@@ -1,0 +1,957 @@
+🐧 [root@debian:~]# (
+> cd ~/kernel-source/ksu-reference-32915384/kernel
+>
+'\> printf '\n=== core_hook.c: 480-750 ===\n'
+> sed -n '480,750p' core_hook.c
+ri>
+t> printf '\n=== core_hook.c: 780-930 ===\n'
+> sed -n '780,930p' core_hook.c
+in>
+> printf '\n=== kernel_compat.c ===\n'
+> cat kernel_compat.c
+>
+> printf '\n=== kernel_compat.h ===\n'
+> cat kernel_compat.h
+
+>
+> printf '\n=== selinux/selinux.c ===\n'
+a> cat selinux/selinux.c
+p>
+r> printf '\n=== selinux/sepolicy.c: beginning ===\n'
+sed -> sed -n '1,180p' selinux/sepolicy.c
+> )
+
+=== core_hook.c: 480-750 ===
+                        if (copy_to_user(result, &reply_ok, sizeof(reply_ok))) {
+                                pr_err("prctl reply error, cmd: %lu\n", arg2);
+                        }
+                }
+                return 0;
+        }
+
+        return 0;
+}
+
+static bool is_appuid(kuid_t uid)
+{
+#define PER_USER_RANGE 100000
+#define FIRST_APPLICATION_UID 10000
+#define LAST_APPLICATION_UID 19999
+
+        uid_t appid = uid.val % PER_USER_RANGE;
+        return appid >= FIRST_APPLICATION_UID && appid <= LAST_APPLICATION_UID;
+}
+
+static bool should_umount(struct path *path)
+{
+        if (!path) {
+                return false;
+        }
+
+        if (current->nsproxy->mnt_ns == init_nsproxy.mnt_ns) {
+                pr_info("ignore global mnt namespace process: %d\n",
+                        current_uid().val);
+                return false;
+        }
+
+        if (path->mnt && path->mnt->mnt_sb && path->mnt->mnt_sb->s_type) {
+                const char *fstype = path->mnt->mnt_sb->s_type->name;
+                return strcmp(fstype, "overlay") == 0;
+        }
+        return false;
+}
+
+static void ksu_umount_mnt(struct path *path, int flags)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0) || defined(KSU_UMOUNT)
+        int err = path_umount(path, flags);
+        if (err) {
+                pr_info("umount %s failed: %d\n", path->dentry->d_iname, err);
+        }
+#else
+        // TODO: umount for non GKI kernel
+#endif
+}
+
+static void try_umount(const char *mnt, bool check_mnt, int flags)
+{
+        struct path path;
+        int err = kern_path(mnt, 0, &path);
+        if (err) {
+                return;
+        }
+
+        if (path.dentry != path.mnt->mnt_root) {
+                // it is not root mountpoint, maybe umounted by others already.
+                return;
+        }
+
+        // we are only interest in some specific mounts
+        if (check_mnt && !should_umount(&path)) {
+                return;
+        }
+
+        ksu_umount_mnt(&path, flags);
+}
+
+int ksu_handle_setuid(struct cred *new, const struct cred *old)
+{
+        // this hook is used for umounting overlayfs for some uid, if there isn't any module mounted, just ignore it!
+        if (!ksu_module_mounted) {
+                return 0;
+        }
+
+        if (!new || !old) {
+                return 0;
+        }
+
+        kuid_t new_uid = new->uid;
+        kuid_t old_uid = old->uid;
+
+        if (0 != old_uid.val) {
+                // old process is not root, ignore it.
+                return 0;
+        }
+
+        if (!is_appuid(new_uid) || is_unsupported_uid(new_uid.val)) {
+                // pr_info("handle setuid ignore non application or isolated uid: %d\n", new_uid.val);
+                return 0;
+        }
+
+        if (ksu_is_allow_uid(new_uid.val)) {
+                // pr_info("handle setuid ignore allowed application: %d\n", new_uid.val);
+                return 0;
+        }
+
+        if (!ksu_uid_should_umount(new_uid.val)) {
+                return 0;
+        } else {
+#ifdef CONFIG_KSU_DEBUG
+                pr_info("uid: %d should not umount!\n", current_uid().val);
+#endif
+        }
+
+        // check old process's selinux context, if it is not zygote, ignore it!
+        // because some su apps may setuid to untrusted_app but they are in global mount namespace
+        // when we umount for such process, that is a disaster!
+        bool is_zygote_child = is_zygote(old->security);
+        if (!is_zygote_child) {
+                pr_info("handle umount ignore non zygote child: %d\n",
+                        current->pid);
+                return 0;
+        }
+        // umount the target mnt
+        pr_info("handle umount for uid: %d, pid: %d\n", new_uid.val,
+                current->pid);
+
+        // fixme: use `collect_mounts` and `iterate_mount` to iterate all mountpoint and
+        // filter the mountpoint whose target is `/data/adb`
+        try_umount("/system", true, 0);
+        try_umount("/vendor", true, 0);
+        try_umount("/product", true, 0);
+        try_umount("/data/adb/modules", false, MNT_DETACH);
+
+        // try umount ksu temp path
+        try_umount("/debug_ramdisk", false, MNT_DETACH);
+        try_umount("/sbin", false, MNT_DETACH);
+
+        return 0;
+}
+
+// Init functons
+
+static int handler_pre(struct kprobe *p, struct pt_regs *regs)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
+        struct pt_regs *real_regs = (struct pt_regs *)PT_REGS_PARM1(regs);
+#else
+        struct pt_regs *real_regs = regs;
+#endif
+        int option = (int)PT_REGS_PARM1(real_regs);
+        unsigned long arg2 = (unsigned long)PT_REGS_PARM2(real_regs);
+        unsigned long arg3 = (unsigned long)PT_REGS_PARM3(real_regs);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
+        // PRCTL_SYMBOL is the arch-specificed one, which receive raw pt_regs from syscall
+        unsigned long arg4 = (unsigned long)PT_REGS_SYSCALL_PARM4(real_regs);
+#else
+        // PRCTL_SYMBOL is the common one, called by C convention in do_syscall_64
+        // https://elixir.bootlin.com/linux/v4.15.18/source/arch/x86/entry/common.c#L287
+        unsigned long arg4 = (unsigned long)PT_REGS_CCALL_PARM4(real_regs);
+#endif
+        unsigned long arg5 = (unsigned long)PT_REGS_PARM5(real_regs);
+
+        return ksu_handle_prctl(option, arg2, arg3, arg4, arg5);
+}
+
+static struct kprobe prctl_kp = {
+        .symbol_name = PRCTL_SYMBOL,
+        .pre_handler = handler_pre,
+};
+
+static int renameat_handler_pre(struct kprobe *p, struct pt_regs *regs)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+        // https://elixir.bootlin.com/linux/v5.12-rc1/source/include/linux/fs.h
+        struct renamedata *rd = PT_REGS_PARM1(regs);
+        struct dentry *old_entry = rd->old_dentry;
+        struct dentry *new_entry = rd->new_dentry;
+#else
+        struct dentry *old_entry = (struct dentry *)PT_REGS_PARM2(regs);
+        struct dentry *new_entry = (struct dentry *)PT_REGS_CCALL_PARM4(regs);
+#endif
+
+        return ksu_handle_rename(old_entry, new_entry);
+}
+
+static struct kprobe renameat_kp = {
+        .symbol_name = "vfs_rename",
+        .pre_handler = renameat_handler_pre,
+};
+
+__maybe_unused int ksu_kprobe_init(void)
+{
+        int rc = 0;
+        rc = register_kprobe(&prctl_kp);
+
+        if (rc) {
+                pr_info("prctl kprobe failed: %d.\n", rc);
+                return rc;
+        }
+
+        rc = register_kprobe(&renameat_kp);
+        pr_info("renameat kp: %d\n", rc);
+
+        return rc;
+}
+
+__maybe_unused int ksu_kprobe_exit(void)
+{
+        unregister_kprobe(&prctl_kp);
+        unregister_kprobe(&renameat_kp);
+        return 0;
+}
+
+static int ksu_task_prctl(int option, unsigned long arg2, unsigned long arg3,
+                          unsigned long arg4, unsigned long arg5)
+{
+        ksu_handle_prctl(option, arg2, arg3, arg4, arg5);
+        return -ENOSYS;
+}
+// kernel 4.4 and 4.9
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+static int ksu_key_permission(key_ref_t key_ref, const struct cred *cred,
+                              unsigned perm)
+{
+        if (init_session_keyring != NULL) {
+                return 0;
+        }
+        if (strcmp(current->comm, "init")) {
+                // we are only interested in `init` process
+                return 0;
+        }
+        init_session_keyring = cred->session_keyring;
+        pr_info("kernel_compat: got init_session_keyring\n");
+        return 0;
+}
+#endif
+static int ksu_inode_rename(struct inode *old_inode, struct dentry *old_dentry,
+                            struct inode *new_inode, struct dentry *new_dentry)
+{
+        return ksu_handle_rename(old_dentry, new_dentry);
+}
+
+static int ksu_task_fix_setuid(struct cred *new, const struct cred *old,
+                               int flags)
+{
+        return ksu_handle_setuid(new, old);
+}
+
+#ifndef MODULE
+static struct security_hook_list ksu_hooks[] = {
+        LSM_HOOK_INIT(task_prctl, ksu_task_prctl),
+        LSM_HOOK_INIT(inode_rename, ksu_inode_rename),
+        LSM_HOOK_INIT(task_fix_setuid, ksu_task_fix_setuid),
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+        LSM_HOOK_INIT(key_permission, ksu_key_permission)
+#endif
+};
+
+void __init ksu_lsm_hook_init(void)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+        security_add_hooks(ksu_hooks, ARRAY_SIZE(ksu_hooks), "ksu");
+#else
+        // https://elixir.bootlin.com/linux/v4.10.17/source/include/linux/lsm_hooks.h#L1892
+        security_add_hooks(ksu_hooks, ARRAY_SIZE(ksu_hooks));
+#endif
+}
+
+#else
+static int override_security_head(void *head, const void *new_head, size_t len)
+{
+        unsigned long base = (unsigned long)head & PAGE_MASK;
+        unsigned long offset = offset_in_page(head);
+
+        // this is impossible for our case because the page alignment
+
+=== core_hook.c: 780-930 ===
+        }
+
+        kfree(head);
+}
+
+struct hlist_head *copy_security_hlist(struct hlist_head *orig)
+{
+        struct hlist_head *new_head = kmalloc(sizeof(*new_head), GFP_KERNEL);
+        if (!new_head)
+                return NULL;
+
+        INIT_HLIST_HEAD(new_head);
+
+        struct security_hook_list *entry;
+        struct security_hook_list *new_entry;
+
+        hlist_for_each_entry (entry, orig, list) {
+                new_entry = kmalloc(sizeof(*new_entry), GFP_KERNEL);
+                if (!new_entry) {
+                        free_security_hook_list(new_head);
+                        return NULL;
+                }
+
+                *new_entry = *entry;
+
+                hlist_add_tail_rcu(&new_entry->list, new_head);
+        }
+
+        return new_head;
+}
+
+#define LSM_SEARCH_MAX 180 // This should be enough to iterate
+static void *find_head_addr(void *security_ptr, int *index)
+{
+        if (!security_ptr) {
+                return NULL;
+        }
+        struct hlist_head *head_start =
+                (struct hlist_head *)&security_hook_heads;
+
+        for (int i = 0; i < LSM_SEARCH_MAX; i++) {
+                struct hlist_head *head = head_start + i;
+                struct security_hook_list *pos;
+                hlist_for_each_entry (pos, head, list) {
+                        if (pos->hook.capget == security_ptr) {
+                                if (index) {
+                                        *index = i;
+                                }
+                                return head;
+                        }
+                }
+        }
+
+        return NULL;
+}
+
+#define GET_SYMBOL_ADDR(sym)                                                   \
+        ({                                                                     \
+                void *addr = kallsyms_lookup_name(#sym ".cfi_jt");             \
+                if (!addr) {                                                   \
+                        addr = kallsyms_lookup_name(#sym);                     \
+                }                                                              \
+                addr;                                                          \
+        })
+
+#define KSU_LSM_HOOK_HACK_INIT(head_ptr, name, func)                           \
+        do {                                                                   \
+                static struct security_hook_list hook = {                      \
+                        .hook = { .name = func }                               \
+                };                                                             \
+                hook.head = head_ptr;                                          \
+                hook.lsm = "ksu";                                              \
+                struct hlist_head *new_head = copy_security_hlist(hook.head);  \
+                if (!new_head) {                                               \
+                        pr_err("Failed to copy security list: %s\n", #name);   \
+                        break;                                                 \
+                }                                                              \
+                hlist_add_tail_rcu(&hook.list, new_head);                      \
+                if (override_security_head(hook.head, new_head,                \
+                                           sizeof(*new_head))) {               \
+                        free_security_hook_list(new_head);                     \
+                        pr_err("Failed to hack lsm for: %s\n", #name);         \
+                }                                                              \
+        } while (0)
+
+void __init ksu_lsm_hook_init(void)
+{
+        void *cap_prctl = GET_SYMBOL_ADDR(cap_task_prctl);
+        void *prctl_head = find_head_addr(cap_prctl, NULL);
+        if (prctl_head) {
+                if (prctl_head != &security_hook_heads.task_prctl) {
+                        pr_warn("prctl's address has shifted!\n");
+                }
+                KSU_LSM_HOOK_HACK_INIT(prctl_head, task_prctl, ksu_task_prctl);
+        } else {
+                pr_warn("Failed to find task_prctl!\n");
+        }
+
+        int inode_killpriv_index = -1;
+        void *cap_killpriv = GET_SYMBOL_ADDR(cap_inode_killpriv);
+        find_head_addr(cap_killpriv, &inode_killpriv_index);
+        if (inode_killpriv_index < 0) {
+                pr_warn("Failed to find inode_rename, use kprobe instead!\n");
+                register_kprobe(&renameat_kp);
+        } else {
+                int inode_rename_index = inode_killpriv_index +
+                                         &security_hook_heads.inode_rename -
+                                         &security_hook_heads.inode_killpriv;
+                struct hlist_head *head_start =
+                        (struct hlist_head *)&security_hook_heads;
+                void *inode_rename_head = head_start + inode_rename_index;
+                if (inode_rename_head != &security_hook_heads.inode_rename) {
+                        pr_warn("inode_rename's address has shifted!\n");
+                }
+                KSU_LSM_HOOK_HACK_INIT(inode_rename_head, inode_rename,
+                                       ksu_inode_rename);
+        }
+        void *cap_setuid = GET_SYMBOL_ADDR(cap_task_fix_setuid);
+        void *setuid_head = find_head_addr(cap_setuid, NULL);
+        if (setuid_head) {
+                if (setuid_head != &security_hook_heads.task_fix_setuid) {
+                        pr_warn("setuid's address has shifted!\n");
+                }
+                KSU_LSM_HOOK_HACK_INIT(setuid_head, task_fix_setuid,
+                                       ksu_task_fix_setuid);
+        } else {
+                pr_warn("Failed to find task_fix_setuid!\n");
+        }
+        smp_mb();
+}
+#endif
+
+void __init ksu_core_init(void)
+{
+        ksu_lsm_hook_init();
+}
+
+void ksu_core_exit(void)
+{
+        pr_info("ksu_kprobe_exit\n");
+}
+
+=== kernel_compat.c ===
+#include "linux/version.h"
+#include "linux/fs.h"
+#include "linux/nsproxy.h"
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+#include "linux/sched/task.h"
+#else
+#include "linux/sched.h"
+#endif
+#include "linux/uaccess.h"
+#include "klog.h" // IWYU pragma: keep
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+#include "linux/key.h"
+#include "linux/errno.h"
+#include "linux/cred.h"
+struct key *init_session_keyring = NULL;
+
+static inline int install_session_keyring(struct key *keyring)
+{
+        struct cred *new;
+        int ret;
+
+        new = prepare_creds();
+        if (!new)
+                return -ENOMEM;
+
+        ret = install_session_keyring_to_cred(new, keyring);
+        if (ret < 0) {
+                abort_creds(new);
+                return ret;
+        }
+
+        return commit_creds(new);
+}
+#endif
+
+extern struct task_struct init_task;
+
+// mnt_ns context switch for environment that android_init->nsproxy->mnt_ns != init_task.nsproxy->mnt_ns, such as WSA
+struct ksu_ns_fs_saved {
+        struct nsproxy *ns;
+        struct fs_struct *fs;
+};
+
+static void ksu_save_ns_fs(struct ksu_ns_fs_saved *ns_fs_saved)
+{
+        ns_fs_saved->ns = current->nsproxy;
+        ns_fs_saved->fs = current->fs;
+}
+
+static void ksu_load_ns_fs(struct ksu_ns_fs_saved *ns_fs_saved)
+{
+        current->nsproxy = ns_fs_saved->ns;
+        current->fs = ns_fs_saved->fs;
+}
+
+static bool android_context_saved_checked = false;
+static bool android_context_saved_enabled = false;
+static struct ksu_ns_fs_saved android_context_saved;
+
+void ksu_android_ns_fs_check()
+{
+        if (android_context_saved_checked)
+                return;
+        android_context_saved_checked = true;
+        task_lock(current);
+        if (current->nsproxy && current->fs &&
+            current->nsproxy->mnt_ns != init_task.nsproxy->mnt_ns) {
+                android_context_saved_enabled = true;
+                pr_info("android context saved enabled due to init mnt_ns(%p) != android mnt_ns(%p)\n",
+                        current->nsproxy->mnt_ns, init_task.nsproxy->mnt_ns);
+                ksu_save_ns_fs(&android_context_saved);
+        } else {
+                pr_info("android context saved disabled\n");
+        }
+        task_unlock(current);
+}
+
+struct file *ksu_filp_open_compat(const char *filename, int flags, umode_t mode)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+        if (init_session_keyring != NULL && !current_cred()->session_keyring &&
+            (current->flags & PF_WQ_WORKER)) {
+                pr_info("installing init session keyring for older kernel\n");
+                install_session_keyring(init_session_keyring);
+        }
+#endif
+        // switch mnt_ns even if current is not wq_worker, to ensure what we open is the correct file in android mnt_ns, rather than user created mnt_ns
+        struct ksu_ns_fs_saved saved;
+        if (android_context_saved_enabled) {
+                pr_info("start switch current nsproxy and fs to android context\n");
+                task_lock(current);
+                ksu_save_ns_fs(&saved);
+                ksu_load_ns_fs(&android_context_saved);
+                task_unlock(current);
+        }
+        struct file *fp = filp_open(filename, flags, mode);
+        if (android_context_saved_enabled) {
+                task_lock(current);
+                ksu_load_ns_fs(&saved);
+                task_unlock(current);
+                pr_info("switch current nsproxy and fs back to saved successfully\n");
+        }
+        return fp;
+}
+
+ssize_t ksu_kernel_read_compat(struct file *p, void *buf, size_t count,
+                               loff_t *pos)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+        return kernel_read(p, buf, count, pos);
+#else
+        loff_t offset = pos ? *pos : 0;
+        ssize_t result = kernel_read(p, offset, (char *)buf, count);
+        if (pos && result > 0) {
+                *pos = offset + result;
+        }
+        return result;
+#endif
+}
+
+ssize_t ksu_kernel_write_compat(struct file *p, const void *buf, size_t count,
+                                loff_t *pos)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+        return kernel_write(p, buf, count, pos);
+#else
+        loff_t offset = pos ? *pos : 0;
+        ssize_t result = kernel_write(p, buf, count, offset);
+        if (pos && result > 0) {
+                *pos = offset + result;
+        }
+        return result;
+#endif
+}
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+long ksu_strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr,
+                                   long count)
+{
+        return strncpy_from_user_nofault(dst, unsafe_addr, count);
+}
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
+long ksu_strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr,
+                                   long count)
+{
+        return strncpy_from_unsafe_user(dst, unsafe_addr, count);
+}
+#else
+// Copied from: https://elixir.bootlin.com/linux/v4.9.337/source/mm/maccess.c#L201
+long ksu_strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr,
+                                   long count)
+{
+        mm_segment_t old_fs = get_fs();
+        long ret;
+
+        if (unlikely(count <= 0))
+                return 0;
+
+        set_fs(USER_DS);
+        pagefault_disable();
+        ret = strncpy_from_user(dst, unsafe_addr, count);
+        pagefault_enable();
+        set_fs(old_fs);
+
+        if (ret >= count) {
+                ret = count;
+                dst[ret - 1] = '\0';
+        } else if (ret > 0) {
+                ret++;
+        }
+
+        return ret;
+}
+#endif
+
+=== kernel_compat.h ===
+#ifndef __KSU_H_KERNEL_COMPAT
+#define __KSU_H_KERNEL_COMPAT
+
+#include "linux/fs.h"
+#include "linux/key.h"
+#include "linux/version.h"
+
+extern long ksu_strncpy_from_user_nofault(char *dst,
+                                          const void __user *unsafe_addr,
+                                          long count);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+extern struct key *init_session_keyring;
+#endif
+
+extern void ksu_android_ns_fs_check();
+extern struct file *ksu_filp_open_compat(const char *filename, int flags,
+                                         umode_t mode);
+extern ssize_t ksu_kernel_read_compat(struct file *p, void *buf, size_t count,
+                                      loff_t *pos);
+extern ssize_t ksu_kernel_write_compat(struct file *p, const void *buf,
+                                       size_t count, loff_t *pos);
+
+#endif
+
+=== selinux/selinux.c ===
+#include "selinux.h"
+#include "objsec.h"
+#include "linux/version.h"
+#include "../klog.h" // IWYU pragma: keep
+#ifndef KSU_COMPAT_USE_SELINUX_STATE
+#include "avc.h"
+#endif
+
+#define KERNEL_SU_DOMAIN "u:r:su:s0"
+
+static int transive_to_domain(const char *domain)
+{
+        struct cred *cred;
+        struct task_security_struct *tsec;
+        u32 sid;
+        int error;
+
+        cred = (struct cred *)__task_cred(current);
+
+        tsec = cred->security;
+        if (!tsec) {
+                pr_err("tsec == NULL!\n");
+                return -1;
+        }
+
+        error = security_secctx_to_secid(domain, strlen(domain), &sid);
+        if (error) {
+                pr_info("security_secctx_to_secid %s -> sid: %d, error: %d\n",
+                        domain, sid, error);
+        }
+        if (!error) {
+                tsec->sid = sid;
+                tsec->create_sid = 0;
+                tsec->keycreate_sid = 0;
+                tsec->sockcreate_sid = 0;
+        }
+        return error;
+}
+
+void setup_selinux(const char *domain)
+{
+        if (transive_to_domain(domain)) {
+                pr_err("transive domain failed.\n");
+                return;
+        }
+
+        /* we didn't need this now, we have change selinux rules when boot!
+if (!is_domain_permissive) {
+  if (set_domain_permissive() == 0) {
+      is_domain_permissive = true;
+  }
+}*/
+}
+
+void setenforce(bool enforce)
+{
+#ifdef CONFIG_SECURITY_SELINUX_DEVELOP
+#ifdef KSU_COMPAT_USE_SELINUX_STATE
+        selinux_state.enforcing = enforce;
+#else
+        selinux_enforcing = enforce;
+#endif
+#endif
+}
+
+bool getenforce()
+{
+#ifdef CONFIG_SECURITY_SELINUX_DISABLE
+#ifdef KSU_COMPAT_USE_SELINUX_STATE
+        if (selinux_state.disabled) {
+#else
+        if (selinux_disabled) {
+#endif
+                return false;
+        }
+#endif
+
+#ifdef CONFIG_SECURITY_SELINUX_DEVELOP
+#ifdef KSU_COMPAT_USE_SELINUX_STATE
+        return selinux_state.enforcing;
+#else
+        return selinux_enforcing;
+#endif
+#else
+        return true;
+#endif
+}
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) &&                         \
+        !defined(KSU_COMPAT_HAS_CURRENT_SID)
+/*
+ * get the subjective security ID of the current task
+ */
+static inline u32 current_sid(void)
+{
+        const struct task_security_struct *tsec = current_security();
+
+        return tsec->sid;
+}
+#endif
+
+bool is_ksu_domain()
+{
+        char *domain;
+        u32 seclen;
+        bool result;
+        int err = security_secid_to_secctx(current_sid(), &domain, &seclen);
+        if (err) {
+                return false;
+        }
+        result = strncmp(KERNEL_SU_DOMAIN, domain, seclen) == 0;
+        security_release_secctx(domain, seclen);
+        return result;
+}
+
+bool is_zygote(void *sec)
+{
+        struct task_security_struct *tsec = (struct task_security_struct *)sec;
+        if (!tsec) {
+                return false;
+        }
+        char *domain;
+        u32 seclen;
+        bool result;
+        int err = security_secid_to_secctx(tsec->sid, &domain, &seclen);
+        if (err) {
+                return false;
+        }
+        result = strncmp("u:r:zygote:s0", domain, seclen) == 0;
+        security_release_secctx(domain, seclen);
+        return result;
+}
+=== selinux/sepolicy.c: beginning ===
+#include "sepolicy.h"
+#include "linux/gfp.h"
+#include "linux/printk.h"
+#include "linux/slab.h"
+#include "linux/version.h"
+
+#include "../klog.h" // IWYU pragma: keep
+#include "ss/symtab.h"
+
+#define KSU_SUPPORT_ADD_TYPE
+
+/*
+ * Adapt to Huawei HISI kernel without affecting other kernels ,
+ * Huawei Hisi Kernel EBITMAP Enable or Disable Flag ,
+ * From ss/ebitmap.h
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) &&                           \
+                LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0) ||               \
+        LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) &&                      \
+                LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
+#ifdef HISI_SELINUX_EBITMAP_RO
+#define CONFIG_IS_HW_HISI
+#endif
+#endif
+
+//////////////////////////////////////////////////////
+// Declaration
+//////////////////////////////////////////////////////
+
+static struct avtab_node *get_avtab_node(struct policydb *db,
+                                         struct avtab_key *key,
+                                         struct avtab_extended_perms *xperms);
+
+static bool add_rule(struct policydb *db, const char *s, const char *t,
+                     const char *c, const char *p, int effect, bool invert);
+
+static void add_rule_raw(struct policydb *db, struct type_datum *src,
+                         struct type_datum *tgt, struct class_datum *cls,
+                         struct perm_datum *perm, int effect, bool invert);
+
+static void add_xperm_rule_raw(struct policydb *db, struct type_datum *src,
+                               struct type_datum *tgt, struct class_datum *cls,
+                               uint16_t low, uint16_t high, int effect,
+                               bool invert);
+static bool add_xperm_rule(struct policydb *db, const char *s, const char *t,
+                           const char *c, const char *range, int effect,
+                           bool invert);
+
+static bool add_type_rule(struct policydb *db, const char *s, const char *t,
+                          const char *c, const char *d, int effect);
+
+static bool add_filename_trans(struct policydb *db, const char *s,
+                               const char *t, const char *c, const char *d,
+                               const char *o);
+
+static bool add_genfscon(struct policydb *db, const char *fs_name,
+                         const char *path, const char *context);
+
+static bool add_type(struct policydb *db, const char *type_name, bool attr);
+
+static bool set_type_state(struct policydb *db, const char *type_name,
+                           bool permissive);
+
+static void add_typeattribute_raw(struct policydb *db, struct type_datum *type,
+                                  struct type_datum *attr);
+
+static bool add_typeattribute(struct policydb *db, const char *type,
+                              const char *attr);
+
+//////////////////////////////////////////////////////
+// Implementation
+//////////////////////////////////////////////////////
+
+// Invert is adding rules for auditdeny; in other cases, invert is removing
+// rules
+#define strip_av(effect, invert) ((effect == AVTAB_AUDITDENY) == !invert)
+
+#define ksu_hash_for_each(node_ptr, n_slot, cur)                               \
+        int i;                                                                 \
+        for (i = 0; i < n_slot; ++i)                                           \
+                for (cur = node_ptr[i]; cur; cur = cur->next)
+
+// htable is a struct instead of pointer above 5.8.0:
+// https://elixir.bootlin.com/linux/v5.8-rc1/source/security/selinux/ss/symtab.h
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+#define ksu_hashtab_for_each(htab, cur)                                        \
+        ksu_hash_for_each(htab.htable, htab.size, cur)
+#else
+#define ksu_hashtab_for_each(htab, cur)                                        \
+        ksu_hash_for_each(htab->htable, htab->size, cur)
+#endif
+
+// symtab_search is introduced on 5.9.0:
+// https://elixir.bootlin.com/linux/v5.9-rc1/source/security/selinux/ss/symtab.h
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
+#define symtab_search(s, name) hashtab_search((s)->table, name)
+#define symtab_insert(s, name, datum) hashtab_insert((s)->table, name, datum)
+#endif
+
+#define avtab_for_each(avtab, cur)                                             \
+        ksu_hash_for_each(avtab.htable, avtab.nslot, cur);
+
+static struct avtab_node *get_avtab_node(struct policydb *db,
+                                         struct avtab_key *key,
+                                         struct avtab_extended_perms *xperms)
+{
+        struct avtab_node *node;
+
+        /* AVTAB_XPERMS entries are not necessarily unique */
+        if (key->specified & AVTAB_XPERMS) {
+                bool match = false;
+                node = avtab_search_node(&db->te_avtab, key);
+                while (node) {
+                        if ((node->datum.u.xperms->specified ==
+                             xperms->specified) &&
+                            (node->datum.u.xperms->driver == xperms->driver)) {
+                                match = true;
+                                break;
+                        }
+                        node = avtab_search_node_next(node, key->specified);
+                }
+                if (!match)
+                        node = NULL;
+        } else {
+                node = avtab_search_node(&db->te_avtab, key);
+        }
+
+        if (!node) {
+                struct avtab_datum avdatum = {};
+                /*
+     * AUDITDENY, aka DONTAUDIT, are &= assigned, versus |= for
+     * others. Initialize the data accordingly.
+     */
+                if (key->specified & AVTAB_XPERMS) {
+                        avdatum.u.xperms = xperms;
+                } else {
+                        avdatum.u.data =
+                                key->specified == AVTAB_AUDITDENY ? ~0U : 0U;
+                }
+                /* this is used to get the node - insertion is actually unique */
+                node = avtab_insert_nonunique(&db->te_avtab, key, &avdatum);
+
+                int grow_size = sizeof(struct avtab_key);
+                grow_size += sizeof(struct avtab_datum);
+                if (key->specified & AVTAB_XPERMS) {
+                        grow_size += sizeof(u8);
+                        grow_size += sizeof(u8);
+                        grow_size += sizeof(u32) *
+                                     ARRAY_SIZE(avdatum.u.xperms->perms.p);
+                }
+                db->len += grow_size;
+        }
+
+        return node;
+}
+
+static bool add_rule(struct policydb *db, const char *s, const char *t,
+                     const char *c, const char *p, int effect, bool invert)
+{
+        struct type_datum *src = NULL, *tgt = NULL;
+        struct class_datum *cls = NULL;
+        struct perm_datum *perm = NULL;
+
+        if (s) {
+                src = symtab_search(&db->p_types, s);
+                if (src == NULL) {
+                        pr_info("source type %s does not exist\n", s);
+                        return false;
+                }
+        }
+
+        if (t) {
+                tgt = symtab_search(&db->p_types, t);
+                if (tgt == NULL) {
+                        pr_info("target type %s does not exist\n", t);
+                        return false;
+                }
+        }
+
+        if (c) {
+🐧 [root@debian:~]#
