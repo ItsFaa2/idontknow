@@ -1,0 +1,591 @@
+🐧 [root@debian:~]# (
+> cd ~/kernel-source
+> python3 build_ksu_vmlinux_v2.py
+> )
+================================================================================
+FAA KERNEL 4.9.205 KSU FULL VMLINUX BUILD V2
+================================================================================
+
+=== STEP 1: EXECUTABLE SCRIPT VALIDATION ===
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/ld-version.sh
+  mode: 0o755
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/kernel/vdso/gen_vdso_offsets.sh
+  mode: 0o755
+
+=== STEP 2: KSU CONFIG ===
+OK: CONFIG_KSU=y
+OK: CONFIG_MODULES=y
+OK: CONFIG_KPROBES=y
+OK: CONFIG_OVERLAY_FS=y
+
+=== STEP 3: VDSO OFFSET HEADER ===
+#define vdso_offset_sigtramp    0x07e0
+VDSO OFFSET: VALID
+
+=== STEP 4: VDSO ELF ===
+SIZE: 19840
+VDSO_sigtramp: PRESENT
+
+=== STEP 5: FULL VMLINUX BUILD ===
+
+$ make -C /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15 O=/root/kernel-source/build/ksu-32915384-49 ARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE_ARM32=arm-linux-gnueabihf- -j2 vmlinux
+
+make: Entering directory '/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
+make[1]: Entering directory '/root/kernel-source/build/ksu-32915384-49'
+  CHK     include/config/kernel.release
+  GEN     ./Makefile
+  CHK     include/generated/uapi/linux/version.h
+  CHK     include/generated/utsrelease.h
+  Using /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15 as source for kernel
+  CHK     scripts/mod/devicetable-offsets.h
+  CHK     include/generated/timeconst.h
+  CHK     include/generated/bounds.h
+  CHK     include/generated/asm-offsets.h
+  CALL    /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/checksyscalls.sh
+  CHK     include/generated/compile.h
+  CC      arch/arm64/kernel/signal.o
+  CC      arch/arm64/kernel/vdso.o
+  CHK     kernel/config_data.h
+  CC      arch/arm64/kernel/signal32.o
+  LD      certs/built-in.o
+  CC      mm/filemap.o
+  CC      arch/arm64/kernel/sys_compat.o
+  AS      arch/arm64/kernel/entry32.o
+  AS      arch/arm64/kernel/kuser32.o
+  CC      arch/arm64/kernel/arm64ksyms.o
+  CC      mm/mempool.o
+  CC      arch/arm64/kernel/module-plts.o
+  CC      arch/arm64/kernel/perf_regs.o
+  CC      mm/oom_kill.o
+  CC      arch/arm64/kernel/perf_callchain.o
+  CC      arch/arm64/kernel/perf_event.o
+  CC      mm/maccess.o
+  CC      arch/arm64/kernel/hw_breakpoint.o
+  CC      mm/page_alloc.o
+  AS      arch/arm64/kernel/sleep.o
+  CC      arch/arm64/kernel/suspend.o
+  CC      arch/arm64/kernel/cpuidle.o
+  CC      arch/arm64/kernel/armv8_deprecated.o
+  CC      arch/arm64/kernel/kaslr.o
+  CC      arch/arm64/kernel/ssbd.o
+  CC      arch/arm64/kernel/probes/kprobes.o
+  CC      arch/arm64/kernel/probes/decode-insn.o
+  AS      arch/arm64/kernel/probes/kprobes_trampoline.o
+  CC      arch/arm64/kernel/probes/simulate-insn.o
+  LD      arch/arm64/kernel/probes/built-in.o
+  OBJCOPY arch/arm64/kernel/vdso32/vdso.so
+  AS      arch/arm64/kernel/vdso32/vdso.o
+  LD      arch/arm64/kernel/vdso32/built-in.o
+  AS      arch/arm64/kernel/head.o
+  LDS     arch/arm64/kernel/vmlinux.lds
+  LD      arch/arm64/kernel/built-in.o
+  CC      fs/open.o
+  CC      fs/read_write.o
+  CC      mm/page-writeback.o
+  CC      fs/file_table.o
+  CC      mm/readahead.o
+  CC      fs/super.o
+  CC      mm/swap.o
+  CC      fs/char_dev.o
+  CC      mm/truncate.o
+  CC      fs/stat.o
+  CC      mm/vmscan.o
+  CC      fs/exec.o
+  CC      fs/pipe.o
+  CC      fs/namei.o
+  CC      mm/shmem.o
+  CC      mm/util.o
+  CC      mm/mmzone.o
+  CC      mm/vmstat.o
+  CC      fs/fcntl.o
+  CC      fs/ioctl.o
+  CC      mm/backing-dev.o
+  CC      fs/readdir.o
+  CC      mm/mm_init.o
+  CC      fs/select.o
+  CC      mm/mmu_context.o
+  CC      mm/percpu.o
+  CC      fs/dcache.o
+  CC      mm/slab_common.o
+  CC      mm/compaction.o
+  CC      fs/inode.o
+  CC      mm/vmacache.o
+  CC      fs/attr.o
+  CC      mm/interval_tree.o
+  CC      fs/bad_inode.o
+  CC      mm/list_lru.o
+  CC      fs/file.o
+  CC      mm/workingset.o
+  CC      mm/debug.o
+  CC      fs/filesystems.o
+  CC      mm/gup.o
+  CC      fs/namespace.o
+  CC      mm/highmem.o
+  CC      mm/memory.o
+  CC      fs/seq_file.o
+  CC      fs/xattr.o
+  CC      mm/mincore.o
+  CC      mm/mlock.o
+  CC      fs/libfs.o
+  CC      mm/mmap.o
+  CC      fs/fs-writeback.o
+  CC      mm/mprotect.o
+  CC      mm/mremap.o
+  CC      fs/pnode.o
+  CC      mm/msync.o
+  CC      fs/splice.o
+  CC      mm/rmap.o
+  CC      mm/vmalloc.o
+  CC      fs/sync.o
+  CC      fs/utimes.o
+  CC      fs/stack.o
+  CC      fs/fs_struct.o
+  CC      mm/pagewalk.o
+  CC      fs/statfs.o
+  CC      mm/pgtable-generic.o
+  CC      mm/process_vm_access.o
+  CC      fs/fs_pin.o
+  CC      mm/init-mm.o
+  CC      fs/nsfs.o
+  CC      mm/nobootmem.o
+  CC      fs/buffer.o
+  CC      mm/fadvise.o
+  CC      mm/madvise.o
+  CC      mm/memblock.o
+  CC      fs/block_dev.o
+  CC      mm/page_io.o
+  CC      mm/swap_state.o
+In file included from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/atomic.h:41,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/atomic.h:4,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/jump_label.h:169,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cpufeature.h:29,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/hw_breakpoint.h:20,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/processor.h:41,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/spinlock.h:21,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/spinlock.h:87,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/mmzone.h:7,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/gfp.h:5,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/mm.h:9,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:9:
+In function ‘__xchg_case_mb_4’,
+    inlined from ‘__xchg_mb’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:99:1,
+    inlined from ‘swapin_nr_pages’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:424:10,
+    inlined from ‘swapin_readahead’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:482:9:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:38:9: error: array subscript ‘long unsigned int[0]’ is partly outside array bounds of ‘atomic_t[1]’ [-Werror=array-bounds]
+   38 |         asm volatile(ARM64_LSE_ATOMIC_INSN(                             \
+      |         ^~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:70:1: note: in expansion of macro ‘__XCHG_CASE’
+   70 | __XCHG_CASE(w,  ,  mb_4, dmb ish, nop,  , a, l, "memory")
+      | ^~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c: In function ‘swapin_readahead’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:64:17: note: object ‘swapin_readahead_hits’ of size 4
+   64 | static atomic_t swapin_readahead_hits = ATOMIC_INIT(4);
+      |                 ^~~~~~~~~~~~~~~~~~~~~
+In function ‘__xchg_case_mb_4’,
+    inlined from ‘__xchg_mb’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:99:1,
+    inlined from ‘swapin_nr_pages’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:424:10,
+    inlined from ‘swapin_readahead’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:482:9:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:38:9: error: array subscript ‘long unsigned int[0]’ is partly outside array bounds of ‘atomic_t[1]’ [-Werror=array-bounds]
+   38 |         asm volatile(ARM64_LSE_ATOMIC_INSN(                             \
+      |         ^~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:70:1: note: in expansion of macro ‘__XCHG_CASE’
+   70 | __XCHG_CASE(w,  ,  mb_4, dmb ish, nop,  , a, l, "memory")
+      | ^~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c: In function ‘swapin_readahead’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:64:17: note: object ‘swapin_readahead_hits’ of size 4
+   64 | static atomic_t swapin_readahead_hits = ATOMIC_INIT(4);
+      |                 ^~~~~~~~~~~~~~~~~~~~~
+  CC      fs/direct-io.o
+cc1: all warnings being treated as errors
+make[2]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: mm/swap_state.o] Error 1
+make[1]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/Makefile:1120: mm] Error 2
+make[1]: *** Waiting for unfinished jobs....
+  CC      fs/mpage.o
+  CC      fs/proc_namespace.o
+  CC      fs/configfs/inode.o
+  CC      fs/configfs/file.o
+  CC      fs/crypto/crypto.o
+  CC      fs/configfs/dir.o
+  CC      fs/crypto/fname.o
+  CC      fs/crypto/hooks.o
+  CC      fs/configfs/symlink.o
+  CC      fs/crypto/keyinfo.o
+  CC      fs/configfs/mount.o
+  CC      fs/configfs/item.o
+  CC      fs/crypto/policy.o
+  LD      fs/configfs/configfs.o
+  LD      fs/configfs/built-in.o
+  CC      fs/debugfs/inode.o
+  CC      fs/crypto/bio.o
+  CC      fs/debugfs/file.o
+  LD      fs/crypto/fscrypto.o
+  LD      fs/crypto/built-in.o
+  CC      fs/devpts/inode.o
+In file included from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/asm-generic/preempt.h:4,
+                 from ./arch/arm64/include/generated/asm/preempt.h:1,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/preempt.h:59,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/spinlock.h:50,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/seqlock.h:35,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/time.h:5,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/uapi/linux/timex.h:56,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/timex.h:56,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/sched.h:18,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/compat.h:25,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/stat.h:23,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/stat.h:5,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/module.h:10,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/debugfs/file.c:12:
+In function ‘check_object_size’,
+    inlined from ‘copy_from_user’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/uaccess.h:451:3,
+    inlined from ‘debugfs_write_file_bool’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/debugfs/file.c:808:6:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:91:17: warning: ‘buf’ may be used uninitialized [-Wmaybe-uninitialized]
+   91 |                 __check_object_size(ptr, n, to_user);
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h: In function ‘debugfs_write_file_bool’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:84:13: note: by argument 1 of type ‘const void *’ to ‘__check_object_size’ declared here
+   84 | extern void __check_object_size(const void *ptr, unsigned long n,
+      |             ^~~~~~~~~~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/debugfs/file.c:800:14: note: ‘buf’ declared here
+  800 |         char buf[32];
+      |              ^~~
+  LD      fs/devpts/devpts.o
+  LD      fs/devpts/built-in.o
+  CC      fs/erofs/super.o
+  LD      fs/debugfs/debugfs.o
+  LD      fs/debugfs/built-in.o
+  CC      fs/exfat/inode.o
+  CC      fs/exfat/namei.o
+  CC      fs/erofs/inode.o
+  CC      fs/exfat/dir.o
+  CC      fs/erofs/data.o
+  CC      fs/erofs/namei.o
+  CC      fs/exfat/super.o
+  CC      fs/erofs/dir.o
+  CC      fs/erofs/utils.o
+  CC      fs/exfat/fatent.o
+  CC      fs/erofs/pcpubuf.o
+  CC      fs/exfat/cache.o
+  CC      fs/erofs/xattr.o
+  CC      fs/exfat/nls.o
+  CC      fs/exfat/misc.o
+  CC      fs/erofs/decompressor.o
+  CC      fs/exfat/file.o
+  CC      fs/erofs/zmap.o
+  CC      fs/exfat/balloc.o
+  CC      fs/erofs/zdata.o
+  LD      fs/exfat/exfat.o
+  LD      fs/exfat/built-in.o
+  LD      fs/exofs/built-in.o
+  CC      fs/ext4/balloc.o
+  LD      fs/erofs/erofs.o
+  LD      fs/erofs/built-in.o
+  CC      fs/f2fs/dir.o
+  CC      fs/ext4/bitmap.o
+  CC      fs/ext4/dir.o
+  CC      fs/f2fs/file.o
+  CC      fs/ext4/file.o
+  CC      fs/ext4/fsync.o
+  CC      fs/ext4/ialloc.o
+  CC      fs/ext4/inode.o
+  CC      fs/f2fs/inode.o
+  CC      fs/f2fs/namei.o
+  CC      fs/f2fs/hash.o
+  CC      fs/f2fs/super.o
+  CC      fs/ext4/page-io.o
+  CC      fs/ext4/ioctl.o
+  CC      fs/ext4/namei.o
+  CC      fs/f2fs/inline.o
+  CC      fs/f2fs/checkpoint.o
+  CC      fs/ext4/super.o
+  CC      fs/f2fs/gc.o
+  CC      fs/f2fs/data.o
+  CC      fs/ext4/symlink.o
+  CC      fs/ext4/hash.o
+  CC      fs/f2fs/node.o
+  CC      fs/ext4/resize.o
+  CC      fs/ext4/extents.o
+  CC      fs/f2fs/segment.o
+In file included from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:44:
+In function ‘ext4_ext_pblock’,
+    inlined from ‘ext4_zeroout_es’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3149:14,
+    inlined from ‘ext4_ext_convert_to_initialized’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3658:10,
+    inlined from ‘ext4_ext_handle_unwritten_extents’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4119:8,
+    inlined from ‘ext4_ext_map_blocks’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4378:10:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/ext4_extents.h:225:15: warning: ‘zero_ex2.ee_start_lo’ may be used uninitialized [-Wmaybe-uninitialized]
+  225 |         block = le32_to_cpu(ex->ee_start_lo);
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c: In function ‘ext4_ext_map_blocks’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3435:38: note: ‘zero_ex2.ee_start_lo’ was declared here
+ 3435 |         struct ext4_extent zero_ex1, zero_ex2;
+      |                                      ^~~~~~~~
+In function ‘ext4_ext_pblock’,
+    inlined from ‘ext4_zeroout_es’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3149:14,
+    inlined from ‘ext4_ext_convert_to_initialized’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3658:10,
+    inlined from ‘ext4_ext_handle_unwritten_extents’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4119:8,
+    inlined from ‘ext4_ext_map_blocks’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4378:10:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/ext4_extents.h:226:19: warning: ‘zero_ex2.ee_start_hi’ may be used uninitialized [-Wmaybe-uninitialized]
+  226 |         block |= ((ext4_fsblk_t) le16_to_cpu(ex->ee_start_hi) << 31) << 1;
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c: In function ‘ext4_ext_map_blocks’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3435:38: note: ‘zero_ex2.ee_start_hi’ was declared here
+ 3435 |         struct ext4_extent zero_ex1, zero_ex2;
+      |                                      ^~~~~~~~
+In function ‘ext4_zeroout_es’,
+    inlined from ‘ext4_ext_convert_to_initialized’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3658:10,
+    inlined from ‘ext4_ext_handle_unwritten_extents’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4119:8,
+    inlined from ‘ext4_ext_map_blocks’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4378:10:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3154:16: warning: ‘zero_ex2.ee_block’ may be used uninitialized [-Wmaybe-uninitialized]
+ 3154 |         return ext4_es_insert_extent(inode, ee_block, ee_len, ee_pblock,
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 3155 |                                      EXTENT_STATUS_WRITTEN);
+      |                                      ~~~~~~~~~~~~~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c: In function ‘ext4_ext_map_blocks’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3435:38: note: ‘zero_ex2.ee_block’ was declared here
+ 3435 |         struct ext4_extent zero_ex1, zero_ex2;
+      |                                      ^~~~~~~~
+In function ‘ext4_ext_pblock’,
+    inlined from ‘ext4_zeroout_es’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3149:14,
+    inlined from ‘ext4_ext_convert_to_initialized’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3656:,
+    inlined from ‘ext4_ext_handle_unwritten_extents’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4119:8,
+    inlined from ‘ext4_ext_map_blocks’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4378:10:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/ext4_extents.h:225:15: warning: ‘zero_ex1.ee_start_lo’ may be used uninitialized [-Wmaybe-uninitialized]
+  225 |         block = le32_to_cpu(ex->ee_start_lo);
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c: In function ‘ext4_ext_map_blocks’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3435:28: note: ‘zero_ex1.ee_start_lo’ was declared here
+ 3435 |         struct ext4_extent zero_ex1, zero_ex2;
+      |                            ^~~~~~~~
+In function ‘ext4_ext_pblock’,
+    inlined from ‘ext4_zeroout_es’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3149:14,
+    inlined from ‘ext4_ext_convert_to_initialized’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3656:,
+    inlined from ‘ext4_ext_handle_unwritten_extents’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4119:8,
+    inlined from ‘ext4_ext_map_blocks’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4378:10:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/ext4_extents.h:226:19: warning: ‘zero_ex1.ee_start_hi’ may be used uninitialized [-Wmaybe-uninitialized]
+  226 |         block |= ((ext4_fsblk_t) le16_to_cpu(ex->ee_start_hi) << 31) << 1;
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c: In function ‘ext4_ext_map_blocks’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3435:28: note: ‘zero_ex1.ee_start_hi’ was declared here
+ 3435 |         struct ext4_extent zero_ex1, zero_ex2;
+      |                            ^~~~~~~~
+In function ‘ext4_zeroout_es’,
+    inlined from ‘ext4_ext_convert_to_initialized’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3656:,
+    inlined from ‘ext4_ext_handle_unwritten_extents’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4119:8,
+    inlined from ‘ext4_ext_map_blocks’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:4378:10:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3154:16: warning: ‘zero_ex1.ee_block’ may be used uninitialized [-Wmaybe-uninitialized]
+ 3154 |         return ext4_es_insert_extent(inode, ee_block, ee_len, ee_pblock,
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 3155 |                                      EXTENT_STATUS_WRITTEN);
+      |                                      ~~~~~~~~~~~~~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c: In function ‘ext4_ext_map_blocks’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/ext4/extents.c:3435:28: note: ‘zero_ex1.ee_block’ was declared here
+ 3435 |         struct ext4_extent zero_ex1, zero_ex2;
+      |                            ^~~~~~~~
+  CC      fs/ext4/ext4_jbd2.o
+  CC      fs/ext4/migrate.o
+  CC      fs/ext4/mballoc.o
+  CC      fs/f2fs/recovery.o
+  CC      fs/f2fs/shrinker.o
+  CC      fs/f2fs/extent_cache.o
+  CC      fs/ext4/block_validity.o
+  CC      fs/f2fs/sysfs.o
+  CC      fs/ext4/move_extent.o
+  CC      fs/f2fs/debug.o
+  CC      fs/ext4/mmp.o
+  CC      fs/ext4/indirect.o
+  CC      fs/f2fs/xattr.o
+  CC      fs/f2fs/acl.o
+  CC      fs/ext4/extents_status.o
+  LD      fs/f2fs/f2fs.o
+  LD      fs/f2fs/built-in.o
+  CC      fs/fat/cache.o
+  CC      fs/fat/dir.o
+  CC      fs/ext4/xattr.o
+  CC      fs/fat/fatent.o
+  CC      fs/ext4/xattr_user.o
+  CC      fs/ext4/xattr_trusted.o
+  CC      fs/ext4/inline.o
+  CC      fs/fat/file.o
+  CC      fs/fat/inode.o
+  CC      fs/ext4/readpage.o
+  CC      fs/ext4/sysfs.o
+  CC      fs/fat/misc.o
+  CC      fs/ext4/xattr_security.o
+  CC      fs/fat/nfs.o
+  LD      fs/ext4/ext4.o
+  LD      fs/ext4/built-in.o
+  CC      fs/fuse/dev.o
+  CC      fs/fat/namei_vfat.o
+  CC      fs/fat/namei_msdos.o
+  LD      fs/fat/fat.o
+  LD      fs/fat/vfat.o
+  LD      fs/fat/msdos.o
+  LD      fs/fat/built-in.o
+  CC      fs/isofs/namei.o
+  CC      fs/fuse/dir.o
+  CC      fs/isofs/inode.o
+  CC      fs/fuse/file.o
+  CC      fs/isofs/dir.o
+  CC      fs/isofs/util.o
+  CC      fs/isofs/rock.o
+  CC      fs/isofs/export.o
+  CC      fs/isofs/joliet.o
+  CC      fs/isofs/compress.o
+  CC      fs/fuse/inode.o
+  LD      fs/isofs/isofs.o
+  LD      fs/isofs/built-in.o
+  CC      fs/jbd2/transaction.o
+  CC      fs/fuse/control.o
+  CC      fs/fuse/xattr.o
+  CC      fs/jbd2/commit.o
+  CC      fs/fuse/acl.o
+  LD      fs/fuse/fuse.o
+  LD      fs/fuse/built-in.o
+  CC      fs/kernfs/mount.o
+  CC      fs/kernfs/inode.o
+  CC      fs/jbd2/recovery.o
+  CC      fs/kernfs/dir.o
+  CC      fs/jbd2/checkpoint.o
+  CC      fs/kernfs/file.o
+  CC      fs/jbd2/revoke.o
+  CC      fs/jbd2/journal.o
+  CC      fs/kernfs/symlink.o
+  LD      fs/kernfs/built-in.o
+  CC      fs/nls/nls_base.o
+  CC      fs/nls/nls_cp437.o
+  CC      fs/nls/nls_cp950.o
+  CC      fs/nls/nls_ascii.o
+  CC      fs/nls/nls_iso8859-1.o
+  CC      fs/nls/nls_utf8.o
+  LD      fs/jbd2/jbd2.o
+  LD      fs/jbd2/built-in.o
+  CC      fs/notify/fsnotify.o
+  LD      fs/nls/built-in.o
+  CC      fs/ntfs/aops.o
+  CC      fs/notify/notification.o
+  CC      fs/ntfs/attrib.o
+  CC      fs/notify/group.o
+  CC      fs/ntfs/collate.o
+  CC      fs/notify/inode_mark.o
+  CC      fs/ntfs/compress.o
+  CC      fs/notify/mark.o
+  CC      fs/notify/vfsmount_mark.o
+  CC      fs/ntfs/debug.o
+  CC      fs/notify/fdinfo.o
+  CC      fs/ntfs/dir.o
+  CC      fs/notify/dnotify/dnotify.o
+  LD      fs/notify/dnotify/built-in.o
+  LD      fs/notify/fanotify/built-in.o
+  CC      fs/notify/inotify/inotify_fsnotify.o
+  CC      fs/ntfs/file.o
+  CC      fs/notify/inotify/inotify_user.o
+  CC      fs/ntfs/index.o
+  LD      fs/notify/inotify/built-in.o
+  LD      fs/notify/built-in.o
+  CC      fs/overlayfs/super.o
+  CC      fs/ntfs/inode.o
+  CC      fs/overlayfs/inode.o
+  CC      fs/overlayfs/dir.o
+  CC      fs/ntfs/mft.o
+  CC      fs/ntfs/mst.o
+  CC      fs/overlayfs/readdir.o
+  CC      fs/ntfs/namei.o
+  CC      fs/ntfs/runlist.o
+  CC      fs/overlayfs/copy_up.o
+  LD      fs/overlayfs/overlay.o
+  LD      fs/overlayfs/built-in.o
+  CC      fs/proc/task_mmu.o
+  CC      fs/ntfs/super.o
+  CC      fs/proc/inode.o
+  CC      fs/ntfs/sysctl.o
+  CC      fs/ntfs/unistr.o
+  CC      fs/proc/root.o
+  CC      fs/ntfs/upcase.o
+  CC      fs/proc/base.o
+  LD      fs/ntfs/ntfs.o
+  LD      fs/ntfs/built-in.o
+  CC      fs/pstore/inode.o
+  CC      fs/pstore/platform.o
+  CC      fs/pstore/pmsg.o
+  CC      fs/proc/generic.o
+  CC      fs/pstore/ram.o
+  CC      fs/pstore/ram_core.o
+  CC      fs/proc/array.o
+  LD      fs/pstore/pstore.o
+  LD      fs/pstore/ramoops.o
+  LD      fs/pstore/built-in.o
+  CC      fs/quota/dquot.o
+  CC      fs/proc/fd.o
+  CC      fs/proc/proc_tty.o
+  CC      fs/proc/cmdline.o
+  CC      fs/proc/consoles.o
+  CC      fs/proc/cpuinfo.o
+  CC      fs/proc/devices.o
+  CC      fs/proc/interrupts.o
+  CC      fs/quota/quota_v2.o
+  CC      fs/proc/loadavg.o
+  CC      fs/quota/quota_tree.o
+  CC      fs/proc/meminfo.o
+  CC      fs/proc/stat.o
+  CC      fs/quota/quota.o
+  CC      fs/proc/uptime.o
+  CC      fs/proc/version.o
+  CC      fs/proc/softirqs.o
+  CC      fs/quota/kqid.o
+  CC      fs/proc/namespaces.o
+  CC      fs/quota/netlink.o
+  CC      fs/proc/self.o
+  CC      fs/proc/thread_self.o
+  LD      fs/quota/built-in.o
+  CC      fs/ramfs/inode.o
+  CC      fs/proc/uid.o
+  CC      fs/ramfs/file-mmu.o
+  CC      fs/proc/proc_sysctl.o
+  LD      fs/ramfs/ramfs.o
+  LD      fs/ramfs/built-in.o
+  CC      fs/sdcardfs/dentry.o
+  CC      fs/sdcardfs/file.o
+  CC      fs/sdcardfs/inode.o
+  CC      fs/proc/proc_net.o
+  CC      fs/sdcardfs/main.o
+  CC      fs/proc/kmsg.o
+  CC      fs/proc/page.o
+  CC      fs/sdcardfs/super.o
+  LD      fs/proc/proc.o
+  LD      fs/proc/built-in.o
+  CC      fs/sdcardfs/lookup.o
+  CC      fs/sysfs/file.o
+  CC      fs/sdcardfs/mmap.o
+  CC      fs/sysfs/dir.o
+  CC      fs/sdcardfs/packagelist.o
+  CC      fs/sysfs/symlink.o
+  CC      fs/sysfs/mount.o
+  CC      fs/sysfs/group.o
+  LD      fs/sysfs/built-in.o
+  CC      fs/tracefs/inode.o
+  CC      fs/sdcardfs/derived_perm.o
+  LD      fs/tracefs/tracefs.o
+  LD      fs/tracefs/built-in.o
+  CC      fs/eventpoll.o
+  LD      fs/sdcardfs/sdcardfs.o
+  LD      fs/sdcardfs/built-in.o
+  CC      fs/anon_inodes.o
+  CC      fs/signalfd.o
+  CC      fs/timerfd.o
+  CC      fs/eventfd.o
+  CC      fs/aio.o
+  CC      fs/locks.o
+  CC      fs/compat.o
+  CC      fs/compat_ioctl.o
+  CC      fs/binfmt_script.o
+  CC      fs/binfmt_elf.o
+  CC      fs/compat_binfmt_elf.o
+  CC      fs/mbcache.o
+  CC      fs/posix_acl.o
+  CC      fs/coredump.o
+  CC      fs/drop_caches.o
+  CC      fs/dcookies.o
+  LD      fs/built-in.o
+make[1]: Leaving directory '/root/kernel-source/build/ksu-32915384-49'
+make: *** [Makefile:152: sub-make] Error 2
+make: Leaving directory '/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
+
+BUILD EXIT CODE: 2
+
+BUILD FAILED
+🐧 [root@debian:~]#
