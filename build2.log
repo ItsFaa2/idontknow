@@ -1,7 +1,3 @@
-🐧 [root@debian:~]# (
-> cd ~/kernel-source
-> python3 build_ksu_vmlinux_v2.py
-> )
 ================================================================================
 FAA KERNEL 4.9.205 KSU FULL VMLINUX BUILD V2
 ================================================================================
@@ -43,475 +39,210 @@ make[1]: Entering directory '/root/kernel-source/build/ksu-32915384-49'
   CHK     include/generated/asm-offsets.h
   CALL    /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/checksyscalls.sh
   CHK     include/generated/compile.h
-  CC      mm/filemap.o
   CHK     kernel/config_data.h
-  CC      mm/mempool.o
-  LD      ipc/built-in.o
-  CC      security/hie/hie.o
-  CC      mm/oom_kill.o
-  LD      security/hie/built-in.o
-  CC      security/integrity/iint.o
-  CC      security/integrity/integrity_audit.o
-  LD      security/integrity/integrity.o
-  LD      security/integrity/built-in.o
-  CC      mm/maccess.o
-  CC      security/keys/gc.o
-  CC      mm/page_alloc.o
-  CC      security/keys/key.o
-  CC      security/keys/keyring.o
-  CC      security/keys/keyctl.o
-  CC      security/keys/permission.o
-  CC      security/keys/process_keys.o
-  CC      security/keys/request_key.o
-  CC      security/keys/request_key_auth.o
-  CC      security/keys/user_defined.o
-  CC      security/keys/compat.o
-  CC      mm/page-writeback.o
-  CC      security/keys/proc.o
-  CC      security/keys/sysctl.o
-  LD      security/keys/built-in.o
-  CC      security/selinux/avc.o
-  CC      mm/readahead.o
-  CC      security/selinux/hooks.o
-  CC      mm/swap.o
-  CC      mm/truncate.o
-  CC      mm/vmscan.o
-  CC      security/selinux/selinuxfs.o
-  CC      security/selinux/netlink.o
-  CC      security/selinux/nlmsgtab.o
-  CC      security/selinux/netif.o
-  CC      security/selinux/netnode.o
-  CC      mm/shmem.o
-  CC      security/selinux/netport.o
-  CC      security/selinux/exports.o
-  CC      security/selinux/ss/ebitmap.o
-  CC      security/selinux/ss/hashtab.o
-  CC      security/selinux/ss/symtab.o
-  CC      security/selinux/ss/sidtab.o
-  CC      mm/util.o
-  CC      security/selinux/ss/avtab.o
-  CC      mm/mmzone.o
-  CC      mm/vmstat.o
-  CC      security/selinux/ss/policydb.o
-  CC      mm/backing-dev.o
-  CC      mm/mm_init.o
-  CC      security/selinux/ss/services.o
-  CC      mm/mmu_context.o
-  CC      mm/percpu.o
-  CC      security/selinux/ss/conditional.o
-  CC      mm/slab_common.o
-  CC      security/selinux/ss/mls.o
-  CC      security/selinux/ss/status.o
-  CC      mm/compaction.o
-  LD      security/selinux/selinux.o
-  LD      security/selinux/built-in.o
-  CC      security/commoncap.o
-  CC      security/min_addr.o
-  CC      security/security.o
-  CC      mm/vmacache.o
-  CC      mm/interval_tree.o
-  CC      mm/list_lru.o
-  CC      security/lsm_audit.o
-  CC      mm/workingset.o
-  CC      mm/debug.o
-  LD      security/built-in.o
-  CC      crypto/api.o
-  CC      mm/gup.o
-  CC      crypto/cipher.o
-  CC      mm/highmem.o
-  CC      crypto/compress.o
-  CC      mm/memory.o
-  CC      crypto/memneq.o
-  CC      crypto/crypto_wq.o
-  CC      crypto/algapi.o
-  CC      crypto/scatterwalk.o
-  CC      mm/mincore.o
-  CC      mm/mlock.o
-  CC      crypto/proc.o
-  CC      crypto/aead.o
-  CC      mm/mmap.o
-  CC      crypto/ablkcipher.o
-  CC      crypto/blkcipher.o
-  CC      mm/mprotect.o
-  CC      crypto/skcipher.o
-  CC      mm/mremap.o
-  CC      crypto/seqiv.o
-  CC      mm/msync.o
-  CC      mm/rmap.o
-  CC      crypto/echainiv.o
-  CC      crypto/ahash.o
-  CC      mm/vmalloc.o
-  CC      crypto/shash.o
-  CC      crypto/akcipher.o
-  CC      crypto/kpp.o
-  CC      mm/pagewalk.o
-  CC      mm/pgtable-generic.o
-  CC      crypto/acompress.o
-  CC      mm/process_vm_access.o
-  CC      crypto/scompress.o
-  CC      mm/init-mm.o
-  CC      mm/nobootmem.o
-  CC      crypto/algboss.o
-  CC      mm/fadvise.o
-  CC      mm/madvise.o
-  CC      crypto/testmgr.o
-  CC      crypto/cmac.o
-  CC      mm/memblock.o
-  CC      crypto/hmac.o
-  CC      crypto/xcbc.o
-  CC      mm/page_io.o
-  CC      crypto/crypto_null.o
-  CC      mm/swap_state.o
-  CC      crypto/md5.o
-In file included from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/atomic.h:41,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/atomic.h:4,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/jump_label.h:169,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cpufeature.h:29,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/hw_breakpoint.h:20,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/processor.h:41,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/spinlock.h:21,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/spinlock.h:87,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/mmzone.h:7,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/gfp.h:5,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/mm.h:9,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:9:
-In function ‘__xchg_case_mb_4’,
-    inlined from ‘__xchg_mb’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:99:1,
-    inlined from ‘swapin_nr_pages’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:424:10,
-    inlined from ‘swapin_readahead’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:482:9:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:38:9: warning: array subscript ‘long unsigned int[0]’ is partly outside array bounds of ‘atomic_t[1]’ [-Warray-bounds]
-   38 |         asm volatile(ARM64_LSE_ATOMIC_INSN(                             \
-      |         ^~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:70:1: note: in expansion of macro ‘__XCHG_CASE’
-   70 | __XCHG_CASE(w,  ,  mb_4, dmb ish, nop,  , a, l, "memory")
-      | ^~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c: In function ‘swapin_readahead’:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:64:17: note: object ‘swapin_readahead_hits’ of size 4
-   64 | static atomic_t swapin_readahead_hits = ATOMIC_INIT(4);
-      |                 ^~~~~~~~~~~~~~~~~~~~~
-In function ‘__xchg_case_mb_4’,
-    inlined from ‘__xchg_mb’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:99:1,
-    inlined from ‘swapin_nr_pages’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:424:10,
-    inlined from ‘swapin_readahead’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:482:9:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:38:9: warning: array subscript ‘long unsigned int[0]’ is partly outside array bounds of ‘atomic_t[1]’ [-Warray-bounds]
-   38 |         asm volatile(ARM64_LSE_ATOMIC_INSN(                             \
-      |         ^~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/cmpxchg.h:70:1: note: in expansion of macro ‘__XCHG_CASE’
-   70 | __XCHG_CASE(w,  ,  mb_4, dmb ish, nop,  , a, l, "memory")
-      | ^~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c: In function ‘swapin_readahead’:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/swap_state.c:64:17: note: object ‘swapin_readahead_hits’ of size 4
-   64 | static atomic_t swapin_readahead_hits = ATOMIC_INIT(4);
-      |                 ^~~~~~~~~~~~~~~~~~~~~
-  CC      mm/swapfile.o
-  CC      crypto/sha1_generic.o
-  CC      crypto/sha256_generic.o
-  CC      mm/dmapool.o
-  CC      crypto/sha512_generic.o
-  CC      mm/sparse.o
-  CC      crypto/gf128mul.o
-  CC      mm/sparse-vmemmap.o
-  CC      mm/slub.o
-  CC      crypto/ecb.o
-  CC      crypto/cbc.o
-  CC      crypto/cts.o
-  CC      crypto/xts.o
-  CC      mm/migrate.o
-  CC      crypto/ctr.o
-  CC      crypto/gcm.o
-  CC      mm/page_counter.o
-  CC      crypto/ccm.o
-  CC      mm/memcontrol.o
-  CC      crypto/cryptd.o
-  CC      crypto/des_generic.o
-  CC      crypto/blowfish_generic.o
-  CC      crypto/blowfish_common.o
-  CC      crypto/twofish_generic.o
-  CC      mm/vmpressure.o
-  CC      crypto/twofish_common.o
-  CC      mm/swap_cgroup.o
-  CC      mm/page_isolation.o
-  CC      crypto/aes_generic.o
-  CC      mm/zsmalloc.o
-  CC      crypto/arc4.o
-  CC      mm/early_ioremap.o
-  CC      crypto/deflate.o
-  CC      mm/cma.o
-  CC      crypto/crc32c_generic.o
-  CC      crypto/crc32_generic.o
-  CC      mm/usercopy.o
-  CC      crypto/authenc.o
-  LD      mm/built-in.o
-  CC      block/bio.o
-  CC      crypto/authencesn.o
-  CC      crypto/lzo.o
-  CC      block/elevator.o
-  CC      crypto/lz4.o
-  CC      crypto/rng.o
-  CC      crypto/drbg.o
-  CC      block/blk-core.o
-  CC      crypto/jitterentropy.o
-  CC      crypto/jitterentropy-kcapi.o
-  CC      crypto/ghash-generic.o
-  CC      crypto/zstd.o
-  CC      crypto/ablk_helper.o
-  LD      crypto/crypto.o
-  LD      crypto/crypto_algapi.o
-  LD      crypto/crypto_blkcipher.o
-  LD      crypto/crypto_hash.o
-  LD      crypto/cryptomgr.o
-  LD      crypto/jitterentropy_rng.o
-  LD      crypto/built-in.o
-  CC      drivers/amba/bus.o
-  CC      block/blk-tag.o
-  LD      drivers/amba/built-in.o
-  CC      drivers/android/binder.o
-  CC      block/blk-sysfs.o
-  CC      block/blk-flush.o
-  CC      block/blk-settings.o
-  CC      block/blk-ioc.o
-  CC      block/blk-map.o
-  CC      block/blk-exec.o
-  CC      drivers/android/binder_alloc.o
-  CC      block/blk-merge.o
-  LD      drivers/android/built-in.o
-  LD      drivers/auxdisplay/built-in.o
-  CC      drivers/base/component.o
-  CC      block/blk-softirq.o
-  CC      drivers/base/core.o
-  CC      block/blk-timeout.o
-  CC      block/blk-lib.o
-  CC      block/blk-mq.o
-  CC      drivers/base/bus.o
-  CC      drivers/base/dd.o
-  CC      drivers/base/syscore.o
-  CC      block/blk-mq-tag.o
-  CC      drivers/base/driver.o
-  CC      block/blk-mq-sysfs.o
-  CC      drivers/base/class.o
-  CC      block/blk-mq-cpumap.o
-  CC      drivers/base/platform.o
-  CC      block/ioctl.o
-  CC      drivers/base/cpu.o
-  CC      block/genhd.o
-  CC      drivers/base/firmware.o
-  CC      drivers/base/init.o
-  CC      drivers/base/map.o
-  CC      block/scsi_ioctl.o
-  CC      drivers/base/devres.o
-  CC      drivers/base/attribute_container.o
-  CC      block/partition-generic.o
-  CC      drivers/base/transport_class.o
-  CC      drivers/base/topology.o
-  CC      block/ioprio.o
-  CC      drivers/base/container.o
-  CC      drivers/base/property.o
-  CC      block/badblocks.o
-  CC      block/partitions/check.o
-  CC      block/partitions/msdos.o
-  CC      drivers/base/cacheinfo.o
-  CC      block/partitions/efi.o
-  CC      drivers/base/power/sysfs.o
-  LD      block/partitions/built-in.o
-  CC      block/noop-iosched.o
-  CC      drivers/base/power/generic_ops.o
-  CC      block/deadline-iosched.o
-  CC      drivers/base/power/common.o
-  CC      block/cfq-iosched.o
-  CC      drivers/base/power/qos.o
-  CC      drivers/base/power/runtime.o
-  CC      block/compat_ioctl.o
-  CC      drivers/base/power/wakeirq.o
-  LD      block/built-in.o
-  CC      sound/sound_core.o
-  CC      drivers/base/power/main.o
-  LD      sound/arm/built-in.o
-  LD      sound/atmel/built-in.o
-  CC      sound/core/sound.o
-  CC      sound/core/init.o
-  CC      sound/core/memory.o
-  CC      drivers/base/power/wakeup.o
-  CC      sound/core/control.o
-  CC      drivers/base/power/clock_ops.o
-  LD      drivers/base/power/built-in.o
-  CC      drivers/base/regmap/regmap.o
-  CC      sound/core/misc.o
-  CC      sound/core/device.o
-  CC      sound/core/info.o
-  CC      sound/core/info_oss.o
-  CC      sound/core/sound_oss.o
-  CC      drivers/base/regmap/regcache.o
-  CC      sound/core/ctljack.o
-  CC      sound/core/jack.o
-  CC      drivers/base/regmap/regcache-rbtree.o
-  CC      drivers/base/regmap/regcache-lzo.o
-  CC      sound/core/hwdep.o
-  CC      drivers/base/regmap/regcache-flat.o
-  CC      drivers/base/regmap/regmap-debugfs.o
-  CC      sound/core/timer.o
-  CC      drivers/base/regmap/regmap-i2c.o
-  CC      drivers/base/regmap/regmap-spi.o
-  CC      drivers/base/regmap/regmap-mmio.o
-  CC      sound/core/hrtimer.o
-  CC      sound/core/pcm.o
-  LD      drivers/base/regmap/built-in.o
-  CC      drivers/base/dma-mapping.o
-  CC      drivers/base/dma-coherent.o
-  CC      sound/core/pcm_native.o
-  CC      drivers/base/firmware_class.o
-  CC      drivers/base/module.o
-  CC      drivers/base/pinctrl.o
-  LD      drivers/base/built-in.o
-  CC      drivers/block/brd.o
-  CC      drivers/block/loop.o
-  CC      drivers/block/zram/zcomp.o
-  CC      sound/core/pcm_lib.o
-  CC      drivers/block/zram/zram_drv.o
-  LD      drivers/block/zram/zram.o
-  LD      drivers/block/zram/built-in.o
-  LD      drivers/block/built-in.o
-  LD      drivers/bus/built-in.o
-  LD      drivers/cdrom/built-in.o
-  CC      drivers/char/mem.o
-  CC      drivers/char/random.o
-  CC      sound/core/pcm_misc.o
-  CC      sound/core/pcm_memory.o
-  CC      sound/core/memalloc.o
-  CC      sound/core/pcm_timer.o
-  CC      drivers/char/misc.o
-  CC      sound/core/rawmidi.o
-  LD      drivers/char/agp/built-in.o
-  CC      drivers/char/rpmb/rpmb-mtk.o
-  CC      drivers/char/rpmb/core.o
-  LD      sound/core/oss/built-in.o
-  CC      sound/core/seq/seq.o
-  CC      sound/core/seq/seq_lock.o
-  LD      drivers/char/rpmb/rpmb.o
-  LD      drivers/char/rpmb/built-in.o
-  CC      drivers/char/srandom/srandom.o
-  CC      sound/core/seq/seq_clientmgr.o
-  LD      drivers/char/srandom/built-in.o
-  LD      drivers/char/built-in.o
-  LD      drivers/char/ipmi/built-in.o
-  CC      drivers/clk/clk-devres.o
-  CC      drivers/clk/clkdev.o
-  CC      sound/core/seq/seq_memory.o
-  CC      drivers/clk/clk.o
-  CC      sound/core/seq/seq_queue.o
-  CC      sound/core/seq/seq_fifo.o
-  CC      sound/core/seq/seq_prioq.o
-  CC      sound/core/seq/seq_timer.o
-  CC      sound/core/seq/seq_system.o
-  CC      sound/core/seq/seq_ports.o
-  CC      drivers/clk/clk-divider.o
-  CC      sound/core/seq/seq_info.o
-  CC      drivers/clk/clk-fixed-factor.o
-  CC      sound/core/seq/seq_device.o
-  CC      drivers/clk/clk-fixed-rate.o
-  CC      sound/core/seq/seq_midi_event.o
-  CC      drivers/clk/clk-gate.o
-  CC      sound/core/seq/oss/seq_oss.o
-  CC      drivers/clk/clk-multiplier.o
-  CC      sound/core/seq/oss/seq_oss_init.o
-  CC      drivers/clk/clk-mux.o
-  CC      sound/core/seq/oss/seq_oss_timer.o
-  CC      drivers/clk/clk-composite.o
-  CC      sound/core/seq/oss/seq_oss_ioctl.o
-  CC      drivers/clk/clk-fractional-divider.o
-  CC      sound/core/seq/oss/seq_oss_event.o
-  CC      drivers/clk/clk-gpio.o
-  CC      sound/core/seq/oss/seq_oss_rw.o
-  CC      drivers/clk/clk-conf.o
-  CC      sound/core/seq/oss/seq_oss_synth.o
-  CC      drivers/clk/clk-xgene.o
-  CC      sound/core/seq/oss/seq_oss_midi.o
-  LD      drivers/clk/bcm/built-in.o
+  CC      drivers/clocksource/clksrc-probe.o
   CC      drivers/clk/mediatek/clk-mtk.o
-  CC      sound/core/seq/oss/seq_oss_readq.o
+  CC      drivers/clocksource/mmio.o
   CC      drivers/clk/mediatek/clk-pll.o
-  CC      sound/core/seq/oss/seq_oss_writeq.o
+  CC      drivers/clocksource/mtk_apxgpt.o
   CC      drivers/clk/mediatek/clk-gate.o
-  LD      sound/core/seq/oss/snd-seq-oss.o
-  LD      sound/core/seq/oss/built-in.o
-  CC      sound/core/seq/seq_dummy.o
   CC      drivers/clk/mediatek/clk-mux.o
-  CC      sound/core/seq/seq_midi.o
+  CC      drivers/clocksource/mtk_systimer.o
   CC      drivers/clk/mediatek/clk-apmixed.o
+  CC      drivers/clocksource/arm_arch_timer.o
   CC      drivers/clk/mediatek/clk-mt6765.o
-  LD      sound/core/seq/snd-seq.o
-  LD      sound/core/seq/snd-seq-device.o
-  LD      sound/core/seq/snd-seq-midi-event.o
-  LD      sound/core/seq/snd-seq-dummy.o
-  LD      sound/core/seq/snd-seq-midi.o
-  LD      sound/core/seq/built-in.o
-  LD      sound/core/snd.o
-  LD      sound/core/snd-hwdep.o
-  LD      sound/core/snd-timer.o
-  LD      sound/core/snd-hrtimer.o
-  LD      sound/core/snd-pcm.o
-  LD      sound/core/snd-rawmidi.o
-  LD      sound/core/built-in.o
-  LD      sound/drivers/mpu401/built-in.o
-  LD      sound/drivers/opl3/built-in.o
-  LD      sound/drivers/opl4/built-in.o
-  LD      sound/drivers/pcsp/built-in.o
-  LD      sound/drivers/vx/built-in.o
-  LD      sound/drivers/built-in.o
-  LD      sound/firewire/built-in.o
-  LD      sound/hda/built-in.o
-  LD      sound/i2c/other/built-in.o
-  LD      sound/i2c/built-in.o
-  LD      sound/isa/ad1816a/built-in.o
-  LD      sound/isa/ad1848/built-in.o
-  LD      sound/isa/cs423x/built-in.o
-  LD      sound/isa/es1688/built-in.o
-  LD      sound/isa/galaxy/built-in.o
-  LD      sound/isa/gus/built-in.o
-  LD      sound/isa/msnd/built-in.o
-  LD      sound/isa/opti9xx/built-in.o
-  LD      sound/isa/sb/built-in.o
-  LD      sound/isa/wavefront/built-in.o
-  LD      sound/isa/wss/built-in.o
-  LD      sound/isa/built-in.o
-  LD      sound/mips/built-in.o
-  LD      sound/oss/built-in.o
-  LD      sound/parisc/built-in.o
-  LD      sound/pci/ac97/built-in.o
-  LD      sound/pci/ali5451/built-in.o
   CC      drivers/clk/mediatek/clk-mt6765-pg.o
-  LD      sound/pci/asihpi/built-in.o
-  LD      sound/pci/au88x0/built-in.o
-  LD      sound/pci/aw2/built-in.o
-  LD      sound/pci/ca0106/built-in.o
-  LD      sound/pci/cs46xx/built-in.o
-  LD      sound/pci/cs5535audio/built-in.o
-  LD      sound/pci/ctxfi/built-in.o
-  LD      sound/pci/echoaudio/built-in.o
-  LD      sound/pci/emu10k1/built-in.o
-  LD      sound/pci/hda/built-in.o
-  LD      sound/pci/ice1712/built-in.o
-  LD      sound/pci/korg1212/built-in.o
-  LD      sound/pci/lola/built-in.o
-  LD      sound/pci/lx6464es/built-in.o
-  LD      sound/pci/mixart/built-in.o
-  LD      sound/pci/nm256/built-in.o
-  LD      sound/pci/oxygen/built-in.o
-  LD      sound/pci/pcxhr/built-in.o
-  LD      sound/pci/riptide/built-in.o
-  LD      sound/pci/rme9652/built-in.o
-  LD      sound/pci/trident/built-in.o
-  LD      sound/pci/vx222/built-in.o
-  LD      sound/pci/ymfpci/built-in.o
-  LD      sound/pci/built-in.o
-  LD      sound/pcmcia/pdaudiocf/built-in.o
-  LD      sound/pcmcia/vx/built-in.o
-  LD      sound/pcmcia/built-in.o
-  LD      sound/ppc/built-in.o
-  LD      sound/sh/built-in.o
-  CC      sound/soc/soc-core.o
+  CC      drivers/clocksource/dummy_timer.o
+  LD      drivers/clocksource/built-in.o
+  CC      drivers/cpufreq/cpufreq.o
   CC      drivers/clk/mediatek/clk-mtk-v1.o
   CC      drivers/clk/mediatek/clk-bringup.o
   CC      drivers/clk/mediatek/clkdbg.o
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c: In function ‘get_all_provider_clks.part.0’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:515:42: warning: dangling pointer to ‘name’ may be used [-Wdangling-pointer=]
+  515 |                         struct clk *ck = __clk_lookup(node_name);
+      |                                          ^~~~~~~~~~~~~~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:461:21: note: ‘name’ declared here
+  461 |         const char *name;
+      |                     ^~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:542:64: warning: dangling pointer to ‘name’ may be used [-Wdangling-pointer=]
+  542 |                                 provider_clks[n].provider_name = node_name;
+      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:461:21: note: ‘name’ declared here
+  461 |         const char *name;
+      |                     ^~~~
+  CC      drivers/cpufreq/freq_table.o
+  CC      drivers/clk/mediatek/clkchk.o
+  CC      drivers/cpufreq/cpufreq_stats.o
+  CC      drivers/clk/mediatek/clkdbg_mt6765.o
+  CC      drivers/cpufreq/cpufreq_times.o
+  CC      drivers/clk/mediatek/clkchk-mt6765.o
+  LD      drivers/clk/mediatek/built-in.o
+  LD      drivers/clk/mvebu/built-in.o
+  LD      drivers/clk/ti/built-in.o
+  LD      drivers/clk/built-in.o
+  CC      drivers/cpuidle/cpuidle.o
+  CC      drivers/cpufreq/cpufreq_performance.o
+  CC      drivers/cpufreq/cpufreq_powersave.o
+  CC      drivers/cpufreq/cpufreq_userspace.o
+  CC      drivers/cpufreq/cpufreq_ondemand.o
+  CC      drivers/cpuidle/driver.o
+  CC      drivers/cpuidle/governor.o
+  CC      drivers/cpuidle/sysfs.o
+  CC      drivers/cpufreq/cpufreq_interactive.o
+  CC      drivers/cpuidle/governors/mtk_menu.o
+  LD      drivers/cpuidle/governors/built-in.o
+  CC      drivers/cpuidle/cpuidle-mtk_acao.o
+  CC      drivers/cpufreq/cpufreq_governor.o
+  CC      drivers/cpufreq/cpufreq_governor_attr_set.o
+  LD      drivers/cpuidle/built-in.o
+  LD      drivers/crypto/built-in.o
+  CC      drivers/devfreq/devfreq.o
+  LD      drivers/cpufreq/built-in.o
+  CC      drivers/dma/dmaengine.o
+  CC      drivers/devfreq/helio-dvfsrc-opp.o
+  CC      drivers/devfreq/helio-dvfsrc-sysfs.o
+  CC      drivers/dma/virt-dma.o
+  CC      drivers/devfreq/helio-dvfsrc-ipi.o
+  CC      drivers/devfreq/helio-dvfsrc.o
+  CC      drivers/dma/of-dma.o
+  CC      drivers/devfreq/helio-dvfsrc-mt6765.o
+  CC      drivers/dma/8250_mtk_dma.o
+  CC      drivers/devfreq/helio-dvfsrc-opp-mt6765.o
+  LD      drivers/dma/qcom/built-in.o
+  LD      drivers/dma/xilinx/built-in.o
+  LD      drivers/dma/built-in.o
+  CC      drivers/dma-buf/dma-buf.o
+  LD      drivers/devfreq/built-in.o
+  LD      drivers/firewire/built-in.o
+  CC      drivers/firmware/psci.o
+  LD      drivers/firmware/broadcom/built-in.o
+  LD      drivers/firmware/meson/built-in.o
+  LD      drivers/firmware/built-in.o
+  CC      drivers/gpio/devres.o
+  CC      drivers/dma-buf/fence.o
+  CC      drivers/gpio/gpiolib.o
+  CC      drivers/dma-buf/reservation.o
+  CC      drivers/dma-buf/seqno-fence.o
+  CC      drivers/dma-buf/fence-array.o
+  CC      drivers/dma-buf/sync_file.o
+  CC      drivers/gpio/gpiolib-legacy.o
+  CC      drivers/dma-buf/sw_sync.o
+  CC      drivers/gpio/gpiolib-of.o
+  CC      drivers/dma-buf/sync_debug.o
+  LD      drivers/gpio/built-in.o
+  LD      drivers/gpu/arm/built-in.o
+  CC      drivers/gpu/drm/drm_crtc_helper.o
+  LD      drivers/dma-buf/built-in.o
+  CC      drivers/hid/hid-core.o
+  CC      drivers/gpu/drm/drm_dp_helper.o
+  CC      drivers/hid/hid-input.o
+  CC      drivers/gpu/drm/drm_probe_helper.o
+  CC      drivers/gpu/drm/drm_plane_helper.o
+  CC      drivers/hid/hid-debug.o
+In function ‘drm_plane_helper_check_update’,
+    inlined from ‘drm_primary_helper_update’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_plane_helper.c:338:8:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_plane_helper.c:236:32: error: ‘visible’ is used uninitialized [-Werror=uninitialized]
+  236 |         struct drm_plane_state state = {
+      |                                ^~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_plane_helper.c: In function ‘drm_primary_helper_update’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_plane_helper.c:336:14: note: ‘visible’ was declared here
+  336 |         bool visible;
+      |              ^~~~~~~
+cc1: all warnings being treated as errors
+make[4]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/gpu/drm/drm_plane_helper.o] Error 1
+make[3]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/gpu/drm] Error 2
+make[2]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/gpu] Error 2
+make[2]: *** Waiting for unfinished jobs....
+  CC      sound/sound_core.o
+  CC      sound/core/sound.o
+  CC      drivers/hid/hidraw.o
+  CC      sound/core/init.o
+  CC      drivers/hid/uhid.o
+  CC      sound/core/memory.o
+  CC      drivers/hid/hid-generic.o
+  CC      drivers/hid/hid-a4tech.o
+  CC      sound/core/control.o
+  CC      drivers/hid/hid-axff.o
+  CC      drivers/hid/hid-apple.o
+  CC      drivers/hid/hid-belkin.o
+  CC      drivers/hid/hid-cherry.o
+  CC      drivers/hid/hid-chicony.o
+  CC      sound/core/misc.o
+  CC      drivers/hid/hid-cypress.o
+  CC      sound/core/device.o
+  CC      drivers/hid/hid-dr.o
+  CC      sound/core/info.o
+  CC      drivers/hid/hid-emsff.o
+  CC      drivers/hid/hid-elecom.o
+  CC      drivers/hid/hid-ezkey.o
+  CC      sound/core/info_oss.o
+  CC      drivers/hid/hid-gyration.o
+  CC      drivers/hid/hid-holtek-kbd.o
+  CC      sound/core/sound_oss.o
+  CC      drivers/hid/hid-holtek-mouse.o
+  CC      sound/core/ctljack.o
+  CC      drivers/hid/hid-holtekff.o
+  CC      sound/core/jack.o
+  CC      drivers/hid/hid-kensington.o
+  CC      drivers/hid/hid-keytouch.o
+  CC      sound/core/hwdep.o
+  CC      drivers/hid/hid-kye.o
+  CC      drivers/hid/hid-lcpower.o
+  CC      drivers/hid/hid-lg.o
+  CC      sound/core/timer.o
+  CC      drivers/hid/hid-lgff.o
+  CC      drivers/hid/hid-lg2ff.o
+  CC      drivers/hid/hid-lg3ff.o
+  CC      drivers/hid/hid-lg4ff.o
+  CC      sound/core/hrtimer.o
+  CC      sound/core/pcm.o
+  CC      drivers/hid/hid-logitech-dj.o
+  CC      drivers/hid/hid-logitech-hidpp.o
+  CC      sound/core/pcm_native.o
+  CC      drivers/hid/hid-magicmouse.o
+  CC      drivers/hid/hid-microsoft.o
+  CC      drivers/hid/hid-monterey.o
+  CC      drivers/hid/hid-multitouch.o
+  CC      drivers/hid/hid-ntrig.o
+  CC      drivers/hid/hid-ortek.o
+  CC      drivers/hid/hid-prodikeys.o
+  CC      drivers/hid/hid-pl.o
+  CC      sound/core/pcm_lib.o
+  CC      drivers/hid/hid-petalynx.o
+  CC      drivers/hid/hid-picolcd_core.o
+  CC      drivers/hid/hid-picolcd_debugfs.o
+In file included from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/asm-generic/preempt.h:4,
+                 from ./arch/arm64/include/generated/asm/preempt.h:1,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/preempt.h:59,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/spinlock.h:50,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/mmzone.h:7,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/gfp.h:5,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/slab.h:14,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/hid.h:30,
+                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/hid/hid-picolcd_debugfs.c:20:
+In function ‘check_object_size’,
+    inlined from ‘copy_from_user’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/uaccess.h:451:3,
+    inlined from ‘picolcd_debug_reset_write’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/hid/hid-picolcd_debugfs.c:53:6:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:91:17: error: ‘buf’ may be used uninitialized [-Werror=maybe-uninitialized]
+   91 |                 __check_object_size(ptr, n, to_user);
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h: In function ‘picolcd_debug_reset_write’:
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:84:13: note: by argument 1 of type ‘const void *’ to ‘__check_object_size’ declared here
+   84 | extern void __check_object_size(const void *ptr, unsigned long n,
+      |             ^~~~~~~~~~~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/hid/hid-picolcd_debugfs.c:51:14: note: ‘buf’ declared here
+   51 |         char buf[32];
+      |              ^~~
+cc1: all warnings being treated as errors
+make[3]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/hid/hid-picolcd_debugfs.o] Error 1
+make[2]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/hid] Error 2
+make[1]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/Makefile:1120: drivers] Error 2
+make[1]: *** Waiting for unfinished jobs....
+  CC      sound/core/pcm_misc.o
+  CC      sound/soc/soc-core.o
+  CC      sound/core/pcm_memory.o
+  CC      sound/core/memalloc.o
 In file included from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/asm-generic/preempt.h:4,
                  from ./arch/arm64/include/generated/asm/preempt.h:1,
                  from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/preempt.h:59,
@@ -529,7 +260,7 @@ In file included from /root/kernel-source/work/kernel-4.9.205/android_kernel_xia
 In function ‘check_object_size’,
     inlined from ‘copy_from_user’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/uaccess.h:451:3,
     inlined from ‘codec_reg_write_file’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/sound/soc/soc-core.c:258:6:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:91:17: error: ‘buf’ may be used uninitialized [-Werror=maybe-uninitialized]
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:91:17: warning: ‘buf’ may be used uninitialized [-Wmaybe-uninitialized]
    91 |                 __check_object_size(ptr, n, to_user);
       |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h: In function ‘codec_reg_write_file’:
@@ -539,58 +270,167 @@ In function ‘check_object_size’,
 /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/sound/soc/soc-core.c:250:14: note: ‘buf’ declared here
   250 |         char buf[32];
       |              ^~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c: In function ‘get_all_provider_clks.part.0’:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:515:42: error: dangling pointer to ‘name’ may be used [-Werror=dangling-pointer]
-  515 |                         struct clk *ck = __clk_lookup(node_name);
-      |                                          ^~~~~~~~~~~~~~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:461:21: note: ‘name’ declared here
-  461 |         const char *name;
-      |                     ^~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:542:64: error: dangling pointer to ‘name’ may be used [-Werror=dangling-pointer]
-  542 |                                 provider_clks[n].provider_name = node_name;
-      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:461:21: note: ‘name’ declared here
-  461 |         const char *name;
-      |                     ^~~~
-cc1: all warnings being treated as errors
-make[4]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/clk/mediatek/clkdbg.o] Error 1
-make[3]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/clk/mediatek] Error 2
-make[2]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/clk] Error 2
-make[1]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/Makefile:1120: drivers] Error 2
-make[1]: *** Waiting for unfinished jobs....
+  CC      sound/core/pcm_timer.o
+  CC      sound/core/rawmidi.o
   CC      sound/soc/soc-dapm.o
-cc1: all warnings being treated as errors
-make[3]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: sound/soc/soc-core.o] Error 1
-make[3]: *** Waiting for unfinished jobs....
-  LD      sound/sparc/built-in.o
-  LD      sound/spi/built-in.o
-  LD      sound/synth/emux/built-in.o
-  LD      sound/synth/built-in.o
+  CC      sound/core/seq/seq.o
+  CC      sound/core/seq/seq_lock.o
+  CC      sound/core/seq/seq_clientmgr.o
+  CC      sound/soc/soc-jack.o
+  CC      sound/core/seq/seq_memory.o
+  CC      sound/soc/soc-cache.o
+  CC      sound/core/seq/seq_queue.o
+  CC      sound/soc/soc-utils.o
+  CC      sound/core/seq/seq_fifo.o
+  CC      sound/soc/soc-pcm.o
+  CC      sound/core/seq/seq_prioq.o
+  CC      sound/core/seq/seq_timer.o
+  CC      sound/core/seq/seq_system.o
+  CC      sound/core/seq/seq_ports.o
+  CC      sound/core/seq/seq_info.o
+  CC      sound/soc/soc-io.o
+  CC      sound/core/seq/seq_device.o
+  CC      sound/core/seq/seq_midi_event.o
+  CC      sound/soc/soc-devres.o
+  CC      sound/soc/soc-ops.o
+  CC      sound/core/seq/oss/seq_oss.o
+  CC      sound/core/seq/oss/seq_oss_init.o
+  LD      sound/soc/adi/built-in.o
+  LD      sound/soc/amd/built-in.o
+  LD      sound/soc/atmel/built-in.o
+  CC      sound/core/seq/oss/seq_oss_timer.o
+  LD      sound/soc/au1x/built-in.o
+  LD      sound/soc/bcm/built-in.o
+  LD      sound/soc/blackfin/built-in.o
+  LD      sound/soc/cirrus/built-in.o
+  CC      sound/soc/codecs/rt5509.o
+  CC      sound/core/seq/oss/seq_oss_ioctl.o
+  CC      sound/core/seq/oss/seq_oss_event.o
+  CC      sound/core/seq/oss/seq_oss_rw.o
+  CC      sound/soc/codecs/rt5509-regmap.o
+  CC      sound/core/seq/oss/seq_oss_synth.o
+  CC      sound/soc/codecs/rt5509-calib.o
+  CC      sound/core/seq/oss/seq_oss_midi.o
+  LD      sound/soc/codecs/snd-soc-rt5509.o
+  LD      sound/soc/codecs/built-in.o
+  LD      sound/soc/davinci/built-in.o
+  LD      sound/soc/dwc/built-in.o
+  LD      sound/soc/fsl/built-in.o
+  LD      sound/soc/generic/built-in.o
+  LD      sound/soc/img/built-in.o
+  LD      sound/soc/intel/boards/built-in.o
+  LD      sound/soc/intel/built-in.o
+  LD      sound/soc/jz4740/built-in.o
+  LD      sound/soc/kirkwood/built-in.o
+  CC      sound/soc/mediatek/codec/mt6357/mtk-soc-codec-6357.o
+  CC      sound/core/seq/oss/seq_oss_readq.o
+  CC      sound/core/seq/oss/seq_oss_writeq.o
+  LD      sound/core/seq/oss/snd-seq-oss.o
+  LD      sound/core/seq/oss/built-in.o
+  CC      sound/core/seq/seq_dummy.o
+  CC      sound/core/seq/seq_midi.o
+  LD      sound/core/seq/snd-seq.o
+  LD      sound/core/seq/snd-seq-device.o
+  LD      sound/core/seq/snd-seq-midi-event.o
+  LD      sound/core/seq/snd-seq-dummy.o
+  LD      sound/core/seq/snd-seq-midi.o
+  LD      sound/core/seq/built-in.o
+  LD      sound/core/snd.o
+  LD      sound/core/snd-hwdep.o
+  LD      sound/core/snd-timer.o
+  LD      sound/core/snd-hrtimer.o
+  LD      sound/core/snd-pcm.o
+  LD      sound/core/snd-rawmidi.o
+  LD      sound/core/built-in.o
   CC      sound/usb/card.o
   CC      sound/usb/clock.o
+  CC      sound/soc/mediatek/codec/mt6357/mtk-auddrv-ana.o
   CC      sound/usb/endpoint.o
   CC      sound/usb/format.o
-make[2]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: sound/soc] Error 2
-make[2]: *** Waiting for unfinished jobs....
+  LD      sound/soc/mediatek/codec/mt6357/built-in.o
+  CC      sound/soc/mediatek/common/mtk-btcvsd.o
   CC      sound/usb/helper.o
   CC      sound/usb/mixer.o
+  LD      sound/soc/mediatek/common/built-in.o
+  CC      sound/soc/mediatek/common_int/mtk-auddrv-devtree-parser.o
+  CC      sound/soc/mediatek/common_int/mtk-auddrv-underflow-mach.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-speaker-amp.o
   CC      sound/usb/mixer_quirks.o
+  CC      sound/soc/mediatek/common_int/mtk-auddrv-afe.o
+  CC      sound/soc/mediatek/common_int/mtk-auddrv-gpio.o
   CC      sound/usb/mixer_scarlett.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-afe-control.o
   CC      sound/usb/pcm.o
   CC      sound/usb/proc.o
   CC      sound/usb/quirks.o
   CC      sound/usb/stream.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-common.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-capture.o
   CC      sound/usb/midi.o
-  LD      sound/usb/6fire/built-in.o
-  LD      sound/usb/bcd2000/built-in.o
-  LD      sound/usb/caiaq/built-in.o
-  LD      sound/usb/hiface/built-in.o
-  LD      sound/usb/misc/built-in.o
-  LD      sound/usb/usx2y/built-in.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dummy.o
   LD      sound/usb/snd-usb-audio.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-routing.o
   LD      sound/usb/snd-usbmidi-lib.o
   LD      sound/usb/built-in.o
-make[1]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/Makefile:1120: sound] Error 2
+  CC      sound/last.o
+  LD      sound/soundcore.o
+  LD      sound/soc/mxs/built-in.o
+  LD      sound/soc/nuc900/built-in.o
+  LD      sound/soc/omap/built-in.o
+  LD      sound/soc/pxa/built-in.o
+  LD      sound/soc/qcom/built-in.o
+  LD      sound/soc/rockchip/built-in.o
+  LD      sound/soc/samsung/built-in.o
+  LD      sound/soc/sh/built-in.o
+  LD      sound/soc/sirf/built-in.o
+  LD      sound/soc/spear/built-in.o
+  LD      sound/soc/sti/built-in.o
+  LD      sound/soc/sunxi/built-in.o
+  LD      sound/soc/tegra/built-in.o
+  LD      sound/soc/txx9/built-in.o
+  LD      sound/soc/ux500/built-in.o
+  LD      sound/soc/xtensa/built-in.o
+  LD      sound/soc/zte/built-in.o
+  LD      sound/soc/snd-soc-core.o
+  CC      sound/soc/mediatek/mt6765/mtk-auddrv-clk.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-capture2.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-i2s2-adc2.o
+  CC      sound/soc/mediatek/mt6765/mtk-soc-afe-connection.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-md1.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-md2.o
+  CC      sound/soc/mediatek/mt6765/mt6765-sound.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-md1-bt.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-md2-bt.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-usb.o
+  LD      sound/soc/mediatek/mt6765/built-in.o
+  CC      sound/soc/mediatek/vendor/mtk-hw-component.o
+  LD      sound/soc/mediatek/vendor/built-in.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-usb-echoref.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-i2s0.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-i2s0Dl1.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-i2s0-awb.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-uldlloopback.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl2.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-deep-buffer-dl.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-mrgrx.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-mrgrx-awb.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-fm-i2s.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-fm-i2s-awb.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-awb.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-bt.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-bt-dai.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-dai-stub.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-dai-routing.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-codec-dummy.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-fmtx.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-tdm-capture.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-hp-impedance.o
+  CC      sound/soc/mediatek/common_int/mtk-soc-machine.o
+  LD      sound/soc/mediatek/common_int/built-in.o
+  LD      sound/soc/mediatek/built-in.o
+  LD      sound/soc/built-in.o
+  LD      sound/built-in.o
 make[1]: Leaving directory '/root/kernel-source/build/ksu-32915384-49'
 make: *** [Makefile:152: sub-make] Error 2
 make: Leaving directory '/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
