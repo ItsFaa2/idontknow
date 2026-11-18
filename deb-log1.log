@@ -1,900 +1,697 @@
+🐧 [root@debian:~]# (
+> cd ~/kernel-source
+>
+> cat > forensic_selinux_sid_v1.py <<'PY'
+> from pathlib import Path
+> import re
+>
+> ROOT = Path(
+>     "/root/kernel-source/work/kernel-4.9.205/"
+>     "android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15"
+ad> )
+eedle = "u32 si>
+> p = ROOT / "security/selinux/hooks.c"
+d> s = p.read_text()
+>
+> needle = "u32 sid, newsid, clen;"
+> pos = s.find(needle)
+>
+> print("=" * 78)
+ S> print("FAA SELINUX SID FORENSIC V1")
+=" *> print("=" * 78)
+> print(f"SOURCE : {p}")
+>
+> if pos < 0:
+T>     raise SystemExit("TARGET DECLARATION NOT FOUND")
+
+st>
+> start = s.rfind("\n", 0, pos)
+> func_start = s.rfind("\nstatic ", 0, pos)
+>
+> # Find next function boundary approximately.
+n> next_func = re.search(
+>     r"\n(?:static\s+)?(?:int|void|bool|long|u32|struct\s+\w+\s*\*)"
+>     r"\s+\w+\s*\([^;]*\)\s*\n\{",
+>     s[pos + len(needle):],
+>     re.S,
+> )
+>
+> if next_func:
+>     func_end = pos + len(needle) + next_func.start()
+> else:
+>     func_end = min(len(s), pos + 12000)
+>
+> # Better target: print a bounded region around declaration.
+> a = max(0, pos - 2500)
+> b = min(len(s), pos + 5000)
+>
+> print("\n=== CONTEXT ===")
+> for i, line in enumerate(s[a:b].splitlines(), 1):
+>     print(f"{i:5}: {line}")
+>
+> region = s[pos:b]
+>
+> print("\n=== VARIABLE REFERENCES ===")
+> for name in ("sid", "newsid", "clen"):
+>     refs = list(re.finditer(rf"\b{re.escape(name)}\b", region))
+>     print(f"{name:8}: {len(refs)} references")
+>     for m in refs:
+>         line = region.count("\n", 0, m.start()) + 1
+>         print(f"  relative line {line}: "
+       >               f"{region.splitlines()[line-1].strip()}")
+>
+> print("\n=== DECLARATION ===")
+> print(needle)
+Y
+
+p> PY
+on3 f>
+> python3 forensic_selinux_sid_v1.py
+> )
 ==============================================================================
-FAA KBUILD COMPILER SELECTION FORENSIC V2
+FAA SELINUX SID FORENSIC V1
 ==============================================================================
-
-==============================================================================
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/Makefile
-==============================================================================
-
---- lines 49-53 ---
-   49: #
-   50: #         quiet_cmd_cc_o_c = Compiling $(RELDIR)/$@
-   51: #         cmd_cc_o_c       = $(CC) $(c_flags) -c -o $@ $<
-   52: #
-   53: # If $(quiet) is empty, the whole command will be printed.
-
---- lines 245-249 ---
-  245: # The default ARCH is the host where make is executed.
-  246:
-  247: # CROSS_COMPILE specify the prefix used for all executables used
-  248: # during compilation. Only gcc and related bin-utils executables
-  249: # are prefixed with $(CROSS_COMPILE).
-
---- lines 247-251 ---
-  247: # CROSS_COMPILE specify the prefix used for all executables used
-  248: # during compilation. Only gcc and related bin-utils executables
-  249: # are prefixed with $(CROSS_COMPILE).
-  250: # CROSS_COMPILE can be set on the command line
-  251: # make CROSS_COMPILE=ia64-linux-
-
---- lines 248-252 ---
-  248: # during compilation. Only gcc and related bin-utils executables
-  249: # are prefixed with $(CROSS_COMPILE).
-  250: # CROSS_COMPILE can be set on the command line
-  251: # make CROSS_COMPILE=ia64-linux-
-  252: # Alternatively CROSS_COMPILE can be set in the environment.
-
---- lines 249-253 ---
-  249: # are prefixed with $(CROSS_COMPILE).
-  250: # CROSS_COMPILE can be set on the command line
-  251: # make CROSS_COMPILE=ia64-linux-
-  252: # Alternatively CROSS_COMPILE can be set in the environment.
-  253: # A third alternative is to store a setting in .config so that plain
-
---- lines 250-254 ---
-  250: # CROSS_COMPILE can be set on the command line
-  251: # make CROSS_COMPILE=ia64-linux-
-  252: # Alternatively CROSS_COMPILE can be set in the environment.
-  253: # A third alternative is to store a setting in .config so that plain
-  254: # "make" in the configured kernel build directory always uses that.
-
---- lines 253-257 ---
-  253: # A third alternative is to store a setting in .config so that plain
-  254: # "make" in the configured kernel build directory always uses that.
-  255: # Default value for CROSS_COMPILE is not to prefix executables
-  256: # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
-  257: ARCH             ?= $(SUBARCH)
-
---- lines 254-258 ---
-  254: # "make" in the configured kernel build directory always uses that.
-  255: # Default value for CROSS_COMPILE is not to prefix executables
-  256: # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
-  257: ARCH             ?= $(SUBARCH)
-  258: CROSS_COMPILE    ?= $(CONFIG_CROSS_COMPILE:"%"=%)
-
---- lines 256-260 ---
-  256: # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
-  257: ARCH             ?= $(SUBARCH)
-  258: CROSS_COMPILE    ?= $(CONFIG_CROSS_COMPILE:"%"=%)
-  259:
-  260: # Architecture as present in compile.h
-
---- lines 302-306 ---
-  302:    else echo sh; fi ; fi)
-  303:
-  304: HOSTCC       = gcc
-  305: HOSTCXX      = g++
-  306: HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
-
---- lines 342-346 ---
-  342:
-  343: # Make variables (CC, etc...)
-  344: AS               = $(CROSS_COMPILE)as
-  345: LD               = $(CROSS_COMPILE)ld
-  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
-
---- lines 343-347 ---
-  343: # Make variables (CC, etc...)
-  344: AS               = $(CROSS_COMPILE)as
-  345: LD               = $(CROSS_COMPILE)ld
-  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
-  347: CC               = $(CROSS_COMPILE)gcc
-
---- lines 344-348 ---
-  344: AS               = $(CROSS_COMPILE)as
-  345: LD               = $(CROSS_COMPILE)ld
-  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
-  347: CC               = $(CROSS_COMPILE)gcc
-  348: CPP              = $(CC) -E
-
---- lines 345-349 ---
-  345: LD               = $(CROSS_COMPILE)ld
-  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
-  347: CC               = $(CROSS_COMPILE)gcc
-  348: CPP              = $(CC) -E
-  349: AR               = $(CROSS_COMPILE)ar
-
---- lines 346-350 ---
-  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
-  347: CC               = $(CROSS_COMPILE)gcc
-  348: CPP              = $(CC) -E
-  349: AR               = $(CROSS_COMPILE)ar
-  350: NM               = $(CROSS_COMPILE)nm
-
---- lines 347-351 ---
-  347: CC               = $(CROSS_COMPILE)gcc
-  348: CPP              = $(CC) -E
-  349: AR               = $(CROSS_COMPILE)ar
-  350: NM               = $(CROSS_COMPILE)nm
-  351: STRIP            = $(CROSS_COMPILE)strip
-
---- lines 348-352 ---
-  348: CPP              = $(CC) -E
-  349: AR               = $(CROSS_COMPILE)ar
-  350: NM               = $(CROSS_COMPILE)nm
-  351: STRIP            = $(CROSS_COMPILE)strip
-  352: OBJCOPY          = $(CROSS_COMPILE)objcopy
-
---- lines 349-353 ---
-  349: AR               = $(CROSS_COMPILE)ar
-  350: NM               = $(CROSS_COMPILE)nm
-  351: STRIP            = $(CROSS_COMPILE)strip
-  352: OBJCOPY          = $(CROSS_COMPILE)objcopy
-  353: OBJDUMP          = $(CROSS_COMPILE)objdump
-
---- lines 350-354 ---
-  350: NM               = $(CROSS_COMPILE)nm
-  351: STRIP            = $(CROSS_COMPILE)strip
-  352: OBJCOPY          = $(CROSS_COMPILE)objcopy
-  353: OBJDUMP          = $(CROSS_COMPILE)objdump
-  354: AWK              = awk
-
---- lines 351-355 ---
-  351: STRIP            = $(CROSS_COMPILE)strip
-  352: OBJCOPY          = $(CROSS_COMPILE)objcopy
-  353: OBJDUMP          = $(CROSS_COMPILE)objdump
-  354: AWK              = awk
-  355: GENKSYMS = scripts/genksyms/genksyms
-
---- lines 403-407 ---
-  403: LDFLAGS :=
-  404: GCC_PLUGINS_CFLAGS :=
-  405: CLANG_FLAGS :=
-  406:
-  407: # Read KERNELRELEASE from include/config/kernel.release (if it exists)
-
---- lines 410-414 ---
-  410:
-  411: export VERSION PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
-  412: export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
-  413: export CPP AR NM STRIP OBJCOPY OBJDUMP
-  414: export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE
-
---- lines 508-512 ---
-  508: endif
-  509:
-  510: ifeq ($(cc-name),clang)
-  511: ifneq ($(CROSS_COMPILE),)
-  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
-
---- lines 509-513 ---
-  509:
-  510: ifeq ($(cc-name),clang)
-  511: ifneq ($(CROSS_COMPILE),)
-  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
-  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
-
---- lines 510-514 ---
-  510: ifeq ($(cc-name),clang)
-  511: ifneq ($(CROSS_COMPILE),)
-  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
-  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
-  514: ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
-
---- lines 511-515 ---
-  511: ifneq ($(CROSS_COMPILE),)
-  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
-  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
-  514: ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
-  515: $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
-
---- lines 512-516 ---
-  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
-  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
-  514: ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
-  515: $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
-  516: endif
-
---- lines 513-517 ---
-  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
-  514: ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
-  515: $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
-  516: endif
-  517: GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
-
---- lines 515-519 ---
-  515: $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
-  516: endif
-  517: GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
-  518: CLANG_FLAGS      += --prefix=$(GCC_TOOLCHAIN_DIR)
-  519: GCC_TOOLCHAIN    := $(realpath $(GCC_TOOLCHAIN_DIR)/..)
-
---- lines 516-520 ---
-  516: endif
-  517: GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
-  518: CLANG_FLAGS      += --prefix=$(GCC_TOOLCHAIN_DIR)
-  519: GCC_TOOLCHAIN    := $(realpath $(GCC_TOOLCHAIN_DIR)/..)
-  520: endif
-
---- lines 520-524 ---
-  520: endif
-  521: ifneq ($(GCC_TOOLCHAIN),)
-  522: CLANG_FLAGS      += --gcc-toolchain=$(GCC_TOOLCHAIN)
-  523: endif
-  524: CLANG_FLAGS      += -no-integrated-as
-
---- lines 522-526 ---
-  522: CLANG_FLAGS      += --gcc-toolchain=$(GCC_TOOLCHAIN)
-  523: endif
-  524: CLANG_FLAGS      += -no-integrated-as
-  525: CLANG_FLAGS      += -Werror=unknown-warning-option
-  526: KBUILD_CFLAGS    += $(CLANG_FLAGS)
-
---- lines 523-527 ---
-  523: endif
-  524: CLANG_FLAGS      += -no-integrated-as
-  525: CLANG_FLAGS      += -Werror=unknown-warning-option
-  526: KBUILD_CFLAGS    += $(CLANG_FLAGS)
-  527: KBUILD_AFLAGS    += $(CLANG_FLAGS)
-
---- lines 524-528 ---
-  524: CLANG_FLAGS      += -no-integrated-as
-  525: CLANG_FLAGS      += -Werror=unknown-warning-option
-  526: KBUILD_CFLAGS    += $(CLANG_FLAGS)
-  527: KBUILD_AFLAGS    += $(CLANG_FLAGS)
-  528: endif
-
---- lines 525-529 ---
-  525: CLANG_FLAGS      += -Werror=unknown-warning-option
-  526: KBUILD_CFLAGS    += $(CLANG_FLAGS)
-  527: KBUILD_AFLAGS    += $(CLANG_FLAGS)
-  528: endif
-  529:
-
---- lines 646-650 ---
-  646: # Make toolchain changes before including arch/$(SRCARCH)/Makefile to ensure
-  647: # ar/cc/ld-* macros return correct values.
-  648: ifdef CONFIG_LTO_CLANG
-  649: # use GNU gold with LLVMgold for LTO linking, and LD for vmlinux_link
-  650: LDFINAL_vmlinux := $(LD)
-
---- lines 647-651 ---
-  647: # ar/cc/ld-* macros return correct values.
-  648: ifdef CONFIG_LTO_CLANG
-  649: # use GNU gold with LLVMgold for LTO linking, and LD for vmlinux_link
-  650: LDFINAL_vmlinux := $(LD)
-  651: LD               := $(LDGOLD)
-
---- lines 650-654 ---
-  650: LDFINAL_vmlinux := $(LD)
-  651: LD               := $(LDGOLD)
-  652: LDFLAGS          += -plugin LLVMgold.so
-  653: # use llvm-ar for building symbol tables from IR files, and llvm-dis instead
-  654: # of objdump for processing symbol versions and exports
-
---- lines 651-655 ---
-  651: LD               := $(LDGOLD)
-  652: LDFLAGS          += -plugin LLVMgold.so
-  653: # use llvm-ar for building symbol tables from IR files, and llvm-dis instead
-  654: # of objdump for processing symbol versions and exports
-  655: LLVM_AR          := llvm-ar
-
---- lines 653-657 ---
-  653: # use llvm-ar for building symbol tables from IR files, and llvm-dis instead
-  654: # of objdump for processing symbol versions and exports
-  655: LLVM_AR          := llvm-ar
-  656: LLVM_DIS := llvm-dis
-  657: export LLVM_AR LLVM_DIS
-
---- lines 654-658 ---
-  654: # of objdump for processing symbol versions and exports
-  655: LLVM_AR          := llvm-ar
-  656: LLVM_DIS := llvm-dis
-  657: export LLVM_AR LLVM_DIS
-  658: endif
-
---- lines 655-659 ---
-  655: LLVM_AR          := llvm-ar
-  656: LLVM_DIS := llvm-dis
-  657: export LLVM_AR LLVM_DIS
-  658: endif
-  659:
-
---- lines 681-685 ---
-  681: endif
-  682:
-  683: ifdef CONFIG_LTO_CLANG
-  684: lto-clang-flags  := -flto -fvisibility=hidden
-  685:
-
---- lines 682-686 ---
-  682:
-  683: ifdef CONFIG_LTO_CLANG
-  684: lto-clang-flags  := -flto -fvisibility=hidden
-  685:
-  686: # allow disabling only clang LTO where needed
-
---- lines 684-688 ---
-  684: lto-clang-flags  := -flto -fvisibility=hidden
-  685:
-  686: # allow disabling only clang LTO where needed
-  687: DISABLE_LTO_CLANG := -fno-lto -fvisibility=default
-  688: export DISABLE_LTO_CLANG
-
---- lines 685-689 ---
-  685:
-  686: # allow disabling only clang LTO where needed
-  687: DISABLE_LTO_CLANG := -fno-lto -fvisibility=default
-  688: export DISABLE_LTO_CLANG
-  689: endif
-
---- lines 686-690 ---
-  686: # allow disabling only clang LTO where needed
-  687: DISABLE_LTO_CLANG := -fno-lto -fvisibility=default
-  688: export DISABLE_LTO_CLANG
-  689: endif
-  690:
-
---- lines 690-694 ---
-  690:
-  691: ifdef CONFIG_LTO
-  692: lto-flags        := $(lto-clang-flags)
-  693: KBUILD_CFLAGS    += $(lto-flags)
-  694:
-
---- lines 693-697 ---
-  693: KBUILD_CFLAGS    += $(lto-flags)
-  694:
-  695: DISABLE_LTO      := $(DISABLE_LTO_CLANG)
-  696: export DISABLE_LTO
-  697:
-
---- lines 701-705 ---
-  701: endif
-  702:
-  703: ifdef CONFIG_CFI_CLANG
-  704: cfi-clang-flags  += -fsanitize=cfi
-  705: DISABLE_CFI_CLANG := -fno-sanitize=cfi
-
---- lines 702-706 ---
-  702:
-  703: ifdef CONFIG_CFI_CLANG
-  704: cfi-clang-flags  += -fsanitize=cfi
-  705: DISABLE_CFI_CLANG := -fno-sanitize=cfi
-  706: ifdef CONFIG_MODULES
-
---- lines 703-707 ---
-  703: ifdef CONFIG_CFI_CLANG
-  704: cfi-clang-flags  += -fsanitize=cfi
-  705: DISABLE_CFI_CLANG := -fno-sanitize=cfi
-  706: ifdef CONFIG_MODULES
-  707: cfi-clang-flags  += -fsanitize-cfi-cross-dso
-
---- lines 705-709 ---
-  705: DISABLE_CFI_CLANG := -fno-sanitize=cfi
-  706: ifdef CONFIG_MODULES
-  707: cfi-clang-flags  += -fsanitize-cfi-cross-dso
-  708: DISABLE_CFI_CLANG += -fno-sanitize-cfi-cross-dso
-  709: endif
-
---- lines 706-710 ---
-  706: ifdef CONFIG_MODULES
-  707: cfi-clang-flags  += -fsanitize-cfi-cross-dso
-  708: DISABLE_CFI_CLANG += -fno-sanitize-cfi-cross-dso
-  709: endif
-  710: ifdef CONFIG_CFI_PERMISSIVE
-
---- lines 709-713 ---
-  709: endif
-  710: ifdef CONFIG_CFI_PERMISSIVE
-  711: cfi-clang-flags  += -fsanitize-recover=cfi -fno-sanitize-trap=cfi
-  712: endif
-  713:
-
---- lines 713-717 ---
-  713:
-  714: # also disable CFI when LTO is disabled
-  715: DISABLE_LTO_CLANG += $(DISABLE_CFI_CLANG)
-  716: # allow disabling only clang CFI where needed
-  717: export DISABLE_CFI_CLANG
-
---- lines 714-718 ---
-  714: # also disable CFI when LTO is disabled
-  715: DISABLE_LTO_CLANG += $(DISABLE_CFI_CLANG)
-  716: # allow disabling only clang CFI where needed
-  717: export DISABLE_CFI_CLANG
-  718: endif
-
---- lines 715-719 ---
-  715: DISABLE_LTO_CLANG += $(DISABLE_CFI_CLANG)
-  716: # allow disabling only clang CFI where needed
-  717: export DISABLE_CFI_CLANG
-  718: endif
-  719:
-
---- lines 720-724 ---
-  720: ifdef CONFIG_CFI
-  721: # cfi-flags are re-tested in prepare-compiler-check
-  722: cfi-flags        := $(cfi-clang-flags)
-  723: KBUILD_CFLAGS    += $(cfi-flags)
-  724:
-
---- lines 723-727 ---
-  723: KBUILD_CFLAGS    += $(cfi-flags)
-  724:
-  725: DISABLE_CFI      := $(DISABLE_CFI_CLANG)
-  726: DISABLE_LTO      += $(DISABLE_CFI)
-  727: export DISABLE_CFI
-
---- lines 746-750 ---
-  746:
-  747: # check for 'asm goto'
-  748: ifeq ($(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-goto.sh $(CC) $(KBUILD_CFLAGS)), y)
-  749:  KBUILD_CFLAGS += -DCC_HAVE_ASM_GOTO
-  750:  KBUILD_AFLAGS += -DCC_HAVE_ASM_GOTO
-
---- lines 789-793 ---
-  789: KBUILD_CFLAGS += $(stackp-flag)
-  790:
-  791: ifeq ($(cc-name),clang)
-  792: ifneq ($(CROSS_COMPILE),)
-  793: CLANG_TRIPLE    ?= $(CROSS_COMPILE)
-
---- lines 790-794 ---
-  790:
-  791: ifeq ($(cc-name),clang)
-  792: ifneq ($(CROSS_COMPILE),)
-  793: CLANG_TRIPLE    ?= $(CROSS_COMPILE)
-  794: CLANG_TARGET     := -target $(notdir $(CLANG_TRIPLE:%-=%))
-
---- lines 791-795 ---
-  791: ifeq ($(cc-name),clang)
-  792: ifneq ($(CROSS_COMPILE),)
-  793: CLANG_TRIPLE    ?= $(CROSS_COMPILE)
-  794: CLANG_TARGET     := -target $(notdir $(CLANG_TRIPLE:%-=%))
-  795: GCC_TOOLCHAIN    := $(realpath $(dir $(shell which $(LD)))/..)
-
---- lines 792-796 ---
-  792: ifneq ($(CROSS_COMPILE),)
-  793: CLANG_TRIPLE    ?= $(CROSS_COMPILE)
-  794: CLANG_TARGET     := -target $(notdir $(CLANG_TRIPLE:%-=%))
-  795: GCC_TOOLCHAIN    := $(realpath $(dir $(shell which $(LD)))/..)
-  796: endif
-
---- lines 796-800 ---
-  796: endif
-  797: ifneq ($(GCC_TOOLCHAIN),)
-  798: CLANG_GCC_TC     := -gcc-toolchain $(GCC_TOOLCHAIN)
-  799: endif
-  800: KBUILD_CFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
-
---- lines 798-802 ---
-  798: CLANG_GCC_TC     := -gcc-toolchain $(GCC_TOOLCHAIN)
-  799: endif
-  800: KBUILD_CFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
-  801: KBUILD_AFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
-  802: KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
-
---- lines 799-803 ---
-  799: endif
-  800: KBUILD_CFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
-  801: KBUILD_AFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
-  802: KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
-  803: KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)
-
---- lines 804-808 ---
-  804: KBUILD_CFLAGS += $(call cc-disable-warning, gnu)
-  805: KBUILD_CFLAGS += $(call cc-disable-warning, duplicate-decl-specifier)
-  806: # Quiet clang warning: comparison of unsigned expression < 0 is always false
-  807: KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
-  808:
-
---- lines 810-814 ---
-  810: KBUILD_CFLAGS += $(call cc-disable-warning, void-pointer-to-enum-cast)
-  811:
-  812: # CLANG uses a _MergedGlobals as optimization, but this breaks modpost, as the
-  813: # source of a reference will be _MergedGlobals and not on of the whitelisted names.
-  814: # See modpost pattern 2
-
---- lines 881-885 ---
-  881:
-  882: # arch Makefile may override CC so keep this after arch Makefile is included
-  883: NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
-  884: CHECKFLAGS     += $(NOSTDINC_FLAGS)
-  885:
-
---- lines 896-900 ---
-  896: KBUILD_CFLAGS    += $(call cc-option,-fno-strict-overflow)
-  897:
-  898: # clang sets -fmerge-all-constants by default as optimization, but this
-  899: # is non-conforming behavior for C and in fact breaks the kernel, so we
-  900: # need to disable it here generally.
-
---- lines 1193-1197 ---
- 1193: PHONY += prepare-compiler-check
- 1194: prepare-compiler-check: FORCE
- 1195: # Make sure we're using a supported toolchain with LTO_CLANG
- 1196: ifdef CONFIG_LTO_CLANG
- 1197:   ifneq ($(call clang-ifversion, -ge, 0500, y), y)
-
---- lines 1194-1198 ---
- 1194: prepare-compiler-check: FORCE
- 1195: # Make sure we're using a supported toolchain with LTO_CLANG
- 1196: ifdef CONFIG_LTO_CLANG
- 1197:   ifneq ($(call clang-ifversion, -ge, 0500, y), y)
- 1198:  @echo Cannot use CONFIG_LTO_CLANG: requires clang 5.0 or later >&2 && exit 1
-
---- lines 1195-1199 ---
- 1195: # Make sure we're using a supported toolchain with LTO_CLANG
- 1196: ifdef CONFIG_LTO_CLANG
- 1197:   ifneq ($(call clang-ifversion, -ge, 0500, y), y)
- 1198:  @echo Cannot use CONFIG_LTO_CLANG: requires clang 5.0 or later >&2 && exit 1
- 1199:   endif
-
---- lines 1196-1200 ---
- 1196: ifdef CONFIG_LTO_CLANG
- 1197:   ifneq ($(call clang-ifversion, -ge, 0500, y), y)
- 1198:  @echo Cannot use CONFIG_LTO_CLANG: requires clang 5.0 or later >&2 && exit 1
- 1199:   endif
- 1200:   ifneq ($(call gold-ifversion, -ge, 112000000, y), y)
-
---- lines 1199-1203 ---
- 1199:   endif
- 1200:   ifneq ($(call gold-ifversion, -ge, 112000000, y), y)
- 1201:  @echo Cannot use CONFIG_LTO_CLANG: requires GNU gold 1.12 or later >&2 && exit 1
- 1202:   endif
- 1203: endif
-
---- lines 1218-1222 ---
- 1218: # Make sure compiler does not have buggy stack-protector support.
- 1219: ifdef stackp-check
- 1220:   ifneq ($(shell $(CONFIG_SHELL) $(stackp-check) $(CC) $(KBUILD_CPPFLAGS) $(biarch)),y)
- 1221:  @echo Cannot use CONFIG_CC_STACKPROTECTOR_$(stackp-name): \
- 1222:                   $(stackp-flag) available but compiler is broken >&2 && exit 1
-
---- lines 1513-1517 ---
- 1513:  @echo  '  dir/            - Build all files in dir and below'
- 1514:  @echo  '  dir/file.[ois]  - Build specified target only'
- 1515:  @echo  '  dir/file.ll     - Build the LLVM assembly file'
- 1516:  @echo  '                    (requires compiler support for LLVM assembly generation)'
- 1517:  @echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
-
---- lines 1514-1518 ---
- 1514:  @echo  '  dir/file.[ois]  - Build specified target only'
- 1515:  @echo  '  dir/file.ll     - Build the LLVM assembly file'
- 1516:  @echo  '                    (requires compiler support for LLVM assembly generation)'
- 1517:  @echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
- 1518:  @echo  '                    (requires a recent binutils and recent build (System.map))'
-
-==============================================================================
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.compiler
-==============================================================================
-MISSING
-
-==============================================================================
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build
-==============================================================================
-
---- lines 149-153 ---
+SOURCE : /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/security/selinux/hooks.c
+
+=== CONTEXT ===
+    1: superblock_doinit(sb, data);
+    2:  if (rc)
+    3:          return rc;
+    4:
+    5:  /* Allow all mounts performed by the kernel */
+    6:  if (flags & (MS_KERNMOUNT | MS_SUBMOUNT))
+    7:          return 0;
+    8:
+    9:  ad.type = LSM_AUDIT_DATA_DENTRY;
+   10:  ad.u.dentry = sb->s_root;
+   11:  return superblock_has_perm(cred, sb, FILESYSTEM__MOUNT, &ad);
+   12: }
+   13:
+   14: static int selinux_sb_statfs(struct dentry *dentry)
+   15: {
+   16:  const struct cred *cred = current_cred();
+   17:  struct common_audit_data ad;
+   18:
+   19:  ad.type = LSM_AUDIT_DATA_DENTRY;
+   20:  ad.u.dentry = dentry->d_sb->s_root;
+   21:  return superblock_has_perm(cred, dentry->d_sb, FILESYSTEM__GETATTR, &ad);
+   22: }
+   23:
+   24: static int selinux_mount(const char *dev_name,
+   25:                   const struct path *path,
+   26:                   const char *type,
+   27:                   unsigned long flags,
+   28:                   void *data)
+   29: {
+   30:  const struct cred *cred = current_cred();
+   31:
+   32:  if (flags & MS_REMOUNT)
+   33:          return superblock_has_perm(cred, path->dentry->d_sb,
+   34:                                     FILESYSTEM__REMOUNT, NULL);
+   35:  else
+   36:          return path_has_perm(cred, path, FILE__MOUNTON);
+   37: }
+   38:
+   39: static int selinux_umount(struct vfsmount *mnt, int flags)
+   40: {
+   41:  const struct cred *cred = current_cred();
+   42:
+   43:  return superblock_has_perm(cred, mnt->mnt_sb,
+   44:                             FILESYSTEM__UNMOUNT, NULL);
+   45: }
+   46:
+   47: /* inode security operations */
+   48:
+   49: static int selinux_inode_alloc_security(struct inode *inode)
+   50: {
+   51:  return inode_alloc_security(inode);
+   52: }
+   53:
+   54: static void selinux_inode_free_security(struct inode *inode)
+   55: {
+   56:  inode_free_security(inode);
+   57: }
+   58:
+   59: static int selinux_dentry_init_security(struct dentry *dentry, int mode,
+   60:                                  const struct qstr *name, void **ctx,
+   61:                                  u32 *ctxlen)
+   62: {
+   63:  u32 newsid;
+   64:  int rc;
+   65:
+   66:  rc = selinux_determine_inode_label(current_security(),
+   67:                                     d_inode(dentry->d_parent), name,
+   68:                                     inode_mode_to_security_class(mode),
+   69:                                     &newsid);
+   70:  if (rc)
+   71:          return rc;
+   72:
+   73:  return security_sid_to_context(newsid, (char **)ctx, ctxlen);
+   74: }
+   75:
+   76: static int selinux_dentry_create_files_as(struct dentry *dentry, int mode,
+   77:                                    struct qstr *name,
+   78:                                    const struct cred *old,
+   79:                                    struct cred *new)
+   80: {
+   81:  u32 newsid;
+   82:  int rc;
+   83:  struct task_security_struct *tsec;
+   84:
+   85:  rc = selinux_determine_inode_label(old->security,
+   86:                                     d_inode(dentry->d_parent), name,
+   87:                                     inode_mode_to_security_class(mode),
+   88:                                     &newsid);
+   89:  if (rc)
+   90:          return rc;
+   91:
+   92:  tsec = new->security;
+   93:  tsec->create_sid = newsid;
+   94:  return 0;
+   95: }
+   96:
+   97: static int selinux_inode_init_security(struct inode *inode, struct inode *dir,
+   98:                                 const struct qstr *qstr,
+   99:                                 const char **name,
+  100:                                 void **value, size_t *len)
+  101: {
+  102:  const struct task_security_struct *tsec = current_security();
+  103:  struct superblock_security_struct *sbsec;
+  104:  u32 sid, newsid, clen;
+  105:  int rc;
+  106:  char *context;
+  107:
+  108:  sbsec = dir->i_sb->s_security;
+  109:
+  110:  sid = tsec->sid;
+  111:  newsid = tsec->create_sid;
+  112:
+  113:  rc = selinux_determine_inode_label(current_security(),
+  114:          dir, qstr,
+  115:          inode_mode_to_security_class(inode->i_mode),
+  116:          &newsid);
+  117:  if (rc)
+  118:          return rc;
+  119:
+  120:  /* Possibly defer initialization to selinux_complete_init. */
+  121:  if (sbsec->flags & SE_SBINITIALIZED) {
+  122:          struct inode_security_struct *isec = inode->i_security;
+  123:          isec->sclass = inode_mode_to_security_class(inode->i_mode);
+  124:          isec->sid = newsid;
+  125:          isec->initialized = LABEL_INITIALIZED;
+  126:  }
+  127:
+  128:  if (!ss_initialized || !(sbsec->flags & SBLABEL_MNT))
+  129:          return -EOPNOTSUPP;
+  130:
+  131:  if (name)
+  132:          *name = XATTR_SELINUX_SUFFIX;
+  133:
+  134:  if (value && len) {
+  135:          rc = security_sid_to_context_force(newsid, &context, &clen);
+  136:          if (rc)
+  137:                  return rc;
+  138:          *value = context;
+  139:          *len = clen;
+  140:  }
+  141:
+  142:  return 0;
+  143: }
+  144:
+  145: static int selinux_inode_create(struct inode *dir, struct dentry *dentry, umode_t mode)
+  146: {
+  147:  return may_create(dir, dentry, SECCLASS_FILE);
+  148: }
   149:
-  150: quiet_cmd_cc_s_c = CC $(quiet_modtag)  $@
-  151: cmd_cc_s_c       = $(CC) $(c_flags) $(DISABLE_LTO) -fverbose-asm -S -o $@ $<
-  152:
-  153: $(obj)/%.s: $(src)/%.c FORCE
-
---- lines 177-181 ---
-  177:  $(call cmd,cc_symtypes_c)
-  178:
-  179: # LLVM assembly
-  180: # Generate .ll files from .c
-  181: quiet_cmd_cc_ll_c = CC $(quiet_modtag)  $@
-
---- lines 180-184 ---
-  180: # Generate .ll files from .c
-  181: quiet_cmd_cc_ll_c = CC $(quiet_modtag)  $@
-  182:       cmd_cc_ll_c = $(CC) $(c_flags) -emit-llvm -S -o $@ $<
-  183:
-  184: $(obj)/%.ll: $(src)/%.c FORCE
-
---- lines 192-196 ---
+  150: static int selinux_inode_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_dentry)
+  151: {
+  152:  return may_link(dir, old_dentry, MAY_LINK);
+  153: }
+  154:
+  155: static int selinux_inode_unlink(struct inode *dir, struct dentry *dentry)
+  156: {
+  157:  return may_link(dir, dentry, MAY_UNLINK);
+  158: }
+  159:
+  160: static int selinux_inode_symlink(struct inode *dir, struct dentry *dentry, const char *name)
+  161: {
+  162:  return may_create(dir, dentry, SECCLASS_LNK_FILE);
+  163: }
+  164:
+  165: static int selinux_inode_mkdir(struct inode *dir, struct dentry *dentry, umode_t mask)
+  166: {
+  167:  return may_create(dir, dentry, SECCLASS_DIR);
+  168: }
+  169:
+  170: static int selinux_inode_rmdir(struct inode *dir, struct dentry *dentry)
+  171: {
+  172:  return may_link(dir, dentry, MAY_RMDIR);
+  173: }
+  174:
+  175: static int selinux_inode_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t dev)
+  176: {
+  177:  return may_create(dir, dentry, inode_mode_to_security_class(mode));
+  178: }
+  179:
+  180: static int selinux_inode_rename(struct inode *old_inode, struct dentry *old_dentry,
+  181:                          struct inode *new_inode, struct dentry *new_dentry)
+  182: {
+  183:  return may_rename(old_inode, old_dentry, new_inode, new_dentry);
+  184: }
+  185:
+  186: static int selinux_inode_readlink(struct dentry *dentry)
+  187: {
+  188:  const struct cred *cred = current_cred();
+  189:
+  190:  return dentry_has_perm(cred, dentry, FILE__READ);
+  191: }
   192:
-  193: ifndef CONFIG_MODVERSIONS
-  194: cmd_cc_o_c = $(CC) $(c_flags) -c -o $@ $<
-  195:
-  196: else
-
---- lines 207-211 ---
-  207: #   the actual value of the checksum generated by genksyms
-  208:
-  209: cmd_cc_o_c = $(CC) $(c_flags) -c -o $(@D)/.tmp_$(@F) $<
-  210:
-  211: ifdef CONFIG_LTO_CLANG
-
---- lines 209-213 ---
-  209: cmd_cc_o_c = $(CC) $(c_flags) -c -o $(@D)/.tmp_$(@F) $<
-  210:
-  211: ifdef CONFIG_LTO_CLANG
-  212: # Generate .o.symversions files for each .o with exported symbols, and link these
-  213: # to the kernel and/or modules at the end.
-
---- lines 219-223 ---
-  219:          fi;                                                             \
-  220:  else                                                                    \
-  221:          if $(LLVM_DIS) -o=- $(@D)/.tmp_$(@F) | grep -q __ksymtab; then  \
-  222:                  $(call cmd_gensymtypes_c,$(KBUILD_SYMTYPES),$(@:.o=.symtypes)) \
-  223:                      > $(@D)/$(@F).symversions;                          \
-
---- lines 246-250 ---
-  246: endif
+  193: static int selinux_inode_follow_link(struct dentry *dentry, struct inode *inode,
+  194:                               bool rcu)
+  195: {
+  196:  const struct cred *cred = current_cred();
+  197:  struct common_audit_data ad;
+  198:  struct inode_security_struct *isec;
+  199:  u32 sid;
+  200:
+  201:  validate_creds(cred);
+  202:
+  203:  ad.type = LSM_AUDIT_DATA_DENTRY;
+  204:  ad.u.dentry = dentry;
+  205:  sid = cred_sid(cred);
+  206:  isec = inode_security_rcu(inode, rcu);
+  207:  if (IS_ERR(isec))
+  208:          return PTR_ERR(isec);
+  209:
+  210:  return avc_has_perm_flags(sid, isec->sid, isec->sclass, FILE__READ, &ad,
+  211:                            rcu ? MAY_NOT_BLOCK : 0);
+  212: }
+  213:
+  214: static noinline int audit_inode_permission(struct inode *inode,
+  215:                                     u32 perms, u32 audited, u32 denied,
+  216:                                     int result,
+  217:                                     unsigned flags)
+  218: {
+  219:  struct common_audit_data ad;
+  220:  struct inode_security_struct *isec = inode->i_security;
+  221:  int rc;
+  222:
+  223:  ad.type = LSM_AUDIT_DATA_INODE;
+  224:  ad.u.inode = inode;
+  225:
+  226:  rc = slow_avc_audit(current_sid(), isec->sid, isec->sclass, perms,
+  227:                      audited, denied, result, &ad, flags);
+  228:  if (rc)
+  229:          return rc;
+  230:  return 0;
+  231: }
+  232:
+  233: static int selinux_inode_permission(struct inode *inode, int mask)
+  234: {
+  235:  const struct cred *cred = current_cred();
+  236:  u32 perms;
+  237:  bool from_access;
+  238:  unsigned flags = mask & MAY_NOT_BLOCK;
+  239:  struct inode_security_struct *isec;
+  240:  u32 sid;
+  241:  struct av_decision avd;
+  242:  int rc, rc2;
+  243:  u32 audited, denied;
+  244:
+  245:  from_access = mask & MAY_ACCESS;
+  246:  mask &= (MAY_READ|MAY_WRITE|MAY_EXEC|MAY_APPEND);
   247:
-  248: ifdef CONFIG_LTO_CLANG
-  249: # With LTO, we postpone running recordmcount until after the LTO link step, so
-  250: # let's export the parameters for the link script.
+  248:  /* No permission to check.  Existence test. */
+  249:  if (!mask)
+  250:          return 0;
+  251:
+  252:  validate_creds(cred);
+  253:
+  254:  if (unlikely(IS_PRIVATE(inode)))
+  255:          return 0;
+  256:
+  257:  perms = file_mask_to_av(inode->i_mode, mask);
+  258:
+  259:  sid = cred_sid(cred);
+  260:  isec = inode_security_rcu(inode, flags & MAY_NOT_BLOCK);
+  261:  if (IS_ERR(isec))
+  262:          return PTR_ERR(isec);
+  263:
+  264:  rc = avc_has_perm_noaudit(sid, isec->sid, isec->sclass, perms, 0, &avd);
+  265:  audited = avc_audit_required(perms, &avd, rc,
+  266:                               from_access ? FILE__AUDIT_ACCESS : 0,
+  267:                               &denied);
+  268:  if (likely(!audited))
+  269:          return rc;
+  270:
+  271:  rc2 = audit_inode_permission(inode, perms, audited, denied, rc, flags);
+  272:  if (rc2)
+  273:          return rc2;
+  274:  return rc;
+  275: }
+  276:
+  277: static int selinux_inode_setattr(struct dentry *dentry, struct iattr *iattr)
+  278: {
+  279:  const struct cred *cred = current_cred();
+  280:  struct inode *inode = d_backing_inode(dentry);
+  281:  unsigned int ia_valid = iattr->ia_valid;
+  282:  __u32 av = FILE__WRITE;
+  283:
+  284:  /* ATTR_FORCE is just used for ATTR_KILL_S[UG]ID. */
+  285:  if (ia_valid & ATTR_FORCE) {
+  286:          ia_valid &= ~(ATTR_KILL_SUID | ATTR_KILL_SGID | ATTR_MODE |
+  287:                        ATTR_FORCE);
+  288:          if (!ia_valid)
+  289:                  return 0;
+  290:  }
+  291:
+  292:  if (ia_valid & (ATTR_MODE | ATTR_UID | ATTR_GID |
+  293:                  ATTR_ATIME_SET | ATTR_MTIME_SET | ATTR_TIMES_SET))
+  294:          return dentry_has_perm(cred, dentry, FILE__SETATTR);
+  295:
+  296:  if (selinux_policycap_openperm &&
+  297:      inode->i_sb->s_magic != SOCKFS_MAGIC &&
+  298:      (ia_valid & ATTR_SIZE) &&
+  299:      !(ia_valid & ATTR_FILE))
+  300:          av |= FILE__OPEN;
+  301:
+  302:  return dentr
 
---- lines 267-271 ---
-  267:  "$(if $(CONFIG_CPU_BIG_ENDIAN),big,little)" \
-  268:  "$(if $(CONFIG_64BIT),64,32)" \
-  269:  "$(OBJDUMP)" "$(OBJCOPY)" "$(CC) $(KBUILD_CFLAGS)" \
-  270:  "$(LD)" "$(NM)" "$(RM)" "$(MV)" \
-  271:  "$(if $(part-of-module),1,0)" "$(@)";
+=== VARIABLE REFERENCES ===
+sid     : 13 references
+  relative line 1: u32 sid, newsid, clen;
+  relative line 7: sid = tsec->sid;
+  relative line 7: sid = tsec->sid;
+  relative line 21: isec->sid = newsid;
+  relative line 96: u32 sid;
+  relative line 102: sid = cred_sid(cred);
+  relative line 107: return avc_has_perm_flags(sid, isec->sid, isec->sclass, FILE__READ, &ad,
+  relative line 107: return avc_has_perm_flags(sid, isec->sid, isec->sclass, FILE__READ, &ad,
+  relative line 123: rc = slow_avc_audit(current_sid(), isec->sid, isec->sclass, perms,
+  relative line 137: u32 sid;
+  relative line 156: sid = cred_sid(cred);
+  relative line 161: rc = avc_has_perm_noaudit(sid, isec->sid, isec->sclass, perms, 0, &avd);
+  relative line 161: rc = avc_has_perm_noaudit(sid, isec->sid, isec->sclass, perms, 0, &avd);
+newsid  : 5 references
+  relative line 1: u32 sid, newsid, clen;
+  relative line 8: newsid = tsec->create_sid;
+  relative line 13: &newsid);
+  relative line 21: isec->sid = newsid;
+  relative line 32: rc = security_sid_to_context_force(newsid, &context, &clen);
+clen    : 3 references
+  relative line 1: u32 sid, newsid, clen;
+  relative line 32: rc = security_sid_to_context_force(newsid, &context, &clen);
+  relative line 36: *len = clen;
 
---- lines 274-278 ---
-  274: endif # BUILD_C_RECORDMCOUNT
-  275:
-  276: ifndef CONFIG_LTO_CLANG
-  277: cmd_record_mcount =                                              \
-  278:  if [ "$(findstring $(CC_FLAGS_FTRACE),$(_c_flags))" =   \
-
---- lines 344-348 ---
-  344:
-  345: quiet_cmd_cc_lst_c = MKLST   $@
-  346:       cmd_cc_lst_c = $(CC) $(c_flags) -g -c -o $*.o $< && \
-  347:               $(CONFIG_SHELL) $(srctree)/scripts/makelst $*.o \
-  348:                               System.map $(OBJDUMP) > $@
-
---- lines 401-405 ---
-  401:
-  402: ifndef CONFIG_MODVERSIONS
-  403: cmd_as_o_S = $(CC) $(a_flags) -c -o $@ $<
-  404:
-  405: else
-
---- lines 408-412 ---
-  408:
-  409: ifeq ($(ASM_PROTOTYPES),)
-  410: cmd_as_o_S = $(CC) $(a_flags) -c -o $@ $<
-  411:
-  412: else
-
---- lines 415-419 ---
-  415: # we parse asm-prototypes.h C header to get function definitions.
-  416:
-  417: cmd_as_o_S = $(CC) $(a_flags) -c -o $(@D)/.tmp_$(@F) $<
-  418:
-  419: cmd_modversions_S =                                                              \
-
---- lines 468-472 ---
-  468: ifdef builtin-target
-  469:
-  470: ifdef CONFIG_LTO_CLANG
-  471:   ifdef CONFIG_MODVERSIONS
-  472:     # combine symversions for later processing
-
---- lines 480-484 ---
-  480:  done;
-  481:   endif
-  482:   # rebuild the symbol table with llvm-ar to include IR files
-  483:   update_lto_symtable = ;                                \
-  484:  mv -f $@ $@.tmp;                                \
-
---- lines 483-487 ---
-  483:   update_lto_symtable = ;                                \
-  484:  mv -f $@ $@.tmp;                                \
-  485:  $(LLVM_AR) rcsT$(KBUILD_ARFLAGS) $@             \
-  486:          $$($(AR) t $@.tmp);                     \
-  487:  rm -f $@.tmp
-
---- lines 555-559 ---
-  555: filter_export_list = sed -ne '/___ksymtab/s/.*+\([^ "]*\).*/$(ref_prefix)\1)/p'
-  556: link_export_list = rm -f $(dummy-object);\
-  557:  echo | $(CC) $(a_flags) -c -o $(dummy-object) -x assembler -;\
-  558:  $(LD) $(ld_flags) -r -o $@ -T $(ksyms-lds) $(dummy-object);\
-  559:  rm $(dummy-object) $(ksyms-lds)
-
---- lines 561-565 ---
-  561: quiet_cmd_export_list = EXPORTS $@
-  562:
-  563: ifdef CONFIG_LTO_CLANG
-  564: # objdump doesn't understand IR files and llvm-dis doesn't support archives,
-  565: # so we'll walk through each file in the archive separately
-
---- lines 562-566 ---
-  562:
-  563: ifdef CONFIG_LTO_CLANG
-  564: # objdump doesn't understand IR files and llvm-dis doesn't support archives,
-  565: # so we'll walk through each file in the archive separately
-  566: cmd_export_list =                                        \
-
---- lines 572-576 ---
-  572:                          >>$(ksyms-lds);         \
-  573:          else                                    \
-  574:                  $(LLVM_DIS) -o=- $$o |          \
-  575:                          $(filter_export_list)   \
-  576:                          >>$(ksyms-lds);         \
-
---- lines 620-624 ---
-  620: quiet_cmd_link_multi-m = LD [M]  $@
-  621:
-  622: ifdef CONFIG_LTO_CLANG
-  623:   # don't compile IR until needed
-  624:   cmd_link_multi-m = $(cmd_link_multi-y)
-
+=== DECLARATION ===
+u32 sid, newsid, clen;
+🐧 [root@debian:~]# (
+> cat > forensic_workingset_nid_v1.py <<'PY'
+> from pathlib import Path
+> import re
+>
+ROOT> ROOT = Path(
+"/r>     "/root/kernel-source/work/kernel-4.9.205/"
+>     "android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15"
+> )
+>
+> p = ROOT / "mm/workingset.c"
+> s = p.read_text()
+>
+> pos = s.find("int memcgid, nid;")
+>
+> print("=" * 78)
+> print("FAA WORKINGSET NID FORENSIC V1")
+nt(> print("=" * 78)
+> print(f"SOURCE : {p}")
+>
+> if pos < 0:
+>     raise SystemExit("TARGET DECLARATION NOT FOUND")
+>
+a > a = max(0, pos - 2500)
+> b = min(len(s), pos + 5000)
+>
+> region = s[a:b]
+>
+> print("\n=== CONTEXT ===")
+> for i, line in enumerate(region.splitlines(), 1):
+>     print(f"{i:5}: {line}")
+>
+> print("\n=== VARIABLE REFERENCES ===")
+> for name in ("memcgid", "nid"):
+>     refs = list(re.finditer(rf"\b{re.escape(name)}\b", region))
+>     print(f"{name:8}: {len(refs)} references")
+>     for m in refs:
+>         line = region.count("\n", 0, m.start()) + 1
+>         print(f"  relative line {line}: "
+>               f"{region.splitlines()[line-1].strip()}")
+> PY
+>
+> python3 forensic_workingset_nid_v1.py
+> )
 ==============================================================================
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/Makefile
+FAA WORKINGSET NID FORENSIC V1
 ==============================================================================
+SOURCE : /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/workingset.c
 
---- lines 52-56 ---
-   52:
-   53: ifeq ($(CONFIG_COMPAT_VDSO), y)
-   54:   CROSS_COMPILE_ARM32 ?= $(CONFIG_CROSS_COMPILE_ARM32:"%"=%)
-   55:
-   56:   # Check that the user has provided a valid prefix for the 32-bit toolchain.
+=== CONTEXT ===
+    1: tive cache is refaulting with a suitable refault
+    2:  * distance, we assume the cache workingset is transitioning and put
+    3:  * pressure on the current active list.
+    4:  *
+    5:  * If this is wrong and demotion kicks in, the pages which are truly
+    6:  * used more frequently will be reactivated while the less frequently
+    7:  * used once will be evicted from memory.
+    8:  *
+    9:  * But if this is right, the stale pages will be pushed out of memory
+   10:  * and the used pages get to stay in cache.
+   11:  *
+   12:  *               Refaulting active pages
+   13:  *
+   14:  * If on the other hand the refaulting pages have recently been
+   15:  * deactivated, it means that the active list is no longer protecting
+   16:  * actively used cache from reclaim. The cache is NOT transitioning to
+   17:  * a different workingset; the existing workingset is thrashing in the
+   18:  * space allocated to the page cache.
+   19:  *
+   20:  *
+   21:  *               Implementation
+   22:  *
+   23:  * For each node's file LRU lists, a counter for inactive evictions
+   24:  * and activations is maintained (node->inactive_age).
+   25:  *
+   26:  * On eviction, a snapshot of this counter (along with some bits to
+   27:  * identify the node) is stored in the now empty page cache radix tree
+   28:  * slot of the evicted page.  This is called a shadow entry.
+   29:  *
+   30:  * On cache misses for which there are shadow entries, an eligible
+   31:  * refault distance will immediately activate the refaulting page.
+   32:  */
+   33:
+   34: #define EVICTION_SHIFT   (RADIX_TREE_EXCEPTIONAL_ENTRY + \
+   35:                   1 + NODES_SHIFT + MEM_CGROUP_ID_SHIFT)
+   36: #define EVICTION_MASK    (~0UL >> EVICTION_SHIFT)
+   37:
+   38: /*
+   39:  * Eviction timestamps need to be able to cover the full range of
+   40:  * actionable refaults. However, bits are tight in the radix tree
+   41:  * entry, and after storing the identifier for the lruvec there might
+   42:  * not be enough left to represent every single actionable refault. In
+   43:  * that case, we have to sacrifice granularity for distance, and group
+   44:  * evictions into coarser buckets by shaving off lower timestamp bits.
+   45:  */
+   46: static unsigned int bucket_order __read_mostly;
+   47:
+   48: static void *pack_shadow(int memcgid, pg_data_t *pgdat, unsigned long eviction,
+   49:                   bool workingset)
+   50: {
+   51:  eviction >>= bucket_order;
+   52:  eviction = (eviction << MEM_CGROUP_ID_SHIFT) | memcgid;
+   53:  eviction = (eviction << NODES_SHIFT) | pgdat->node_id;
+   54:  eviction = (eviction << 1) | workingset;
+   55:  eviction = (eviction << RADIX_TREE_EXCEPTIONAL_SHIFT);
+   56:
+   57:  return (void *)(eviction | RADIX_TREE_EXCEPTIONAL_ENTRY);
+   58: }
+   59:
+   60: static void unpack_shadow(void *shadow, int *memcgidp, pg_data_t **pgdat,
+   61:                    unsigned long *evictionp, bool *workingsetp)
+   62: {
+   63:  unsigned long entry = (unsigned long)shadow;
+   64:  int memcgid, nid;
+   65:  bool workingset;
+   66:
+   67:  entry >>= RADIX_TREE_EXCEPTIONAL_SHIFT;
+   68:  workingset = entry & 1;
+   69:  entry >>= 1;
+   70:  nid = entry & ((1UL << NODES_SHIFT) - 1);
+   71:  entry >>= NODES_SHIFT;
+   72:  memcgid = entry & ((1UL << MEM_CGROUP_ID_SHIFT) - 1);
+   73:  entry >>= MEM_CGROUP_ID_SHIFT;
+   74:
+   75:  *memcgidp = memcgid;
+   76:  *pgdat = NODE_DATA(nid);
+   77:  *evictionp = entry << bucket_order;
+   78:  *workingsetp = workingset;
+   79: }
+   80:
+   81: /**
+   82:  * workingset_eviction - note the eviction of a page from memory
+   83:  * @mapping: address space the page was backing
+   84:  * @page: the page being evicted
+   85:  *
+   86:  * Returns a shadow entry to be stored in @mapping->page_tree in place
+   87:  * of the evicted @page so that a later refault can be detected.
+   88:  */
+   89: void *workingset_eviction(struct address_space *mapping, struct page *page)
+   90: {
+   91:  struct pglist_data *pgdat = page_pgdat(page);
+   92:  struct mem_cgroup *memcg = page_memcg(page);
+   93:  int memcgid = mem_cgroup_id(memcg);
+   94:  unsigned long eviction;
+   95:  struct lruvec *lruvec;
+   96:
+   97:  /* Page is fully exclusive and pins page->mem_cgroup */
+   98:  VM_BUG_ON_PAGE(PageLRU(page), page);
+   99:  VM_BUG_ON_PAGE(page_count(page), page);
+  100:  VM_BUG_ON_PAGE(!PageLocked(page), page);
+  101:
+  102:  lruvec = mem_cgroup_lruvec(pgdat, memcg);
+  103:  eviction = atomic_long_inc_return(&lruvec->inactive_age);
+  104:  return pack_shadow(memcgid, pgdat, eviction, PageWorkingset(page));
+  105: }
+  106:
+  107: /**
+  108:  * workingset_refault - evaluate the refault of a previously evicted page
+  109:  * @page: the freshly allocated replacement page
+  110:  * @shadow: shadow entry of the evicted page
+  111:  *
+  112:  * Calculates and evaluates the refault distance of the previously
+  113:  * evicted page in the context of the node it was allocated in.
+  114:  */
+  115: void workingset_refault(struct page *page, void *shadow)
+  116: {
+  117:  unsigned long refault_distance;
+  118:  struct pglist_data *pgdat;
+  119:  unsigned long active_file;
+  120:  struct mem_cgroup *memcg;
+  121:  unsigned long eviction;
+  122:  struct lruvec *lruvec;
+  123:  unsigned long refault;
+  124:  bool workingset;
+  125:  int memcgid;
+  126:
+  127:  unpack_shadow(shadow, &memcgid, &pgdat, &eviction, &workingset);
+  128:
+  129:  rcu_read_lock();
+  130:  /*
+  131:   * Look up the memcg associated with the stored ID. It might
+  132:   * have been deleted since the page's eviction.
+  133:   *
+  134:   * Note that in rare events the ID could have been recycled
+  135:   * for a new cgroup that refaults a shared page. This is
+  136:   * impossible to tell from the available data. However, this
+  137:   * should be a rare and limited disturbance, and activations
+  138:   * are always speculative anyway. Ultimately, it's the aging
+  139:   * algorithm's job to shake out the minimum access frequency
+  140:   * for the active cache.
+  141:   *
+  142:   * XXX: On !CONFIG_MEMCG, this will always return NULL; it
+  143:   * would be better if the root_mem_cgroup existed in all
+  144:   * configurations instead.
+  145:   */
+  146:  memcg = mem_cgroup_from_id(memcgid);
+  147:  if (!mem_cgroup_disabled() && !memcg)
+  148:          goto out;
+  149:  lruvec = mem_cgroup_lruvec(pgdat, memcg);
+  150:  refault = atomic_long_read(&lruvec->inactive_age);
+  151:  active_file = lruvec_lru_size(lruvec, LRU_ACTIVE_FILE, MAX_NR_ZONES);
+  152:
+  153:  /*
+  154:   * Calculate the refault distance
+  155:   *
+  156:   * The unsigned subtraction here gives an accurate distance
+  157:   * across inactive_age overflows in most cases. There is a
+  158:   * special case: usually, shadow entries have a short lifetime
+  159:   * and are either refaulted or reclaimed along with the inode
+  160:   * before they get too old.  But it is not impossible for the
+  161:   * inactive_age to lap a shadow entry in the field, which can
+  162:   * then result in a false small refault distance, leading to a
+  163:   * false activation should this old entry actually refault
+  164:   * again.  However, earlier kernels used to deactivate
+  165:   * unconditionally with *every* reclaim invocation for the
+  166:   * longest time, so the occasional inappropriate activation
+  167:   * leading to pressure on the active list is not a problem.
+  168:   */
+  169:  refault_distance = (refault - eviction) & EVICTION_MASK;
+  170:
+  171:  inc_node_state(pgdat, WORKINGSET_REFAULT);
+  172:
+  173:  /*
+  174:   * Compare the distance to the existing workingset size. We
+  175:   * don't act on pages that couldn't stay resident even if all
+  176:   * the memory was available to the page cache.
+  177:   */
+  178:  if (refault_distance > active_file)
+  179:          goto out;
+  180:
+  181:  SetPageActive(page);
+  182:  atomic_long_inc(&lruvec->inactive_age);
+  183:  inc_node_state(pgdat, WORKINGSET_ACTIVATE);
+  184:
+  185:  /* Page was active prior to eviction */
+  186:  if (workingset) {
+  187:          SetPageWorkingset(page);
+  188:          inc_node_state(pgdat, WORKINGSET_RESTORE);
+  189:  }
+  190: out:
+  191:  rcu_read_unlock();
+  192: }
+  193:
+  194: /**
+  195:  * workingset_activation - note a page activation
+  196:  * @page: page that is being activated
+  197:  */
+  198: void workingset_activation(struct page *page)
+  199: {
+  200:  struct mem_cgroup *memcg;
+  201:  struct lruvec *lruvec;
+  202:
+  203:  rcu_read_lock();
+  204:  /*
+  205:   * Filter non-memcg pages here, e.g. unmap can call
+  206:   * mark_page_accessed() on VDSO pages.
+  207:   *
+  208:   * XXX: See workingset_refault() - this should return
+  209:   * root_mem_cgroup even for !CONFIG_MEMCG.
+  210:   */
+  211:  memcg = page_memcg_rcu(page);
+  212:  if (!mem_cgroup_disabled() && !memcg)
+  213:          goto out;
+  214:  lruvec = mem_cgroup_lruvec(page_pgdat(page), memcg);
+  215:  atomic_long_inc(&lruvec->inactive_age);
+  216: out:
+  217:  rcu_read_unlock();
+  218: }
+  219:
+  220: /*
+  221:  * Shadow entries reflect the share of the working set that does not
+  222:  * fit into memory, s
 
---- lines 56-60 ---
-   56:   # Check that the user has provided a valid prefix for the 32-bit toolchain.
-   57:   # To prevent selecting the system $(cc-name) by default, the prefix is not
-   58:   # allowed to be empty, unlike CROSS_COMPILE. In the unlikely event that the
-   59:   # system $(cc-name) is actually the 32-bit ARM compiler to be used, the
-   60:   # variable can be set to the dirname (e.g. CROSS_COMPILE_ARM32=/usr/bin/).
-
---- lines 58-62 ---
-   58:   # allowed to be empty, unlike CROSS_COMPILE. In the unlikely event that the
-   59:   # system $(cc-name) is actually the 32-bit ARM compiler to be used, the
-   60:   # variable can be set to the dirname (e.g. CROSS_COMPILE_ARM32=/usr/bin/).
-   61:   # Note: this Makefile is read both before and after regenerating the config
-   62:   # (if needed). Any warning appearing before the config has been regenerated
-
---- lines 62-66 ---
-   62:   # (if needed). Any warning appearing before the config has been regenerated
-   63:   # should be ignored. If the error is triggered and you set
-   64:   # CONFIG_CROSS_COMPILE_ARM32, set CROSS_COMPILE_ARM32 to an appropriate value
-   65:   # when invoking make and fix CONFIG_CROSS_COMPILE_ARM32.
-   66:   ifeq ($(CROSS_COMPILE_ARM32),)
-
---- lines 63-67 ---
-   63:   # should be ignored. If the error is triggered and you set
-   64:   # CONFIG_CROSS_COMPILE_ARM32, set CROSS_COMPILE_ARM32 to an appropriate value
-   65:   # when invoking make and fix CONFIG_CROSS_COMPILE_ARM32.
-   66:   ifeq ($(CROSS_COMPILE_ARM32),)
-   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
-
---- lines 64-68 ---
-   64:   # CONFIG_CROSS_COMPILE_ARM32, set CROSS_COMPILE_ARM32 to an appropriate value
-   65:   # when invoking make and fix CONFIG_CROSS_COMPILE_ARM32.
-   66:   ifeq ($(CROSS_COMPILE_ARM32),)
-   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
-   68:   else ifeq ($(cc-name),clang)
-
---- lines 65-69 ---
-   65:   # when invoking make and fix CONFIG_CROSS_COMPILE_ARM32.
-   66:   ifeq ($(CROSS_COMPILE_ARM32),)
-   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
-   68:   else ifeq ($(cc-name),clang)
-   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
-
---- lines 66-70 ---
-   66:   ifeq ($(CROSS_COMPILE_ARM32),)
-   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
-   68:   else ifeq ($(cc-name),clang)
-   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
-   70:     export CLANG_TARGET_ARM32 := --target=$(notdir $(CLANG_TRIPLE_ARM32:%-=%))
-
---- lines 67-71 ---
-   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
-   68:   else ifeq ($(cc-name),clang)
-   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
-   70:     export CLANG_TARGET_ARM32 := --target=$(notdir $(CLANG_TRIPLE_ARM32:%-=%))
-   71:     export GCC_TOOLCHAIN32_DIR := $(dir $(shell which $(CROSS_COMPILE_ARM32)ld))
-
---- lines 68-72 ---
-   68:   else ifeq ($(cc-name),clang)
-   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
-   70:     export CLANG_TARGET_ARM32 := --target=$(notdir $(CLANG_TRIPLE_ARM32:%-=%))
-   71:     export GCC_TOOLCHAIN32_DIR := $(dir $(shell which $(CROSS_COMPILE_ARM32)ld))
-   72:     export GCC_TOOLCHAIN32 := $(realpath $(GCC_TOOLCHAIN32_DIR)/..)
-
---- lines 69-73 ---
-   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
-   70:     export CLANG_TARGET_ARM32 := --target=$(notdir $(CLANG_TRIPLE_ARM32:%-=%))
-   71:     export GCC_TOOLCHAIN32_DIR := $(dir $(shell which $(CROSS_COMPILE_ARM32)ld))
-   72:     export GCC_TOOLCHAIN32 := $(realpath $(GCC_TOOLCHAIN32_DIR)/..)
-   73:     export CLANG_PREFIX32 := --prefix=$(GCC_TOOLCHAIN32_DIR)$(notdir $(CROSS_COMPILE_ARM32))
-
---- lines 71-75 ---
-   71:     export GCC_TOOLCHAIN32_DIR := $(dir $(shell which $(CROSS_COMPILE_ARM32)ld))
-   72:     export GCC_TOOLCHAIN32 := $(realpath $(GCC_TOOLCHAIN32_DIR)/..)
-   73:     export CLANG_PREFIX32 := --prefix=$(GCC_TOOLCHAIN32_DIR)$(notdir $(CROSS_COMPILE_ARM32))
-   74:     export CLANG_GCC32_TC := --gcc-toolchain=$(GCC_TOOLCHAIN32)
-   75:     export CONFIG_VDSO32 := y
-
---- lines 72-76 ---
-   72:     export GCC_TOOLCHAIN32 := $(realpath $(GCC_TOOLCHAIN32_DIR)/..)
-   73:     export CLANG_PREFIX32 := --prefix=$(GCC_TOOLCHAIN32_DIR)$(notdir $(CROSS_COMPILE_ARM32))
-   74:     export CLANG_GCC32_TC := --gcc-toolchain=$(GCC_TOOLCHAIN32)
-   75:     export CONFIG_VDSO32 := y
-   76:     vdso32 := -DCONFIG_VDSO32=1
-
---- lines 75-79 ---
-   75:     export CONFIG_VDSO32 := y
-   76:     vdso32 := -DCONFIG_VDSO32=1
-   77:   else ifeq ($(shell which $(CROSS_COMPILE_ARM32)$(cc-name) 2> /dev/null),)
-   78:     $(error $(CROSS_COMPILE_ARM32)$(cc-name) not found, check CROSS_COMPILE_ARM32)
-   79:   else
-
---- lines 76-80 ---
-   76:     vdso32 := -DCONFIG_VDSO32=1
-   77:   else ifeq ($(shell which $(CROSS_COMPILE_ARM32)$(cc-name) 2> /dev/null),)
-   78:     $(error $(CROSS_COMPILE_ARM32)$(cc-name) not found, check CROSS_COMPILE_ARM32)
-   79:   else
-   80:     export CROSS_COMPILE_ARM32
-
---- lines 78-82 ---
-   78:     $(error $(CROSS_COMPILE_ARM32)$(cc-name) not found, check CROSS_COMPILE_ARM32)
-   79:   else
-   80:     export CROSS_COMPILE_ARM32
-   81:     export CONFIG_VDSO32 := y
-   82:     vdso32 := -DCONFIG_VDSO32=1
-
---- lines 84-88 ---
-   84: endif
-   85:
-   86: ifeq ($(cc-name),clang)
-   87: # This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=30792.
-   88: # TODO: revert when this is fixed in LLVM.
-
---- lines 85-89 ---
-   85:
-   86: ifeq ($(cc-name),clang)
-   87: # This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=30792.
-   88: # TODO: revert when this is fixed in LLVM.
-   89: KBUILD_CFLAGS    += -mno-implicit-float
-
---- lines 86-90 ---
-   86: ifeq ($(cc-name),clang)
-   87: # This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=30792.
-   88: # TODO: revert when this is fixed in LLVM.
-   89: KBUILD_CFLAGS    += -mno-implicit-float
-   90: else
-
---- lines 119-123 ---
-  119: ifeq ($(CONFIG_ARM64_MODULE_CMODEL_LARGE), y)
-  120: KBUILD_CFLAGS_MODULE     += -mcmodel=large
-  121: ifeq ($(CONFIG_LTO_CLANG), y)
-  122: # Code model is not stored in LLVM IR, so we need to pass it also to LLVMgold
-  123: KBUILD_LDFLAGS_MODULE    += -plugin-opt=-code-model=large
-
---- lines 120-124 ---
-  120: KBUILD_CFLAGS_MODULE     += -mcmodel=large
-  121: ifeq ($(CONFIG_LTO_CLANG), y)
-  122: # Code model is not stored in LLVM IR, so we need to pass it also to LLVMgold
-  123: KBUILD_LDFLAGS_MODULE    += -plugin-opt=-code-model=large
-  124: endif
-
---- lines 141-145 ---
-  141: endif
-  142:
-  143: ifeq ($(cc-name),clang)
-  144: KBUILD_CFLAGS += $(call cc-disable-warning, asm-operand-widths)
-  145: endif
-
-==============================================================================
-TOOLCHAIN
-==============================================================================
-clang-13                 : /usr/bin/clang-13
-clang                    : None
-aarch64-linux-gnu-gcc    : /usr/bin/aarch64-linux-gnu-gcc
-ld.lld-13                : /usr/bin/ld.lld-13
-llvm-ar-13               : /usr/bin/llvm-ar-13
-
-DONE
+=== VARIABLE REFERENCES ===
+memcgid : 10 references
+  relative line 48: static void *pack_shadow(int memcgid, pg_data_t *pgdat, unsigned long eviction,
+  relative line 52: eviction = (eviction << MEM_CGROUP_ID_SHIFT) | memcgid;
+  relative line 64: int memcgid, nid;
+  relative line 72: memcgid = entry & ((1UL << MEM_CGROUP_ID_SHIFT) - 1);
+  relative line 75: *memcgidp = memcgid;
+  relative line 93: int memcgid = mem_cgroup_id(memcg);
+  relative line 104: return pack_shadow(memcgid, pgdat, eviction, PageWorkingset(page));
+  relative line 125: int memcgid;
+  relative line 127: unpack_shadow(shadow, &memcgid, &pgdat, &eviction, &workingset);
+  relative line 146: memcg = mem_cgroup_from_id(memcgid);
+nid     : 3 references
+  relative line 64: int memcgid, nid;
+  relative line 70: nid = entry & ((1UL << NODES_SHIFT) - 1);
+  relative line 76: *pgdat = NODE_DATA(nid);
 🐧 [root@debian:~]#
