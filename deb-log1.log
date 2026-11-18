@@ -1,957 +1,900 @@
-🐧 [root@debian:~]# (
-> cd ~/kernel-source/ksu-reference-32915384/kernel
->
-'\> printf '\n=== core_hook.c: 480-750 ===\n'
-> sed -n '480,750p' core_hook.c
-ri>
-t> printf '\n=== core_hook.c: 780-930 ===\n'
-> sed -n '780,930p' core_hook.c
-in>
-> printf '\n=== kernel_compat.c ===\n'
-> cat kernel_compat.c
->
-> printf '\n=== kernel_compat.h ===\n'
-> cat kernel_compat.h
-
->
-> printf '\n=== selinux/selinux.c ===\n'
-a> cat selinux/selinux.c
-p>
-r> printf '\n=== selinux/sepolicy.c: beginning ===\n'
-sed -> sed -n '1,180p' selinux/sepolicy.c
-> )
-
-=== core_hook.c: 480-750 ===
-                        if (copy_to_user(result, &reply_ok, sizeof(reply_ok))) {
-                                pr_err("prctl reply error, cmd: %lu\n", arg2);
-                        }
-                }
-                return 0;
-        }
-
-        return 0;
-}
-
-static bool is_appuid(kuid_t uid)
-{
-#define PER_USER_RANGE 100000
-#define FIRST_APPLICATION_UID 10000
-#define LAST_APPLICATION_UID 19999
-
-        uid_t appid = uid.val % PER_USER_RANGE;
-        return appid >= FIRST_APPLICATION_UID && appid <= LAST_APPLICATION_UID;
-}
-
-static bool should_umount(struct path *path)
-{
-        if (!path) {
-                return false;
-        }
-
-        if (current->nsproxy->mnt_ns == init_nsproxy.mnt_ns) {
-                pr_info("ignore global mnt namespace process: %d\n",
-                        current_uid().val);
-                return false;
-        }
-
-        if (path->mnt && path->mnt->mnt_sb && path->mnt->mnt_sb->s_type) {
-                const char *fstype = path->mnt->mnt_sb->s_type->name;
-                return strcmp(fstype, "overlay") == 0;
-        }
-        return false;
-}
-
-static void ksu_umount_mnt(struct path *path, int flags)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0) || defined(KSU_UMOUNT)
-        int err = path_umount(path, flags);
-        if (err) {
-                pr_info("umount %s failed: %d\n", path->dentry->d_iname, err);
-        }
-#else
-        // TODO: umount for non GKI kernel
-#endif
-}
-
-static void try_umount(const char *mnt, bool check_mnt, int flags)
-{
-        struct path path;
-        int err = kern_path(mnt, 0, &path);
-        if (err) {
-                return;
-        }
-
-        if (path.dentry != path.mnt->mnt_root) {
-                // it is not root mountpoint, maybe umounted by others already.
-                return;
-        }
-
-        // we are only interest in some specific mounts
-        if (check_mnt && !should_umount(&path)) {
-                return;
-        }
-
-        ksu_umount_mnt(&path, flags);
-}
-
-int ksu_handle_setuid(struct cred *new, const struct cred *old)
-{
-        // this hook is used for umounting overlayfs for some uid, if there isn't any module mounted, just ignore it!
-        if (!ksu_module_mounted) {
-                return 0;
-        }
-
-        if (!new || !old) {
-                return 0;
-        }
-
-        kuid_t new_uid = new->uid;
-        kuid_t old_uid = old->uid;
-
-        if (0 != old_uid.val) {
-                // old process is not root, ignore it.
-                return 0;
-        }
-
-        if (!is_appuid(new_uid) || is_unsupported_uid(new_uid.val)) {
-                // pr_info("handle setuid ignore non application or isolated uid: %d\n", new_uid.val);
-                return 0;
-        }
-
-        if (ksu_is_allow_uid(new_uid.val)) {
-                // pr_info("handle setuid ignore allowed application: %d\n", new_uid.val);
-                return 0;
-        }
-
-        if (!ksu_uid_should_umount(new_uid.val)) {
-                return 0;
-        } else {
-#ifdef CONFIG_KSU_DEBUG
-                pr_info("uid: %d should not umount!\n", current_uid().val);
-#endif
-        }
-
-        // check old process's selinux context, if it is not zygote, ignore it!
-        // because some su apps may setuid to untrusted_app but they are in global mount namespace
-        // when we umount for such process, that is a disaster!
-        bool is_zygote_child = is_zygote(old->security);
-        if (!is_zygote_child) {
-                pr_info("handle umount ignore non zygote child: %d\n",
-                        current->pid);
-                return 0;
-        }
-        // umount the target mnt
-        pr_info("handle umount for uid: %d, pid: %d\n", new_uid.val,
-                current->pid);
-
-        // fixme: use `collect_mounts` and `iterate_mount` to iterate all mountpoint and
-        // filter the mountpoint whose target is `/data/adb`
-        try_umount("/system", true, 0);
-        try_umount("/vendor", true, 0);
-        try_umount("/product", true, 0);
-        try_umount("/data/adb/modules", false, MNT_DETACH);
-
-        // try umount ksu temp path
-        try_umount("/debug_ramdisk", false, MNT_DETACH);
-        try_umount("/sbin", false, MNT_DETACH);
-
-        return 0;
-}
-
-// Init functons
-
-static int handler_pre(struct kprobe *p, struct pt_regs *regs)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
-        struct pt_regs *real_regs = (struct pt_regs *)PT_REGS_PARM1(regs);
-#else
-        struct pt_regs *real_regs = regs;
-#endif
-        int option = (int)PT_REGS_PARM1(real_regs);
-        unsigned long arg2 = (unsigned long)PT_REGS_PARM2(real_regs);
-        unsigned long arg3 = (unsigned long)PT_REGS_PARM3(real_regs);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
-        // PRCTL_SYMBOL is the arch-specificed one, which receive raw pt_regs from syscall
-        unsigned long arg4 = (unsigned long)PT_REGS_SYSCALL_PARM4(real_regs);
-#else
-        // PRCTL_SYMBOL is the common one, called by C convention in do_syscall_64
-        // https://elixir.bootlin.com/linux/v4.15.18/source/arch/x86/entry/common.c#L287
-        unsigned long arg4 = (unsigned long)PT_REGS_CCALL_PARM4(real_regs);
-#endif
-        unsigned long arg5 = (unsigned long)PT_REGS_PARM5(real_regs);
-
-        return ksu_handle_prctl(option, arg2, arg3, arg4, arg5);
-}
-
-static struct kprobe prctl_kp = {
-        .symbol_name = PRCTL_SYMBOL,
-        .pre_handler = handler_pre,
-};
-
-static int renameat_handler_pre(struct kprobe *p, struct pt_regs *regs)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-        // https://elixir.bootlin.com/linux/v5.12-rc1/source/include/linux/fs.h
-        struct renamedata *rd = PT_REGS_PARM1(regs);
-        struct dentry *old_entry = rd->old_dentry;
-        struct dentry *new_entry = rd->new_dentry;
-#else
-        struct dentry *old_entry = (struct dentry *)PT_REGS_PARM2(regs);
-        struct dentry *new_entry = (struct dentry *)PT_REGS_CCALL_PARM4(regs);
-#endif
-
-        return ksu_handle_rename(old_entry, new_entry);
-}
-
-static struct kprobe renameat_kp = {
-        .symbol_name = "vfs_rename",
-        .pre_handler = renameat_handler_pre,
-};
-
-__maybe_unused int ksu_kprobe_init(void)
-{
-        int rc = 0;
-        rc = register_kprobe(&prctl_kp);
-
-        if (rc) {
-                pr_info("prctl kprobe failed: %d.\n", rc);
-                return rc;
-        }
-
-        rc = register_kprobe(&renameat_kp);
-        pr_info("renameat kp: %d\n", rc);
-
-        return rc;
-}
-
-__maybe_unused int ksu_kprobe_exit(void)
-{
-        unregister_kprobe(&prctl_kp);
-        unregister_kprobe(&renameat_kp);
-        return 0;
-}
-
-static int ksu_task_prctl(int option, unsigned long arg2, unsigned long arg3,
-                          unsigned long arg4, unsigned long arg5)
-{
-        ksu_handle_prctl(option, arg2, arg3, arg4, arg5);
-        return -ENOSYS;
-}
-// kernel 4.4 and 4.9
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
-static int ksu_key_permission(key_ref_t key_ref, const struct cred *cred,
-                              unsigned perm)
-{
-        if (init_session_keyring != NULL) {
-                return 0;
-        }
-        if (strcmp(current->comm, "init")) {
-                // we are only interested in `init` process
-                return 0;
-        }
-        init_session_keyring = cred->session_keyring;
-        pr_info("kernel_compat: got init_session_keyring\n");
-        return 0;
-}
-#endif
-static int ksu_inode_rename(struct inode *old_inode, struct dentry *old_dentry,
-                            struct inode *new_inode, struct dentry *new_dentry)
-{
-        return ksu_handle_rename(old_dentry, new_dentry);
-}
-
-static int ksu_task_fix_setuid(struct cred *new, const struct cred *old,
-                               int flags)
-{
-        return ksu_handle_setuid(new, old);
-}
-
-#ifndef MODULE
-static struct security_hook_list ksu_hooks[] = {
-        LSM_HOOK_INIT(task_prctl, ksu_task_prctl),
-        LSM_HOOK_INIT(inode_rename, ksu_inode_rename),
-        LSM_HOOK_INIT(task_fix_setuid, ksu_task_fix_setuid),
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
-        LSM_HOOK_INIT(key_permission, ksu_key_permission)
-#endif
-};
-
-void __init ksu_lsm_hook_init(void)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-        security_add_hooks(ksu_hooks, ARRAY_SIZE(ksu_hooks), "ksu");
-#else
-        // https://elixir.bootlin.com/linux/v4.10.17/source/include/linux/lsm_hooks.h#L1892
-        security_add_hooks(ksu_hooks, ARRAY_SIZE(ksu_hooks));
-#endif
-}
-
-#else
-static int override_security_head(void *head, const void *new_head, size_t len)
-{
-        unsigned long base = (unsigned long)head & PAGE_MASK;
-        unsigned long offset = offset_in_page(head);
-
-        // this is impossible for our case because the page alignment
-
-=== core_hook.c: 780-930 ===
-        }
-
-        kfree(head);
-}
-
-struct hlist_head *copy_security_hlist(struct hlist_head *orig)
-{
-        struct hlist_head *new_head = kmalloc(sizeof(*new_head), GFP_KERNEL);
-        if (!new_head)
-                return NULL;
-
-        INIT_HLIST_HEAD(new_head);
-
-        struct security_hook_list *entry;
-        struct security_hook_list *new_entry;
-
-        hlist_for_each_entry (entry, orig, list) {
-                new_entry = kmalloc(sizeof(*new_entry), GFP_KERNEL);
-                if (!new_entry) {
-                        free_security_hook_list(new_head);
-                        return NULL;
-                }
-
-                *new_entry = *entry;
-
-                hlist_add_tail_rcu(&new_entry->list, new_head);
-        }
-
-        return new_head;
-}
-
-#define LSM_SEARCH_MAX 180 // This should be enough to iterate
-static void *find_head_addr(void *security_ptr, int *index)
-{
-        if (!security_ptr) {
-                return NULL;
-        }
-        struct hlist_head *head_start =
-                (struct hlist_head *)&security_hook_heads;
-
-        for (int i = 0; i < LSM_SEARCH_MAX; i++) {
-                struct hlist_head *head = head_start + i;
-                struct security_hook_list *pos;
-                hlist_for_each_entry (pos, head, list) {
-                        if (pos->hook.capget == security_ptr) {
-                                if (index) {
-                                        *index = i;
-                                }
-                                return head;
-                        }
-                }
-        }
-
-        return NULL;
-}
-
-#define GET_SYMBOL_ADDR(sym)                                                   \
-        ({                                                                     \
-                void *addr = kallsyms_lookup_name(#sym ".cfi_jt");             \
-                if (!addr) {                                                   \
-                        addr = kallsyms_lookup_name(#sym);                     \
-                }                                                              \
-                addr;                                                          \
-        })
-
-#define KSU_LSM_HOOK_HACK_INIT(head_ptr, name, func)                           \
-        do {                                                                   \
-                static struct security_hook_list hook = {                      \
-                        .hook = { .name = func }                               \
-                };                                                             \
-                hook.head = head_ptr;                                          \
-                hook.lsm = "ksu";                                              \
-                struct hlist_head *new_head = copy_security_hlist(hook.head);  \
-                if (!new_head) {                                               \
-                        pr_err("Failed to copy security list: %s\n", #name);   \
-                        break;                                                 \
-                }                                                              \
-                hlist_add_tail_rcu(&hook.list, new_head);                      \
-                if (override_security_head(hook.head, new_head,                \
-                                           sizeof(*new_head))) {               \
-                        free_security_hook_list(new_head);                     \
-                        pr_err("Failed to hack lsm for: %s\n", #name);         \
-                }                                                              \
-        } while (0)
-
-void __init ksu_lsm_hook_init(void)
-{
-        void *cap_prctl = GET_SYMBOL_ADDR(cap_task_prctl);
-        void *prctl_head = find_head_addr(cap_prctl, NULL);
-        if (prctl_head) {
-                if (prctl_head != &security_hook_heads.task_prctl) {
-                        pr_warn("prctl's address has shifted!\n");
-                }
-                KSU_LSM_HOOK_HACK_INIT(prctl_head, task_prctl, ksu_task_prctl);
-        } else {
-                pr_warn("Failed to find task_prctl!\n");
-        }
-
-        int inode_killpriv_index = -1;
-        void *cap_killpriv = GET_SYMBOL_ADDR(cap_inode_killpriv);
-        find_head_addr(cap_killpriv, &inode_killpriv_index);
-        if (inode_killpriv_index < 0) {
-                pr_warn("Failed to find inode_rename, use kprobe instead!\n");
-                register_kprobe(&renameat_kp);
-        } else {
-                int inode_rename_index = inode_killpriv_index +
-                                         &security_hook_heads.inode_rename -
-                                         &security_hook_heads.inode_killpriv;
-                struct hlist_head *head_start =
-                        (struct hlist_head *)&security_hook_heads;
-                void *inode_rename_head = head_start + inode_rename_index;
-                if (inode_rename_head != &security_hook_heads.inode_rename) {
-                        pr_warn("inode_rename's address has shifted!\n");
-                }
-                KSU_LSM_HOOK_HACK_INIT(inode_rename_head, inode_rename,
-                                       ksu_inode_rename);
-        }
-        void *cap_setuid = GET_SYMBOL_ADDR(cap_task_fix_setuid);
-        void *setuid_head = find_head_addr(cap_setuid, NULL);
-        if (setuid_head) {
-                if (setuid_head != &security_hook_heads.task_fix_setuid) {
-                        pr_warn("setuid's address has shifted!\n");
-                }
-                KSU_LSM_HOOK_HACK_INIT(setuid_head, task_fix_setuid,
-                                       ksu_task_fix_setuid);
-        } else {
-                pr_warn("Failed to find task_fix_setuid!\n");
-        }
-        smp_mb();
-}
-#endif
-
-void __init ksu_core_init(void)
-{
-        ksu_lsm_hook_init();
-}
-
-void ksu_core_exit(void)
-{
-        pr_info("ksu_kprobe_exit\n");
-}
-
-=== kernel_compat.c ===
-#include "linux/version.h"
-#include "linux/fs.h"
-#include "linux/nsproxy.h"
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
-#include "linux/sched/task.h"
-#else
-#include "linux/sched.h"
-#endif
-#include "linux/uaccess.h"
-#include "klog.h" // IWYU pragma: keep
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
-#include "linux/key.h"
-#include "linux/errno.h"
-#include "linux/cred.h"
-struct key *init_session_keyring = NULL;
-
-static inline int install_session_keyring(struct key *keyring)
-{
-        struct cred *new;
-        int ret;
-
-        new = prepare_creds();
-        if (!new)
-                return -ENOMEM;
-
-        ret = install_session_keyring_to_cred(new, keyring);
-        if (ret < 0) {
-                abort_creds(new);
-                return ret;
-        }
-
-        return commit_creds(new);
-}
-#endif
-
-extern struct task_struct init_task;
-
-// mnt_ns context switch for environment that android_init->nsproxy->mnt_ns != init_task.nsproxy->mnt_ns, such as WSA
-struct ksu_ns_fs_saved {
-        struct nsproxy *ns;
-        struct fs_struct *fs;
-};
-
-static void ksu_save_ns_fs(struct ksu_ns_fs_saved *ns_fs_saved)
-{
-        ns_fs_saved->ns = current->nsproxy;
-        ns_fs_saved->fs = current->fs;
-}
-
-static void ksu_load_ns_fs(struct ksu_ns_fs_saved *ns_fs_saved)
-{
-        current->nsproxy = ns_fs_saved->ns;
-        current->fs = ns_fs_saved->fs;
-}
-
-static bool android_context_saved_checked = false;
-static bool android_context_saved_enabled = false;
-static struct ksu_ns_fs_saved android_context_saved;
-
-void ksu_android_ns_fs_check()
-{
-        if (android_context_saved_checked)
-                return;
-        android_context_saved_checked = true;
-        task_lock(current);
-        if (current->nsproxy && current->fs &&
-            current->nsproxy->mnt_ns != init_task.nsproxy->mnt_ns) {
-                android_context_saved_enabled = true;
-                pr_info("android context saved enabled due to init mnt_ns(%p) != android mnt_ns(%p)\n",
-                        current->nsproxy->mnt_ns, init_task.nsproxy->mnt_ns);
-                ksu_save_ns_fs(&android_context_saved);
-        } else {
-                pr_info("android context saved disabled\n");
-        }
-        task_unlock(current);
-}
-
-struct file *ksu_filp_open_compat(const char *filename, int flags, umode_t mode)
-{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
-        if (init_session_keyring != NULL && !current_cred()->session_keyring &&
-            (current->flags & PF_WQ_WORKER)) {
-                pr_info("installing init session keyring for older kernel\n");
-                install_session_keyring(init_session_keyring);
-        }
-#endif
-        // switch mnt_ns even if current is not wq_worker, to ensure what we open is the correct file in android mnt_ns, rather than user created mnt_ns
-        struct ksu_ns_fs_saved saved;
-        if (android_context_saved_enabled) {
-                pr_info("start switch current nsproxy and fs to android context\n");
-                task_lock(current);
-                ksu_save_ns_fs(&saved);
-                ksu_load_ns_fs(&android_context_saved);
-                task_unlock(current);
-        }
-        struct file *fp = filp_open(filename, flags, mode);
-        if (android_context_saved_enabled) {
-                task_lock(current);
-                ksu_load_ns_fs(&saved);
-                task_unlock(current);
-                pr_info("switch current nsproxy and fs back to saved successfully\n");
-        }
-        return fp;
-}
-
-ssize_t ksu_kernel_read_compat(struct file *p, void *buf, size_t count,
-                               loff_t *pos)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
-        return kernel_read(p, buf, count, pos);
-#else
-        loff_t offset = pos ? *pos : 0;
-        ssize_t result = kernel_read(p, offset, (char *)buf, count);
-        if (pos && result > 0) {
-                *pos = offset + result;
-        }
-        return result;
-#endif
-}
-
-ssize_t ksu_kernel_write_compat(struct file *p, const void *buf, size_t count,
-                                loff_t *pos)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
-        return kernel_write(p, buf, count, pos);
-#else
-        loff_t offset = pos ? *pos : 0;
-        ssize_t result = kernel_write(p, buf, count, offset);
-        if (pos && result > 0) {
-                *pos = offset + result;
-        }
-        return result;
-#endif
-}
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
-long ksu_strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr,
-                                   long count)
-{
-        return strncpy_from_user_nofault(dst, unsafe_addr, count);
-}
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
-long ksu_strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr,
-                                   long count)
-{
-        return strncpy_from_unsafe_user(dst, unsafe_addr, count);
-}
-#else
-// Copied from: https://elixir.bootlin.com/linux/v4.9.337/source/mm/maccess.c#L201
-long ksu_strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr,
-                                   long count)
-{
-        mm_segment_t old_fs = get_fs();
-        long ret;
-
-        if (unlikely(count <= 0))
-                return 0;
-
-        set_fs(USER_DS);
-        pagefault_disable();
-        ret = strncpy_from_user(dst, unsafe_addr, count);
-        pagefault_enable();
-        set_fs(old_fs);
-
-        if (ret >= count) {
-                ret = count;
-                dst[ret - 1] = '\0';
-        } else if (ret > 0) {
-                ret++;
-        }
-
-        return ret;
-}
-#endif
-
-=== kernel_compat.h ===
-#ifndef __KSU_H_KERNEL_COMPAT
-#define __KSU_H_KERNEL_COMPAT
-
-#include "linux/fs.h"
-#include "linux/key.h"
-#include "linux/version.h"
-
-extern long ksu_strncpy_from_user_nofault(char *dst,
-                                          const void __user *unsafe_addr,
-                                          long count);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
-extern struct key *init_session_keyring;
-#endif
-
-extern void ksu_android_ns_fs_check();
-extern struct file *ksu_filp_open_compat(const char *filename, int flags,
-                                         umode_t mode);
-extern ssize_t ksu_kernel_read_compat(struct file *p, void *buf, size_t count,
-                                      loff_t *pos);
-extern ssize_t ksu_kernel_write_compat(struct file *p, const void *buf,
-                                       size_t count, loff_t *pos);
-
-#endif
-
-=== selinux/selinux.c ===
-#include "selinux.h"
-#include "objsec.h"
-#include "linux/version.h"
-#include "../klog.h" // IWYU pragma: keep
-#ifndef KSU_COMPAT_USE_SELINUX_STATE
-#include "avc.h"
-#endif
-
-#define KERNEL_SU_DOMAIN "u:r:su:s0"
-
-static int transive_to_domain(const char *domain)
-{
-        struct cred *cred;
-        struct task_security_struct *tsec;
-        u32 sid;
-        int error;
-
-        cred = (struct cred *)__task_cred(current);
-
-        tsec = cred->security;
-        if (!tsec) {
-                pr_err("tsec == NULL!\n");
-                return -1;
-        }
-
-        error = security_secctx_to_secid(domain, strlen(domain), &sid);
-        if (error) {
-                pr_info("security_secctx_to_secid %s -> sid: %d, error: %d\n",
-                        domain, sid, error);
-        }
-        if (!error) {
-                tsec->sid = sid;
-                tsec->create_sid = 0;
-                tsec->keycreate_sid = 0;
-                tsec->sockcreate_sid = 0;
-        }
-        return error;
-}
-
-void setup_selinux(const char *domain)
-{
-        if (transive_to_domain(domain)) {
-                pr_err("transive domain failed.\n");
-                return;
-        }
-
-        /* we didn't need this now, we have change selinux rules when boot!
-if (!is_domain_permissive) {
-  if (set_domain_permissive() == 0) {
-      is_domain_permissive = true;
-  }
-}*/
-}
-
-void setenforce(bool enforce)
-{
-#ifdef CONFIG_SECURITY_SELINUX_DEVELOP
-#ifdef KSU_COMPAT_USE_SELINUX_STATE
-        selinux_state.enforcing = enforce;
-#else
-        selinux_enforcing = enforce;
-#endif
-#endif
-}
-
-bool getenforce()
-{
-#ifdef CONFIG_SECURITY_SELINUX_DISABLE
-#ifdef KSU_COMPAT_USE_SELINUX_STATE
-        if (selinux_state.disabled) {
-#else
-        if (selinux_disabled) {
-#endif
-                return false;
-        }
-#endif
-
-#ifdef CONFIG_SECURITY_SELINUX_DEVELOP
-#ifdef KSU_COMPAT_USE_SELINUX_STATE
-        return selinux_state.enforcing;
-#else
-        return selinux_enforcing;
-#endif
-#else
-        return true;
-#endif
-}
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)) &&                         \
-        !defined(KSU_COMPAT_HAS_CURRENT_SID)
-/*
- * get the subjective security ID of the current task
- */
-static inline u32 current_sid(void)
-{
-        const struct task_security_struct *tsec = current_security();
-
-        return tsec->sid;
-}
-#endif
-
-bool is_ksu_domain()
-{
-        char *domain;
-        u32 seclen;
-        bool result;
-        int err = security_secid_to_secctx(current_sid(), &domain, &seclen);
-        if (err) {
-                return false;
-        }
-        result = strncmp(KERNEL_SU_DOMAIN, domain, seclen) == 0;
-        security_release_secctx(domain, seclen);
-        return result;
-}
-
-bool is_zygote(void *sec)
-{
-        struct task_security_struct *tsec = (struct task_security_struct *)sec;
-        if (!tsec) {
-                return false;
-        }
-        char *domain;
-        u32 seclen;
-        bool result;
-        int err = security_secid_to_secctx(tsec->sid, &domain, &seclen);
-        if (err) {
-                return false;
-        }
-        result = strncmp("u:r:zygote:s0", domain, seclen) == 0;
-        security_release_secctx(domain, seclen);
-        return result;
-}
-=== selinux/sepolicy.c: beginning ===
-#include "sepolicy.h"
-#include "linux/gfp.h"
-#include "linux/printk.h"
-#include "linux/slab.h"
-#include "linux/version.h"
-
-#include "../klog.h" // IWYU pragma: keep
-#include "ss/symtab.h"
-
-#define KSU_SUPPORT_ADD_TYPE
-
-/*
- * Adapt to Huawei HISI kernel without affecting other kernels ,
- * Huawei Hisi Kernel EBITMAP Enable or Disable Flag ,
- * From ss/ebitmap.h
- */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) &&                           \
-                LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0) ||               \
-        LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) &&                      \
-                LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
-#ifdef HISI_SELINUX_EBITMAP_RO
-#define CONFIG_IS_HW_HISI
-#endif
-#endif
-
-//////////////////////////////////////////////////////
-// Declaration
-//////////////////////////////////////////////////////
-
-static struct avtab_node *get_avtab_node(struct policydb *db,
-                                         struct avtab_key *key,
-                                         struct avtab_extended_perms *xperms);
-
-static bool add_rule(struct policydb *db, const char *s, const char *t,
-                     const char *c, const char *p, int effect, bool invert);
-
-static void add_rule_raw(struct policydb *db, struct type_datum *src,
-                         struct type_datum *tgt, struct class_datum *cls,
-                         struct perm_datum *perm, int effect, bool invert);
-
-static void add_xperm_rule_raw(struct policydb *db, struct type_datum *src,
-                               struct type_datum *tgt, struct class_datum *cls,
-                               uint16_t low, uint16_t high, int effect,
-                               bool invert);
-static bool add_xperm_rule(struct policydb *db, const char *s, const char *t,
-                           const char *c, const char *range, int effect,
-                           bool invert);
-
-static bool add_type_rule(struct policydb *db, const char *s, const char *t,
-                          const char *c, const char *d, int effect);
-
-static bool add_filename_trans(struct policydb *db, const char *s,
-                               const char *t, const char *c, const char *d,
-                               const char *o);
-
-static bool add_genfscon(struct policydb *db, const char *fs_name,
-                         const char *path, const char *context);
-
-static bool add_type(struct policydb *db, const char *type_name, bool attr);
-
-static bool set_type_state(struct policydb *db, const char *type_name,
-                           bool permissive);
-
-static void add_typeattribute_raw(struct policydb *db, struct type_datum *type,
-                                  struct type_datum *attr);
-
-static bool add_typeattribute(struct policydb *db, const char *type,
-                              const char *attr);
-
-//////////////////////////////////////////////////////
-// Implementation
-//////////////////////////////////////////////////////
-
-// Invert is adding rules for auditdeny; in other cases, invert is removing
-// rules
-#define strip_av(effect, invert) ((effect == AVTAB_AUDITDENY) == !invert)
-
-#define ksu_hash_for_each(node_ptr, n_slot, cur)                               \
-        int i;                                                                 \
-        for (i = 0; i < n_slot; ++i)                                           \
-                for (cur = node_ptr[i]; cur; cur = cur->next)
-
-// htable is a struct instead of pointer above 5.8.0:
-// https://elixir.bootlin.com/linux/v5.8-rc1/source/security/selinux/ss/symtab.h
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
-#define ksu_hashtab_for_each(htab, cur)                                        \
-        ksu_hash_for_each(htab.htable, htab.size, cur)
-#else
-#define ksu_hashtab_for_each(htab, cur)                                        \
-        ksu_hash_for_each(htab->htable, htab->size, cur)
-#endif
-
-// symtab_search is introduced on 5.9.0:
-// https://elixir.bootlin.com/linux/v5.9-rc1/source/security/selinux/ss/symtab.h
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
-#define symtab_search(s, name) hashtab_search((s)->table, name)
-#define symtab_insert(s, name, datum) hashtab_insert((s)->table, name, datum)
-#endif
-
-#define avtab_for_each(avtab, cur)                                             \
-        ksu_hash_for_each(avtab.htable, avtab.nslot, cur);
-
-static struct avtab_node *get_avtab_node(struct policydb *db,
-                                         struct avtab_key *key,
-                                         struct avtab_extended_perms *xperms)
-{
-        struct avtab_node *node;
-
-        /* AVTAB_XPERMS entries are not necessarily unique */
-        if (key->specified & AVTAB_XPERMS) {
-                bool match = false;
-                node = avtab_search_node(&db->te_avtab, key);
-                while (node) {
-                        if ((node->datum.u.xperms->specified ==
-                             xperms->specified) &&
-                            (node->datum.u.xperms->driver == xperms->driver)) {
-                                match = true;
-                                break;
-                        }
-                        node = avtab_search_node_next(node, key->specified);
-                }
-                if (!match)
-                        node = NULL;
-        } else {
-                node = avtab_search_node(&db->te_avtab, key);
-        }
-
-        if (!node) {
-                struct avtab_datum avdatum = {};
-                /*
-     * AUDITDENY, aka DONTAUDIT, are &= assigned, versus |= for
-     * others. Initialize the data accordingly.
-     */
-                if (key->specified & AVTAB_XPERMS) {
-                        avdatum.u.xperms = xperms;
-                } else {
-                        avdatum.u.data =
-                                key->specified == AVTAB_AUDITDENY ? ~0U : 0U;
-                }
-                /* this is used to get the node - insertion is actually unique */
-                node = avtab_insert_nonunique(&db->te_avtab, key, &avdatum);
-
-                int grow_size = sizeof(struct avtab_key);
-                grow_size += sizeof(struct avtab_datum);
-                if (key->specified & AVTAB_XPERMS) {
-                        grow_size += sizeof(u8);
-                        grow_size += sizeof(u8);
-                        grow_size += sizeof(u32) *
-                                     ARRAY_SIZE(avdatum.u.xperms->perms.p);
-                }
-                db->len += grow_size;
-        }
-
-        return node;
-}
-
-static bool add_rule(struct policydb *db, const char *s, const char *t,
-                     const char *c, const char *p, int effect, bool invert)
-{
-        struct type_datum *src = NULL, *tgt = NULL;
-        struct class_datum *cls = NULL;
-        struct perm_datum *perm = NULL;
-
-        if (s) {
-                src = symtab_search(&db->p_types, s);
-                if (src == NULL) {
-                        pr_info("source type %s does not exist\n", s);
-                        return false;
-                }
-        }
-
-        if (t) {
-                tgt = symtab_search(&db->p_types, t);
-                if (tgt == NULL) {
-                        pr_info("target type %s does not exist\n", t);
-                        return false;
-                }
-        }
-
-        if (c) {
+==============================================================================
+FAA KBUILD COMPILER SELECTION FORENSIC V2
+==============================================================================
+
+==============================================================================
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/Makefile
+==============================================================================
+
+--- lines 49-53 ---
+   49: #
+   50: #         quiet_cmd_cc_o_c = Compiling $(RELDIR)/$@
+   51: #         cmd_cc_o_c       = $(CC) $(c_flags) -c -o $@ $<
+   52: #
+   53: # If $(quiet) is empty, the whole command will be printed.
+
+--- lines 245-249 ---
+  245: # The default ARCH is the host where make is executed.
+  246:
+  247: # CROSS_COMPILE specify the prefix used for all executables used
+  248: # during compilation. Only gcc and related bin-utils executables
+  249: # are prefixed with $(CROSS_COMPILE).
+
+--- lines 247-251 ---
+  247: # CROSS_COMPILE specify the prefix used for all executables used
+  248: # during compilation. Only gcc and related bin-utils executables
+  249: # are prefixed with $(CROSS_COMPILE).
+  250: # CROSS_COMPILE can be set on the command line
+  251: # make CROSS_COMPILE=ia64-linux-
+
+--- lines 248-252 ---
+  248: # during compilation. Only gcc and related bin-utils executables
+  249: # are prefixed with $(CROSS_COMPILE).
+  250: # CROSS_COMPILE can be set on the command line
+  251: # make CROSS_COMPILE=ia64-linux-
+  252: # Alternatively CROSS_COMPILE can be set in the environment.
+
+--- lines 249-253 ---
+  249: # are prefixed with $(CROSS_COMPILE).
+  250: # CROSS_COMPILE can be set on the command line
+  251: # make CROSS_COMPILE=ia64-linux-
+  252: # Alternatively CROSS_COMPILE can be set in the environment.
+  253: # A third alternative is to store a setting in .config so that plain
+
+--- lines 250-254 ---
+  250: # CROSS_COMPILE can be set on the command line
+  251: # make CROSS_COMPILE=ia64-linux-
+  252: # Alternatively CROSS_COMPILE can be set in the environment.
+  253: # A third alternative is to store a setting in .config so that plain
+  254: # "make" in the configured kernel build directory always uses that.
+
+--- lines 253-257 ---
+  253: # A third alternative is to store a setting in .config so that plain
+  254: # "make" in the configured kernel build directory always uses that.
+  255: # Default value for CROSS_COMPILE is not to prefix executables
+  256: # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+  257: ARCH             ?= $(SUBARCH)
+
+--- lines 254-258 ---
+  254: # "make" in the configured kernel build directory always uses that.
+  255: # Default value for CROSS_COMPILE is not to prefix executables
+  256: # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+  257: ARCH             ?= $(SUBARCH)
+  258: CROSS_COMPILE    ?= $(CONFIG_CROSS_COMPILE:"%"=%)
+
+--- lines 256-260 ---
+  256: # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+  257: ARCH             ?= $(SUBARCH)
+  258: CROSS_COMPILE    ?= $(CONFIG_CROSS_COMPILE:"%"=%)
+  259:
+  260: # Architecture as present in compile.h
+
+--- lines 302-306 ---
+  302:    else echo sh; fi ; fi)
+  303:
+  304: HOSTCC       = gcc
+  305: HOSTCXX      = g++
+  306: HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
+
+--- lines 342-346 ---
+  342:
+  343: # Make variables (CC, etc...)
+  344: AS               = $(CROSS_COMPILE)as
+  345: LD               = $(CROSS_COMPILE)ld
+  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
+
+--- lines 343-347 ---
+  343: # Make variables (CC, etc...)
+  344: AS               = $(CROSS_COMPILE)as
+  345: LD               = $(CROSS_COMPILE)ld
+  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
+  347: CC               = $(CROSS_COMPILE)gcc
+
+--- lines 344-348 ---
+  344: AS               = $(CROSS_COMPILE)as
+  345: LD               = $(CROSS_COMPILE)ld
+  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
+  347: CC               = $(CROSS_COMPILE)gcc
+  348: CPP              = $(CC) -E
+
+--- lines 345-349 ---
+  345: LD               = $(CROSS_COMPILE)ld
+  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
+  347: CC               = $(CROSS_COMPILE)gcc
+  348: CPP              = $(CC) -E
+  349: AR               = $(CROSS_COMPILE)ar
+
+--- lines 346-350 ---
+  346: LDGOLD           = $(CROSS_COMPILE)ld.gold
+  347: CC               = $(CROSS_COMPILE)gcc
+  348: CPP              = $(CC) -E
+  349: AR               = $(CROSS_COMPILE)ar
+  350: NM               = $(CROSS_COMPILE)nm
+
+--- lines 347-351 ---
+  347: CC               = $(CROSS_COMPILE)gcc
+  348: CPP              = $(CC) -E
+  349: AR               = $(CROSS_COMPILE)ar
+  350: NM               = $(CROSS_COMPILE)nm
+  351: STRIP            = $(CROSS_COMPILE)strip
+
+--- lines 348-352 ---
+  348: CPP              = $(CC) -E
+  349: AR               = $(CROSS_COMPILE)ar
+  350: NM               = $(CROSS_COMPILE)nm
+  351: STRIP            = $(CROSS_COMPILE)strip
+  352: OBJCOPY          = $(CROSS_COMPILE)objcopy
+
+--- lines 349-353 ---
+  349: AR               = $(CROSS_COMPILE)ar
+  350: NM               = $(CROSS_COMPILE)nm
+  351: STRIP            = $(CROSS_COMPILE)strip
+  352: OBJCOPY          = $(CROSS_COMPILE)objcopy
+  353: OBJDUMP          = $(CROSS_COMPILE)objdump
+
+--- lines 350-354 ---
+  350: NM               = $(CROSS_COMPILE)nm
+  351: STRIP            = $(CROSS_COMPILE)strip
+  352: OBJCOPY          = $(CROSS_COMPILE)objcopy
+  353: OBJDUMP          = $(CROSS_COMPILE)objdump
+  354: AWK              = awk
+
+--- lines 351-355 ---
+  351: STRIP            = $(CROSS_COMPILE)strip
+  352: OBJCOPY          = $(CROSS_COMPILE)objcopy
+  353: OBJDUMP          = $(CROSS_COMPILE)objdump
+  354: AWK              = awk
+  355: GENKSYMS = scripts/genksyms/genksyms
+
+--- lines 403-407 ---
+  403: LDFLAGS :=
+  404: GCC_PLUGINS_CFLAGS :=
+  405: CLANG_FLAGS :=
+  406:
+  407: # Read KERNELRELEASE from include/config/kernel.release (if it exists)
+
+--- lines 410-414 ---
+  410:
+  411: export VERSION PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
+  412: export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
+  413: export CPP AR NM STRIP OBJCOPY OBJDUMP
+  414: export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE
+
+--- lines 508-512 ---
+  508: endif
+  509:
+  510: ifeq ($(cc-name),clang)
+  511: ifneq ($(CROSS_COMPILE),)
+  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
+
+--- lines 509-513 ---
+  509:
+  510: ifeq ($(cc-name),clang)
+  511: ifneq ($(CROSS_COMPILE),)
+  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
+  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
+
+--- lines 510-514 ---
+  510: ifeq ($(cc-name),clang)
+  511: ifneq ($(CROSS_COMPILE),)
+  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
+  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
+  514: ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
+
+--- lines 511-515 ---
+  511: ifneq ($(CROSS_COMPILE),)
+  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
+  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
+  514: ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
+  515: $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
+
+--- lines 512-516 ---
+  512: CLANG_TRIPLE     ?= $(CROSS_COMPILE)
+  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
+  514: ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
+  515: $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
+  516: endif
+
+--- lines 513-517 ---
+  513: CLANG_FLAGS      += --target=$(notdir $(CLANG_TRIPLE:%-=%))
+  514: ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
+  515: $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
+  516: endif
+  517: GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
+
+--- lines 515-519 ---
+  515: $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
+  516: endif
+  517: GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
+  518: CLANG_FLAGS      += --prefix=$(GCC_TOOLCHAIN_DIR)
+  519: GCC_TOOLCHAIN    := $(realpath $(GCC_TOOLCHAIN_DIR)/..)
+
+--- lines 516-520 ---
+  516: endif
+  517: GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
+  518: CLANG_FLAGS      += --prefix=$(GCC_TOOLCHAIN_DIR)
+  519: GCC_TOOLCHAIN    := $(realpath $(GCC_TOOLCHAIN_DIR)/..)
+  520: endif
+
+--- lines 520-524 ---
+  520: endif
+  521: ifneq ($(GCC_TOOLCHAIN),)
+  522: CLANG_FLAGS      += --gcc-toolchain=$(GCC_TOOLCHAIN)
+  523: endif
+  524: CLANG_FLAGS      += -no-integrated-as
+
+--- lines 522-526 ---
+  522: CLANG_FLAGS      += --gcc-toolchain=$(GCC_TOOLCHAIN)
+  523: endif
+  524: CLANG_FLAGS      += -no-integrated-as
+  525: CLANG_FLAGS      += -Werror=unknown-warning-option
+  526: KBUILD_CFLAGS    += $(CLANG_FLAGS)
+
+--- lines 523-527 ---
+  523: endif
+  524: CLANG_FLAGS      += -no-integrated-as
+  525: CLANG_FLAGS      += -Werror=unknown-warning-option
+  526: KBUILD_CFLAGS    += $(CLANG_FLAGS)
+  527: KBUILD_AFLAGS    += $(CLANG_FLAGS)
+
+--- lines 524-528 ---
+  524: CLANG_FLAGS      += -no-integrated-as
+  525: CLANG_FLAGS      += -Werror=unknown-warning-option
+  526: KBUILD_CFLAGS    += $(CLANG_FLAGS)
+  527: KBUILD_AFLAGS    += $(CLANG_FLAGS)
+  528: endif
+
+--- lines 525-529 ---
+  525: CLANG_FLAGS      += -Werror=unknown-warning-option
+  526: KBUILD_CFLAGS    += $(CLANG_FLAGS)
+  527: KBUILD_AFLAGS    += $(CLANG_FLAGS)
+  528: endif
+  529:
+
+--- lines 646-650 ---
+  646: # Make toolchain changes before including arch/$(SRCARCH)/Makefile to ensure
+  647: # ar/cc/ld-* macros return correct values.
+  648: ifdef CONFIG_LTO_CLANG
+  649: # use GNU gold with LLVMgold for LTO linking, and LD for vmlinux_link
+  650: LDFINAL_vmlinux := $(LD)
+
+--- lines 647-651 ---
+  647: # ar/cc/ld-* macros return correct values.
+  648: ifdef CONFIG_LTO_CLANG
+  649: # use GNU gold with LLVMgold for LTO linking, and LD for vmlinux_link
+  650: LDFINAL_vmlinux := $(LD)
+  651: LD               := $(LDGOLD)
+
+--- lines 650-654 ---
+  650: LDFINAL_vmlinux := $(LD)
+  651: LD               := $(LDGOLD)
+  652: LDFLAGS          += -plugin LLVMgold.so
+  653: # use llvm-ar for building symbol tables from IR files, and llvm-dis instead
+  654: # of objdump for processing symbol versions and exports
+
+--- lines 651-655 ---
+  651: LD               := $(LDGOLD)
+  652: LDFLAGS          += -plugin LLVMgold.so
+  653: # use llvm-ar for building symbol tables from IR files, and llvm-dis instead
+  654: # of objdump for processing symbol versions and exports
+  655: LLVM_AR          := llvm-ar
+
+--- lines 653-657 ---
+  653: # use llvm-ar for building symbol tables from IR files, and llvm-dis instead
+  654: # of objdump for processing symbol versions and exports
+  655: LLVM_AR          := llvm-ar
+  656: LLVM_DIS := llvm-dis
+  657: export LLVM_AR LLVM_DIS
+
+--- lines 654-658 ---
+  654: # of objdump for processing symbol versions and exports
+  655: LLVM_AR          := llvm-ar
+  656: LLVM_DIS := llvm-dis
+  657: export LLVM_AR LLVM_DIS
+  658: endif
+
+--- lines 655-659 ---
+  655: LLVM_AR          := llvm-ar
+  656: LLVM_DIS := llvm-dis
+  657: export LLVM_AR LLVM_DIS
+  658: endif
+  659:
+
+--- lines 681-685 ---
+  681: endif
+  682:
+  683: ifdef CONFIG_LTO_CLANG
+  684: lto-clang-flags  := -flto -fvisibility=hidden
+  685:
+
+--- lines 682-686 ---
+  682:
+  683: ifdef CONFIG_LTO_CLANG
+  684: lto-clang-flags  := -flto -fvisibility=hidden
+  685:
+  686: # allow disabling only clang LTO where needed
+
+--- lines 684-688 ---
+  684: lto-clang-flags  := -flto -fvisibility=hidden
+  685:
+  686: # allow disabling only clang LTO where needed
+  687: DISABLE_LTO_CLANG := -fno-lto -fvisibility=default
+  688: export DISABLE_LTO_CLANG
+
+--- lines 685-689 ---
+  685:
+  686: # allow disabling only clang LTO where needed
+  687: DISABLE_LTO_CLANG := -fno-lto -fvisibility=default
+  688: export DISABLE_LTO_CLANG
+  689: endif
+
+--- lines 686-690 ---
+  686: # allow disabling only clang LTO where needed
+  687: DISABLE_LTO_CLANG := -fno-lto -fvisibility=default
+  688: export DISABLE_LTO_CLANG
+  689: endif
+  690:
+
+--- lines 690-694 ---
+  690:
+  691: ifdef CONFIG_LTO
+  692: lto-flags        := $(lto-clang-flags)
+  693: KBUILD_CFLAGS    += $(lto-flags)
+  694:
+
+--- lines 693-697 ---
+  693: KBUILD_CFLAGS    += $(lto-flags)
+  694:
+  695: DISABLE_LTO      := $(DISABLE_LTO_CLANG)
+  696: export DISABLE_LTO
+  697:
+
+--- lines 701-705 ---
+  701: endif
+  702:
+  703: ifdef CONFIG_CFI_CLANG
+  704: cfi-clang-flags  += -fsanitize=cfi
+  705: DISABLE_CFI_CLANG := -fno-sanitize=cfi
+
+--- lines 702-706 ---
+  702:
+  703: ifdef CONFIG_CFI_CLANG
+  704: cfi-clang-flags  += -fsanitize=cfi
+  705: DISABLE_CFI_CLANG := -fno-sanitize=cfi
+  706: ifdef CONFIG_MODULES
+
+--- lines 703-707 ---
+  703: ifdef CONFIG_CFI_CLANG
+  704: cfi-clang-flags  += -fsanitize=cfi
+  705: DISABLE_CFI_CLANG := -fno-sanitize=cfi
+  706: ifdef CONFIG_MODULES
+  707: cfi-clang-flags  += -fsanitize-cfi-cross-dso
+
+--- lines 705-709 ---
+  705: DISABLE_CFI_CLANG := -fno-sanitize=cfi
+  706: ifdef CONFIG_MODULES
+  707: cfi-clang-flags  += -fsanitize-cfi-cross-dso
+  708: DISABLE_CFI_CLANG += -fno-sanitize-cfi-cross-dso
+  709: endif
+
+--- lines 706-710 ---
+  706: ifdef CONFIG_MODULES
+  707: cfi-clang-flags  += -fsanitize-cfi-cross-dso
+  708: DISABLE_CFI_CLANG += -fno-sanitize-cfi-cross-dso
+  709: endif
+  710: ifdef CONFIG_CFI_PERMISSIVE
+
+--- lines 709-713 ---
+  709: endif
+  710: ifdef CONFIG_CFI_PERMISSIVE
+  711: cfi-clang-flags  += -fsanitize-recover=cfi -fno-sanitize-trap=cfi
+  712: endif
+  713:
+
+--- lines 713-717 ---
+  713:
+  714: # also disable CFI when LTO is disabled
+  715: DISABLE_LTO_CLANG += $(DISABLE_CFI_CLANG)
+  716: # allow disabling only clang CFI where needed
+  717: export DISABLE_CFI_CLANG
+
+--- lines 714-718 ---
+  714: # also disable CFI when LTO is disabled
+  715: DISABLE_LTO_CLANG += $(DISABLE_CFI_CLANG)
+  716: # allow disabling only clang CFI where needed
+  717: export DISABLE_CFI_CLANG
+  718: endif
+
+--- lines 715-719 ---
+  715: DISABLE_LTO_CLANG += $(DISABLE_CFI_CLANG)
+  716: # allow disabling only clang CFI where needed
+  717: export DISABLE_CFI_CLANG
+  718: endif
+  719:
+
+--- lines 720-724 ---
+  720: ifdef CONFIG_CFI
+  721: # cfi-flags are re-tested in prepare-compiler-check
+  722: cfi-flags        := $(cfi-clang-flags)
+  723: KBUILD_CFLAGS    += $(cfi-flags)
+  724:
+
+--- lines 723-727 ---
+  723: KBUILD_CFLAGS    += $(cfi-flags)
+  724:
+  725: DISABLE_CFI      := $(DISABLE_CFI_CLANG)
+  726: DISABLE_LTO      += $(DISABLE_CFI)
+  727: export DISABLE_CFI
+
+--- lines 746-750 ---
+  746:
+  747: # check for 'asm goto'
+  748: ifeq ($(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-goto.sh $(CC) $(KBUILD_CFLAGS)), y)
+  749:  KBUILD_CFLAGS += -DCC_HAVE_ASM_GOTO
+  750:  KBUILD_AFLAGS += -DCC_HAVE_ASM_GOTO
+
+--- lines 789-793 ---
+  789: KBUILD_CFLAGS += $(stackp-flag)
+  790:
+  791: ifeq ($(cc-name),clang)
+  792: ifneq ($(CROSS_COMPILE),)
+  793: CLANG_TRIPLE    ?= $(CROSS_COMPILE)
+
+--- lines 790-794 ---
+  790:
+  791: ifeq ($(cc-name),clang)
+  792: ifneq ($(CROSS_COMPILE),)
+  793: CLANG_TRIPLE    ?= $(CROSS_COMPILE)
+  794: CLANG_TARGET     := -target $(notdir $(CLANG_TRIPLE:%-=%))
+
+--- lines 791-795 ---
+  791: ifeq ($(cc-name),clang)
+  792: ifneq ($(CROSS_COMPILE),)
+  793: CLANG_TRIPLE    ?= $(CROSS_COMPILE)
+  794: CLANG_TARGET     := -target $(notdir $(CLANG_TRIPLE:%-=%))
+  795: GCC_TOOLCHAIN    := $(realpath $(dir $(shell which $(LD)))/..)
+
+--- lines 792-796 ---
+  792: ifneq ($(CROSS_COMPILE),)
+  793: CLANG_TRIPLE    ?= $(CROSS_COMPILE)
+  794: CLANG_TARGET     := -target $(notdir $(CLANG_TRIPLE:%-=%))
+  795: GCC_TOOLCHAIN    := $(realpath $(dir $(shell which $(LD)))/..)
+  796: endif
+
+--- lines 796-800 ---
+  796: endif
+  797: ifneq ($(GCC_TOOLCHAIN),)
+  798: CLANG_GCC_TC     := -gcc-toolchain $(GCC_TOOLCHAIN)
+  799: endif
+  800: KBUILD_CFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
+
+--- lines 798-802 ---
+  798: CLANG_GCC_TC     := -gcc-toolchain $(GCC_TOOLCHAIN)
+  799: endif
+  800: KBUILD_CFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
+  801: KBUILD_AFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
+  802: KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
+
+--- lines 799-803 ---
+  799: endif
+  800: KBUILD_CFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
+  801: KBUILD_AFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
+  802: KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
+  803: KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)
+
+--- lines 804-808 ---
+  804: KBUILD_CFLAGS += $(call cc-disable-warning, gnu)
+  805: KBUILD_CFLAGS += $(call cc-disable-warning, duplicate-decl-specifier)
+  806: # Quiet clang warning: comparison of unsigned expression < 0 is always false
+  807: KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
+  808:
+
+--- lines 810-814 ---
+  810: KBUILD_CFLAGS += $(call cc-disable-warning, void-pointer-to-enum-cast)
+  811:
+  812: # CLANG uses a _MergedGlobals as optimization, but this breaks modpost, as the
+  813: # source of a reference will be _MergedGlobals and not on of the whitelisted names.
+  814: # See modpost pattern 2
+
+--- lines 881-885 ---
+  881:
+  882: # arch Makefile may override CC so keep this after arch Makefile is included
+  883: NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+  884: CHECKFLAGS     += $(NOSTDINC_FLAGS)
+  885:
+
+--- lines 896-900 ---
+  896: KBUILD_CFLAGS    += $(call cc-option,-fno-strict-overflow)
+  897:
+  898: # clang sets -fmerge-all-constants by default as optimization, but this
+  899: # is non-conforming behavior for C and in fact breaks the kernel, so we
+  900: # need to disable it here generally.
+
+--- lines 1193-1197 ---
+ 1193: PHONY += prepare-compiler-check
+ 1194: prepare-compiler-check: FORCE
+ 1195: # Make sure we're using a supported toolchain with LTO_CLANG
+ 1196: ifdef CONFIG_LTO_CLANG
+ 1197:   ifneq ($(call clang-ifversion, -ge, 0500, y), y)
+
+--- lines 1194-1198 ---
+ 1194: prepare-compiler-check: FORCE
+ 1195: # Make sure we're using a supported toolchain with LTO_CLANG
+ 1196: ifdef CONFIG_LTO_CLANG
+ 1197:   ifneq ($(call clang-ifversion, -ge, 0500, y), y)
+ 1198:  @echo Cannot use CONFIG_LTO_CLANG: requires clang 5.0 or later >&2 && exit 1
+
+--- lines 1195-1199 ---
+ 1195: # Make sure we're using a supported toolchain with LTO_CLANG
+ 1196: ifdef CONFIG_LTO_CLANG
+ 1197:   ifneq ($(call clang-ifversion, -ge, 0500, y), y)
+ 1198:  @echo Cannot use CONFIG_LTO_CLANG: requires clang 5.0 or later >&2 && exit 1
+ 1199:   endif
+
+--- lines 1196-1200 ---
+ 1196: ifdef CONFIG_LTO_CLANG
+ 1197:   ifneq ($(call clang-ifversion, -ge, 0500, y), y)
+ 1198:  @echo Cannot use CONFIG_LTO_CLANG: requires clang 5.0 or later >&2 && exit 1
+ 1199:   endif
+ 1200:   ifneq ($(call gold-ifversion, -ge, 112000000, y), y)
+
+--- lines 1199-1203 ---
+ 1199:   endif
+ 1200:   ifneq ($(call gold-ifversion, -ge, 112000000, y), y)
+ 1201:  @echo Cannot use CONFIG_LTO_CLANG: requires GNU gold 1.12 or later >&2 && exit 1
+ 1202:   endif
+ 1203: endif
+
+--- lines 1218-1222 ---
+ 1218: # Make sure compiler does not have buggy stack-protector support.
+ 1219: ifdef stackp-check
+ 1220:   ifneq ($(shell $(CONFIG_SHELL) $(stackp-check) $(CC) $(KBUILD_CPPFLAGS) $(biarch)),y)
+ 1221:  @echo Cannot use CONFIG_CC_STACKPROTECTOR_$(stackp-name): \
+ 1222:                   $(stackp-flag) available but compiler is broken >&2 && exit 1
+
+--- lines 1513-1517 ---
+ 1513:  @echo  '  dir/            - Build all files in dir and below'
+ 1514:  @echo  '  dir/file.[ois]  - Build specified target only'
+ 1515:  @echo  '  dir/file.ll     - Build the LLVM assembly file'
+ 1516:  @echo  '                    (requires compiler support for LLVM assembly generation)'
+ 1517:  @echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
+
+--- lines 1514-1518 ---
+ 1514:  @echo  '  dir/file.[ois]  - Build specified target only'
+ 1515:  @echo  '  dir/file.ll     - Build the LLVM assembly file'
+ 1516:  @echo  '                    (requires compiler support for LLVM assembly generation)'
+ 1517:  @echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
+ 1518:  @echo  '                    (requires a recent binutils and recent build (System.map))'
+
+==============================================================================
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.compiler
+==============================================================================
+MISSING
+
+==============================================================================
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build
+==============================================================================
+
+--- lines 149-153 ---
+  149:
+  150: quiet_cmd_cc_s_c = CC $(quiet_modtag)  $@
+  151: cmd_cc_s_c       = $(CC) $(c_flags) $(DISABLE_LTO) -fverbose-asm -S -o $@ $<
+  152:
+  153: $(obj)/%.s: $(src)/%.c FORCE
+
+--- lines 177-181 ---
+  177:  $(call cmd,cc_symtypes_c)
+  178:
+  179: # LLVM assembly
+  180: # Generate .ll files from .c
+  181: quiet_cmd_cc_ll_c = CC $(quiet_modtag)  $@
+
+--- lines 180-184 ---
+  180: # Generate .ll files from .c
+  181: quiet_cmd_cc_ll_c = CC $(quiet_modtag)  $@
+  182:       cmd_cc_ll_c = $(CC) $(c_flags) -emit-llvm -S -o $@ $<
+  183:
+  184: $(obj)/%.ll: $(src)/%.c FORCE
+
+--- lines 192-196 ---
+  192:
+  193: ifndef CONFIG_MODVERSIONS
+  194: cmd_cc_o_c = $(CC) $(c_flags) -c -o $@ $<
+  195:
+  196: else
+
+--- lines 207-211 ---
+  207: #   the actual value of the checksum generated by genksyms
+  208:
+  209: cmd_cc_o_c = $(CC) $(c_flags) -c -o $(@D)/.tmp_$(@F) $<
+  210:
+  211: ifdef CONFIG_LTO_CLANG
+
+--- lines 209-213 ---
+  209: cmd_cc_o_c = $(CC) $(c_flags) -c -o $(@D)/.tmp_$(@F) $<
+  210:
+  211: ifdef CONFIG_LTO_CLANG
+  212: # Generate .o.symversions files for each .o with exported symbols, and link these
+  213: # to the kernel and/or modules at the end.
+
+--- lines 219-223 ---
+  219:          fi;                                                             \
+  220:  else                                                                    \
+  221:          if $(LLVM_DIS) -o=- $(@D)/.tmp_$(@F) | grep -q __ksymtab; then  \
+  222:                  $(call cmd_gensymtypes_c,$(KBUILD_SYMTYPES),$(@:.o=.symtypes)) \
+  223:                      > $(@D)/$(@F).symversions;                          \
+
+--- lines 246-250 ---
+  246: endif
+  247:
+  248: ifdef CONFIG_LTO_CLANG
+  249: # With LTO, we postpone running recordmcount until after the LTO link step, so
+  250: # let's export the parameters for the link script.
+
+--- lines 267-271 ---
+  267:  "$(if $(CONFIG_CPU_BIG_ENDIAN),big,little)" \
+  268:  "$(if $(CONFIG_64BIT),64,32)" \
+  269:  "$(OBJDUMP)" "$(OBJCOPY)" "$(CC) $(KBUILD_CFLAGS)" \
+  270:  "$(LD)" "$(NM)" "$(RM)" "$(MV)" \
+  271:  "$(if $(part-of-module),1,0)" "$(@)";
+
+--- lines 274-278 ---
+  274: endif # BUILD_C_RECORDMCOUNT
+  275:
+  276: ifndef CONFIG_LTO_CLANG
+  277: cmd_record_mcount =                                              \
+  278:  if [ "$(findstring $(CC_FLAGS_FTRACE),$(_c_flags))" =   \
+
+--- lines 344-348 ---
+  344:
+  345: quiet_cmd_cc_lst_c = MKLST   $@
+  346:       cmd_cc_lst_c = $(CC) $(c_flags) -g -c -o $*.o $< && \
+  347:               $(CONFIG_SHELL) $(srctree)/scripts/makelst $*.o \
+  348:                               System.map $(OBJDUMP) > $@
+
+--- lines 401-405 ---
+  401:
+  402: ifndef CONFIG_MODVERSIONS
+  403: cmd_as_o_S = $(CC) $(a_flags) -c -o $@ $<
+  404:
+  405: else
+
+--- lines 408-412 ---
+  408:
+  409: ifeq ($(ASM_PROTOTYPES),)
+  410: cmd_as_o_S = $(CC) $(a_flags) -c -o $@ $<
+  411:
+  412: else
+
+--- lines 415-419 ---
+  415: # we parse asm-prototypes.h C header to get function definitions.
+  416:
+  417: cmd_as_o_S = $(CC) $(a_flags) -c -o $(@D)/.tmp_$(@F) $<
+  418:
+  419: cmd_modversions_S =                                                              \
+
+--- lines 468-472 ---
+  468: ifdef builtin-target
+  469:
+  470: ifdef CONFIG_LTO_CLANG
+  471:   ifdef CONFIG_MODVERSIONS
+  472:     # combine symversions for later processing
+
+--- lines 480-484 ---
+  480:  done;
+  481:   endif
+  482:   # rebuild the symbol table with llvm-ar to include IR files
+  483:   update_lto_symtable = ;                                \
+  484:  mv -f $@ $@.tmp;                                \
+
+--- lines 483-487 ---
+  483:   update_lto_symtable = ;                                \
+  484:  mv -f $@ $@.tmp;                                \
+  485:  $(LLVM_AR) rcsT$(KBUILD_ARFLAGS) $@             \
+  486:          $$($(AR) t $@.tmp);                     \
+  487:  rm -f $@.tmp
+
+--- lines 555-559 ---
+  555: filter_export_list = sed -ne '/___ksymtab/s/.*+\([^ "]*\).*/$(ref_prefix)\1)/p'
+  556: link_export_list = rm -f $(dummy-object);\
+  557:  echo | $(CC) $(a_flags) -c -o $(dummy-object) -x assembler -;\
+  558:  $(LD) $(ld_flags) -r -o $@ -T $(ksyms-lds) $(dummy-object);\
+  559:  rm $(dummy-object) $(ksyms-lds)
+
+--- lines 561-565 ---
+  561: quiet_cmd_export_list = EXPORTS $@
+  562:
+  563: ifdef CONFIG_LTO_CLANG
+  564: # objdump doesn't understand IR files and llvm-dis doesn't support archives,
+  565: # so we'll walk through each file in the archive separately
+
+--- lines 562-566 ---
+  562:
+  563: ifdef CONFIG_LTO_CLANG
+  564: # objdump doesn't understand IR files and llvm-dis doesn't support archives,
+  565: # so we'll walk through each file in the archive separately
+  566: cmd_export_list =                                        \
+
+--- lines 572-576 ---
+  572:                          >>$(ksyms-lds);         \
+  573:          else                                    \
+  574:                  $(LLVM_DIS) -o=- $$o |          \
+  575:                          $(filter_export_list)   \
+  576:                          >>$(ksyms-lds);         \
+
+--- lines 620-624 ---
+  620: quiet_cmd_link_multi-m = LD [M]  $@
+  621:
+  622: ifdef CONFIG_LTO_CLANG
+  623:   # don't compile IR until needed
+  624:   cmd_link_multi-m = $(cmd_link_multi-y)
+
+==============================================================================
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/Makefile
+==============================================================================
+
+--- lines 52-56 ---
+   52:
+   53: ifeq ($(CONFIG_COMPAT_VDSO), y)
+   54:   CROSS_COMPILE_ARM32 ?= $(CONFIG_CROSS_COMPILE_ARM32:"%"=%)
+   55:
+   56:   # Check that the user has provided a valid prefix for the 32-bit toolchain.
+
+--- lines 56-60 ---
+   56:   # Check that the user has provided a valid prefix for the 32-bit toolchain.
+   57:   # To prevent selecting the system $(cc-name) by default, the prefix is not
+   58:   # allowed to be empty, unlike CROSS_COMPILE. In the unlikely event that the
+   59:   # system $(cc-name) is actually the 32-bit ARM compiler to be used, the
+   60:   # variable can be set to the dirname (e.g. CROSS_COMPILE_ARM32=/usr/bin/).
+
+--- lines 58-62 ---
+   58:   # allowed to be empty, unlike CROSS_COMPILE. In the unlikely event that the
+   59:   # system $(cc-name) is actually the 32-bit ARM compiler to be used, the
+   60:   # variable can be set to the dirname (e.g. CROSS_COMPILE_ARM32=/usr/bin/).
+   61:   # Note: this Makefile is read both before and after regenerating the config
+   62:   # (if needed). Any warning appearing before the config has been regenerated
+
+--- lines 62-66 ---
+   62:   # (if needed). Any warning appearing before the config has been regenerated
+   63:   # should be ignored. If the error is triggered and you set
+   64:   # CONFIG_CROSS_COMPILE_ARM32, set CROSS_COMPILE_ARM32 to an appropriate value
+   65:   # when invoking make and fix CONFIG_CROSS_COMPILE_ARM32.
+   66:   ifeq ($(CROSS_COMPILE_ARM32),)
+
+--- lines 63-67 ---
+   63:   # should be ignored. If the error is triggered and you set
+   64:   # CONFIG_CROSS_COMPILE_ARM32, set CROSS_COMPILE_ARM32 to an appropriate value
+   65:   # when invoking make and fix CONFIG_CROSS_COMPILE_ARM32.
+   66:   ifeq ($(CROSS_COMPILE_ARM32),)
+   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
+
+--- lines 64-68 ---
+   64:   # CONFIG_CROSS_COMPILE_ARM32, set CROSS_COMPILE_ARM32 to an appropriate value
+   65:   # when invoking make and fix CONFIG_CROSS_COMPILE_ARM32.
+   66:   ifeq ($(CROSS_COMPILE_ARM32),)
+   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
+   68:   else ifeq ($(cc-name),clang)
+
+--- lines 65-69 ---
+   65:   # when invoking make and fix CONFIG_CROSS_COMPILE_ARM32.
+   66:   ifeq ($(CROSS_COMPILE_ARM32),)
+   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
+   68:   else ifeq ($(cc-name),clang)
+   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
+
+--- lines 66-70 ---
+   66:   ifeq ($(CROSS_COMPILE_ARM32),)
+   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
+   68:   else ifeq ($(cc-name),clang)
+   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
+   70:     export CLANG_TARGET_ARM32 := --target=$(notdir $(CLANG_TRIPLE_ARM32:%-=%))
+
+--- lines 67-71 ---
+   67:     $(error CROSS_COMPILE_ARM32 not defined or empty, the compat vDSO will not be built)
+   68:   else ifeq ($(cc-name),clang)
+   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
+   70:     export CLANG_TARGET_ARM32 := --target=$(notdir $(CLANG_TRIPLE_ARM32:%-=%))
+   71:     export GCC_TOOLCHAIN32_DIR := $(dir $(shell which $(CROSS_COMPILE_ARM32)ld))
+
+--- lines 68-72 ---
+   68:   else ifeq ($(cc-name),clang)
+   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
+   70:     export CLANG_TARGET_ARM32 := --target=$(notdir $(CLANG_TRIPLE_ARM32:%-=%))
+   71:     export GCC_TOOLCHAIN32_DIR := $(dir $(shell which $(CROSS_COMPILE_ARM32)ld))
+   72:     export GCC_TOOLCHAIN32 := $(realpath $(GCC_TOOLCHAIN32_DIR)/..)
+
+--- lines 69-73 ---
+   69:     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
+   70:     export CLANG_TARGET_ARM32 := --target=$(notdir $(CLANG_TRIPLE_ARM32:%-=%))
+   71:     export GCC_TOOLCHAIN32_DIR := $(dir $(shell which $(CROSS_COMPILE_ARM32)ld))
+   72:     export GCC_TOOLCHAIN32 := $(realpath $(GCC_TOOLCHAIN32_DIR)/..)
+   73:     export CLANG_PREFIX32 := --prefix=$(GCC_TOOLCHAIN32_DIR)$(notdir $(CROSS_COMPILE_ARM32))
+
+--- lines 71-75 ---
+   71:     export GCC_TOOLCHAIN32_DIR := $(dir $(shell which $(CROSS_COMPILE_ARM32)ld))
+   72:     export GCC_TOOLCHAIN32 := $(realpath $(GCC_TOOLCHAIN32_DIR)/..)
+   73:     export CLANG_PREFIX32 := --prefix=$(GCC_TOOLCHAIN32_DIR)$(notdir $(CROSS_COMPILE_ARM32))
+   74:     export CLANG_GCC32_TC := --gcc-toolchain=$(GCC_TOOLCHAIN32)
+   75:     export CONFIG_VDSO32 := y
+
+--- lines 72-76 ---
+   72:     export GCC_TOOLCHAIN32 := $(realpath $(GCC_TOOLCHAIN32_DIR)/..)
+   73:     export CLANG_PREFIX32 := --prefix=$(GCC_TOOLCHAIN32_DIR)$(notdir $(CROSS_COMPILE_ARM32))
+   74:     export CLANG_GCC32_TC := --gcc-toolchain=$(GCC_TOOLCHAIN32)
+   75:     export CONFIG_VDSO32 := y
+   76:     vdso32 := -DCONFIG_VDSO32=1
+
+--- lines 75-79 ---
+   75:     export CONFIG_VDSO32 := y
+   76:     vdso32 := -DCONFIG_VDSO32=1
+   77:   else ifeq ($(shell which $(CROSS_COMPILE_ARM32)$(cc-name) 2> /dev/null),)
+   78:     $(error $(CROSS_COMPILE_ARM32)$(cc-name) not found, check CROSS_COMPILE_ARM32)
+   79:   else
+
+--- lines 76-80 ---
+   76:     vdso32 := -DCONFIG_VDSO32=1
+   77:   else ifeq ($(shell which $(CROSS_COMPILE_ARM32)$(cc-name) 2> /dev/null),)
+   78:     $(error $(CROSS_COMPILE_ARM32)$(cc-name) not found, check CROSS_COMPILE_ARM32)
+   79:   else
+   80:     export CROSS_COMPILE_ARM32
+
+--- lines 78-82 ---
+   78:     $(error $(CROSS_COMPILE_ARM32)$(cc-name) not found, check CROSS_COMPILE_ARM32)
+   79:   else
+   80:     export CROSS_COMPILE_ARM32
+   81:     export CONFIG_VDSO32 := y
+   82:     vdso32 := -DCONFIG_VDSO32=1
+
+--- lines 84-88 ---
+   84: endif
+   85:
+   86: ifeq ($(cc-name),clang)
+   87: # This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=30792.
+   88: # TODO: revert when this is fixed in LLVM.
+
+--- lines 85-89 ---
+   85:
+   86: ifeq ($(cc-name),clang)
+   87: # This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=30792.
+   88: # TODO: revert when this is fixed in LLVM.
+   89: KBUILD_CFLAGS    += -mno-implicit-float
+
+--- lines 86-90 ---
+   86: ifeq ($(cc-name),clang)
+   87: # This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=30792.
+   88: # TODO: revert when this is fixed in LLVM.
+   89: KBUILD_CFLAGS    += -mno-implicit-float
+   90: else
+
+--- lines 119-123 ---
+  119: ifeq ($(CONFIG_ARM64_MODULE_CMODEL_LARGE), y)
+  120: KBUILD_CFLAGS_MODULE     += -mcmodel=large
+  121: ifeq ($(CONFIG_LTO_CLANG), y)
+  122: # Code model is not stored in LLVM IR, so we need to pass it also to LLVMgold
+  123: KBUILD_LDFLAGS_MODULE    += -plugin-opt=-code-model=large
+
+--- lines 120-124 ---
+  120: KBUILD_CFLAGS_MODULE     += -mcmodel=large
+  121: ifeq ($(CONFIG_LTO_CLANG), y)
+  122: # Code model is not stored in LLVM IR, so we need to pass it also to LLVMgold
+  123: KBUILD_LDFLAGS_MODULE    += -plugin-opt=-code-model=large
+  124: endif
+
+--- lines 141-145 ---
+  141: endif
+  142:
+  143: ifeq ($(cc-name),clang)
+  144: KBUILD_CFLAGS += $(call cc-disable-warning, asm-operand-widths)
+  145: endif
+
+==============================================================================
+TOOLCHAIN
+==============================================================================
+clang-13                 : /usr/bin/clang-13
+clang                    : None
+aarch64-linux-gnu-gcc    : /usr/bin/aarch64-linux-gnu-gcc
+ld.lld-13                : /usr/bin/ld.lld-13
+llvm-ar-13               : /usr/bin/llvm-ar-13
+
+DONE
 🐧 [root@debian:~]#
