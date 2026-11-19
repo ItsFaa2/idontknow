@@ -1,2749 +1,925 @@
-🐧 [root@debian:~]# (
-> python3 - <<'PY'
-> from pathlib import Path
-> import re
->
-> ROOT = Path("/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15")
->
-> TARGETS = [
->     (
->         ROOT / "sound/soc/mediatek/codec/mt6357/mtk-auddrv-ana.c",
->         ["ret"],
->         [72, 89],
->     ),
- >     (
-   >         ROOT / "drivers/devfreq/helio-dvfsrc-ipi.c",
->         ["qos_task"],
->         [50],
->     ),
->     (
->         ROOT / "drivers/dma/8250_mtk_dma.c",
->         ["dev_width", "mtkd"],
->         [554, 600],
-  )>     ),
-> ]
->
-> print("=" * 100)
-> print("FAA CLANG UNUSED-BUT-SET EXACT FORENSIC V1")
-> print("=" * 100)
-for>
- pat> for path, variables, target_lines in TARGETS:
->     print("\n" + "=" * 100)
->     print(f"FILE: {path}")
->     print("=" * 100)
->
->     if not path.exists():
->         print("ERROR: FILE NOT FOUND")
->         continue
->
->     lines = path.read_text(errors="replace").splitlines()
->
->     for var in variables:
->         print("\n" + "-" * 80)
->         print(f"VARIABLE: {var}")
->
->         matches = []
->         for i, line in enumerate(lines, 1):
->             if re.search(rf"\b{re.escape(var)}\b", line):
->                 matches.append(i)
->
- >         print(f"ALL REFERENCES: {matches}")
->
->         for line_no in matches:
-  >             start = max(1, line_no - 8)
->             end = min(len(lines), line_no + 8)
->
->             print(f"\n--- CONTEXT {start}-{end}, TARGET {line_no} ---")
->             for n in range(start, end + 1):
->                 marker = ">>>" if n == line_no else "   "
-   >                 print(f"{marker} {n:5}: {lines[n-1]}")
- >
- pri>     print("\n" + "-" * 80)
->     print("FUNCTIONS AROUND TARGET LINES")
->
->     for target in target_lines:
->         start = max(1, target - 35)
->
->         # crude function-boundary scan backwards
->         func_start = None
->         for n in range(target - 1, max(0, target - 150), -1):
->             line = lines[n]
->             if re.search(
-   >                 r"^[A-Za-z_][A-Za-z0-9_ \t\*]*\([^;]*\)\s*(?:\n|\{)?$",
->                 line
->             ):
->                 func_start = n + 1
->                 break
->
->         if func_start is None:
- >             func_start = start
->
->         end = min(len(lines), target + 45)
->
->         print(f"\n--- TARGET LINE {target}, RANGE {func_start}-{end} ---")
->         for n in range(func_start, end + 1):
->             marker = ">>>" if n == target else "   "
->             print(f"{marker} {n:5}: {lines[n-1]}")
->
-> print("\n" + "=" * 100)
-> print("FORENSIC COMPLETE")
-r> print("=" * 100)
-Y> PY
-> )
 ====================================================================================================
-FAA CLANG UNUSED-BUT-SET EXACT FORENSIC V1
+FILE: /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_dp_mst_topology.c
 ====================================================================================================
 
+----------------------------------------------------------------------------------------------------
+TARGET LINE 322: variable 'crc4'
+----------------------------------------------------------------------------------------------------
+CONTEXT 287-366:
+  287:          idx++;
+  288:          buf[idx] = (req->u.i2c_write.write_i2c_device_id) & 0x7f;
+  289:          idx++;
+  290:          buf[idx] = (req->u.i2c_write.num_bytes);
+  291:          idx++;
+  292:          memcpy(&buf[idx], req->u.i2c_write.bytes, req->u.i2c_write.num_bytes);
+  293:          idx += req->u.i2c_write.num_bytes;
+  294:          break;
+  295:  }
+  296:  raw->cur_len = idx;
+  297: }
+  298:
+  299: static void drm_dp_crc_sideband_chunk_req(u8 *msg, u8 len)
+  300: {
+  301:  u8 crc4;
+  302:  crc4 = drm_dp_msg_data_crc4(msg, len);
+  303:  msg[len] = crc4;
+  304: }
+  305:
+  306: static void drm_dp_encode_sideband_reply(struct drm_dp_sideband_msg_reply_body *rep,
+  307:                                   struct drm_dp_sideband_msg_tx *raw)
+  308: {
+  309:  int idx = 0;
+  310:  u8 *buf = raw->msg;
+  311:
+  312:  buf[idx++] = (rep->reply_type & 0x1) << 7 | (rep->req_type & 0x7f);
+  313:
+  314:  raw->cur_len = idx;
+  315: }
+  316:
+  317: /* this adds a chunk of msg to the builder to get the final msg */
+  318: static bool drm_dp_sideband_msg_build(struct drm_dp_sideband_msg_rx *msg,
+  319:                                u8 *replybuf, u8 replybuflen, bool hdr)
+  320: {
+  321:  int ret;
+  322:  u8 crc4; <<< TARGET
+  323:
+  324:  if (hdr) {
+  325:          u8 hdrlen;
+  326:          struct drm_dp_sideband_msg_hdr recv_hdr;
+  327:          ret = drm_dp_decode_sideband_msg_hdr(&recv_hdr, replybuf, replybuflen, &hdrlen);
+  328:          if (ret == false) {
+  329:                  print_hex_dump(KERN_DEBUG, "failed hdr", DUMP_PREFIX_NONE, 16, 1, replybuf, replybuflen, false);
+  330:                  return false;
+  331:          }
+  332:
+  333:          /*
+  334:           * ignore out-of-order messages or messages that are part of a
+  335:           * failed transaction
+  336:           */
+  337:          if (!recv_hdr.somt && !msg->have_somt)
+  338:                  return false;
+  339:
+  340:          /* get length contained in this portion */
+  341:          msg->curchunk_len = recv_hdr.msg_len;
+  342:          msg->curchunk_hdrlen = hdrlen;
+  343:
+  344:          /* we have already gotten an somt - don't bother parsing */
+  345:          if (recv_hdr.somt && msg->have_somt)
+  346:                  return false;
+  347:
+  348:          if (recv_hdr.somt) {
+  349:                  memcpy(&msg->initial_hdr, &recv_hdr, sizeof(struct drm_dp_sideband_msg_hdr));
+  350:                  msg->have_somt = true;
+  351:          }
+  352:          if (recv_hdr.eomt)
+  353:                  msg->have_eomt = true;
+  354:
+  355:          /* copy the bytes for the remainder of this header chunk */
+  356:          msg->curchunk_idx = min(msg->curchunk_len, (u8)(replybuflen - hdrlen));
+  357:          memcpy(&msg->chunk[0], replybuf + hdrlen, msg->curchunk_idx);
+  358:  } else {
+  359:          memcpy(&msg->chunk[msg->curchunk_idx], replybuf, replybuflen);
+  360:          msg->curchunk_idx += replybuflen;
+  361:  }
+  362:
+  363:  if (msg->curchunk_idx >= msg->curchunk_len) {
+  364:          /* do CRC */
+  365:          crc4 = drm_dp_msg_data_crc4(msg->chunk, msg->curchunk_len - 1);
+  366:          /* copy chunk into bigger msg */
+
+'crc4' OCCURRENCES IN CONTEXT:
+  301:  u8 crc4;
+  302:  crc4 = drm_dp_msg_data_crc4(msg, len);
+  303:  msg[len] = crc4;
+  322:  u8 crc4;
+  365:          crc4 = drm_dp_msg_data_crc4(msg->chunk, msg->curchunk_len - 1);
+COUNT: 5
+
+----------------------------------------------------------------------------------------------------
+TARGET LINE 1030: variable 'ret'
+----------------------------------------------------------------------------------------------------
+CONTEXT 995-1074:
+  995:          if (port->port_num == port_num) {
+  996:                  kref_get(&port->kref);
+  997:                  return port;
+  998:          }
+  999:  }
+ 1000:
+ 1001:  return NULL;
+ 1002: }
+ 1003:
+ 1004: /*
+ 1005:  * calculate a new RAD for this MST branch device
+ 1006:  * if parent has an LCT of 2 then it has 1 nibble of RAD,
+ 1007:  * if parent has an LCT of 3 then it has 2 nibbles of RAD,
+ 1008:  */
+ 1009: static u8 drm_dp_calculate_rad(struct drm_dp_mst_port *port,
+ 1010:                           u8 *rad)
+ 1011: {
+ 1012:  int parent_lct = port->parent->lct;
+ 1013:  int shift = 4;
+ 1014:  int idx = (parent_lct - 1) / 2;
+ 1015:  if (parent_lct > 1) {
+ 1016:          memcpy(rad, port->parent->rad, idx + 1);
+ 1017:          shift = (parent_lct % 2) ? 4 : 0;
+ 1018:  } else
+ 1019:          rad[0] = 0;
+ 1020:
+ 1021:  rad[idx] |= port->port_num << shift;
+ 1022:  return parent_lct + 1;
+ 1023: }
+ 1024:
+ 1025: /*
+ 1026:  * return sends link address for new mstb
+ 1027:  */
+ 1028: static bool drm_dp_port_setup_pdt(struct drm_dp_mst_port *port)
+ 1029: {
+ 1030:  int ret; <<< TARGET
+ 1031:  u8 rad[6], lct;
+ 1032:  bool send_link = false;
+ 1033:  switch (port->pdt) {
+ 1034:  case DP_PEER_DEVICE_DP_LEGACY_CONV:
+ 1035:  case DP_PEER_DEVICE_SST_SINK:
+ 1036:          /* add i2c over sideband */
+ 1037:          ret = drm_dp_mst_register_i2c_bus(&port->aux);
+ 1038:          break;
+ 1039:  case DP_PEER_DEVICE_MST_BRANCHING:
+ 1040:          lct = drm_dp_calculate_rad(port, rad);
+ 1041:
+ 1042:          port->mstb = drm_dp_add_mst_branch_device(lct, rad);
+ 1043:          port->mstb->mgr = port->mgr;
+ 1044:          port->mstb->port_parent = port;
+ 1045:
+ 1046:          send_link = true;
+ 1047:          break;
+ 1048:  }
+ 1049:  return send_link;
+ 1050: }
+ 1051:
+ 1052: static void drm_dp_check_mstb_guid(struct drm_dp_mst_branch *mstb, u8 *guid)
+ 1053: {
+ 1054:  int ret;
+ 1055:
+ 1056:  memcpy(mstb->guid, guid, 16);
+ 1057:
+ 1058:  if (!drm_dp_validate_guid(mstb->mgr, mstb->guid)) {
+ 1059:          if (mstb->port_parent) {
+ 1060:                  ret = drm_dp_send_dpcd_write(
+ 1061:                                  mstb->mgr,
+ 1062:                                  mstb->port_parent,
+ 1063:                                  DP_GUID,
+ 1064:                                  16,
+ 1065:                                  mstb->guid);
+ 1066:          } else {
+ 1067:
+ 1068:                  ret = drm_dp_dpcd_write(
+ 1069:                                  mstb->mgr->aux,
+ 1070:                                  DP_GUID,
+ 1071:                                  mstb->guid,
+ 1072:                                  16);
+ 1073:          }
+ 1074:  }
+
+'ret' OCCURRENCES IN CONTEXT:
+ 1030:  int ret;
+ 1037:          ret = drm_dp_mst_register_i2c_bus(&port->aux);
+ 1054:  int ret;
+ 1060:                  ret = drm_dp_send_dpcd_write(
+ 1068:                  ret = drm_dp_dpcd_write(
+COUNT: 5
+
+----------------------------------------------------------------------------------------------------
+TARGET LINE 1054: variable 'ret'
+----------------------------------------------------------------------------------------------------
+CONTEXT 1019-1098:
+ 1019:          rad[0] = 0;
+ 1020:
+ 1021:  rad[idx] |= port->port_num << shift;
+ 1022:  return parent_lct + 1;
+ 1023: }
+ 1024:
+ 1025: /*
+ 1026:  * return sends link address for new mstb
+ 1027:  */
+ 1028: static bool drm_dp_port_setup_pdt(struct drm_dp_mst_port *port)
+ 1029: {
+ 1030:  int ret;
+ 1031:  u8 rad[6], lct;
+ 1032:  bool send_link = false;
+ 1033:  switch (port->pdt) {
+ 1034:  case DP_PEER_DEVICE_DP_LEGACY_CONV:
+ 1035:  case DP_PEER_DEVICE_SST_SINK:
+ 1036:          /* add i2c over sideband */
+ 1037:          ret = drm_dp_mst_register_i2c_bus(&port->aux);
+ 1038:          break;
+ 1039:  case DP_PEER_DEVICE_MST_BRANCHING:
+ 1040:          lct = drm_dp_calculate_rad(port, rad);
+ 1041:
+ 1042:          port->mstb = drm_dp_add_mst_branch_device(lct, rad);
+ 1043:          port->mstb->mgr = port->mgr;
+ 1044:          port->mstb->port_parent = port;
+ 1045:
+ 1046:          send_link = true;
+ 1047:          break;
+ 1048:  }
+ 1049:  return send_link;
+ 1050: }
+ 1051:
+ 1052: static void drm_dp_check_mstb_guid(struct drm_dp_mst_branch *mstb, u8 *guid)
+ 1053: {
+ 1054:  int ret; <<< TARGET
+ 1055:
+ 1056:  memcpy(mstb->guid, guid, 16);
+ 1057:
+ 1058:  if (!drm_dp_validate_guid(mstb->mgr, mstb->guid)) {
+ 1059:          if (mstb->port_parent) {
+ 1060:                  ret = drm_dp_send_dpcd_write(
+ 1061:                                  mstb->mgr,
+ 1062:                                  mstb->port_parent,
+ 1063:                                  DP_GUID,
+ 1064:                                  16,
+ 1065:                                  mstb->guid);
+ 1066:          } else {
+ 1067:
+ 1068:                  ret = drm_dp_dpcd_write(
+ 1069:                                  mstb->mgr->aux,
+ 1070:                                  DP_GUID,
+ 1071:                                  mstb->guid,
+ 1072:                                  16);
+ 1073:          }
+ 1074:  }
+ 1075: }
+ 1076:
+ 1077: static void build_mst_prop_path(const struct drm_dp_mst_branch *mstb,
+ 1078:                          int pnum,
+ 1079:                          char *proppath,
+ 1080:                          size_t proppath_size)
+ 1081: {
+ 1082:  int i;
+ 1083:  char temp[8];
+ 1084:  snprintf(proppath, proppath_size, "mst:%d", mstb->mgr->conn_base_id);
+ 1085:  for (i = 0; i < (mstb->lct - 1); i++) {
+ 1086:          int shift = (i % 2) ? 0 : 4;
+ 1087:          int port_num = (mstb->rad[i / 2] >> shift) & 0xf;
+ 1088:          snprintf(temp, sizeof(temp), "-%d", port_num);
+ 1089:          strlcat(proppath, temp, proppath_size);
+ 1090:  }
+ 1091:  snprintf(temp, sizeof(temp), "-%d", pnum);
+ 1092:  strlcat(proppath, temp, proppath_size);
+ 1093: }
+ 1094:
+ 1095: static void drm_dp_add_port(struct drm_dp_mst_branch *mstb,
+ 1096:                      struct device *dev,
+ 1097:                      struct drm_dp_link_addr_reply_port *port_msg)
+ 1098: {
+
+'ret' OCCURRENCES IN CONTEXT:
+ 1030:  int ret;
+ 1037:          ret = drm_dp_mst_register_i2c_bus(&port->aux);
+ 1054:  int ret;
+ 1060:                  ret = drm_dp_send_dpcd_write(
+ 1068:                  ret = drm_dp_dpcd_write(
+COUNT: 5
+
+----------------------------------------------------------------------------------------------------
+TARGET LINE 1555: variable 'len'
+----------------------------------------------------------------------------------------------------
+CONTEXT 1520-1599:
+ 1520:          if (txmsg->seqno != -1)
+ 1521:                  txmsg->dst->tx_slots[txmsg->seqno] = NULL;
+ 1522:          txmsg->state = DRM_DP_SIDEBAND_TX_TIMEOUT;
+ 1523:          wake_up(&mgr->tx_waitq);
+ 1524:  }
+ 1525: }
+ 1526:
+ 1527: /* called holding qlock */
+ 1528: static void process_single_up_tx_qlock(struct drm_dp_mst_topology_mgr *mgr,
+ 1529:                                 struct drm_dp_sideband_msg_tx *txmsg)
+ 1530: {
+ 1531:  int ret;
+ 1532:
+ 1533:  /* construct a chunk from the first msg in the tx_msg queue */
+ 1534:  ret = process_single_tx_qlock(mgr, txmsg, true);
+ 1535:
+ 1536:  if (ret != 1)
+ 1537:          DRM_DEBUG_KMS("failed to send msg in q %d\n", ret);
+ 1538:
+ 1539:  txmsg->dst->tx_slots[txmsg->seqno] = NULL;
+ 1540: }
+ 1541:
+ 1542: static void drm_dp_queue_down_tx(struct drm_dp_mst_topology_mgr *mgr,
+ 1543:                           struct drm_dp_sideband_msg_tx *txmsg)
+ 1544: {
+ 1545:  mutex_lock(&mgr->qlock);
+ 1546:  list_add_tail(&txmsg->next, &mgr->tx_msg_downq);
+ 1547:  if (list_is_singular(&mgr->tx_msg_downq))
+ 1548:          process_single_down_tx_qlock(mgr);
+ 1549:  mutex_unlock(&mgr->qlock);
+ 1550: }
+ 1551:
+ 1552: static void drm_dp_send_link_address(struct drm_dp_mst_topology_mgr *mgr,
+ 1553:                               struct drm_dp_mst_branch *mstb)
+ 1554: {
+ 1555:  int len; <<< TARGET
+ 1556:  struct drm_dp_sideband_msg_tx *txmsg;
+ 1557:  int ret;
+ 1558:
+ 1559:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
+ 1560:  if (!txmsg)
+ 1561:          return;
+ 1562:
+ 1563:  txmsg->dst = mstb;
+ 1564:  len = build_link_address(txmsg);
+ 1565:
+ 1566:  mstb->link_address_sent = true;
+ 1567:  drm_dp_queue_down_tx(mgr, txmsg);
+ 1568:
+ 1569:  ret = drm_dp_mst_wait_tx_reply(mstb, txmsg);
+ 1570:  if (ret > 0) {
+ 1571:          int i;
+ 1572:
+ 1573:          if (txmsg->reply.reply_type == 1)
+ 1574:                  DRM_DEBUG_KMS("link address nak received\n");
+ 1575:          else {
+ 1576:                  DRM_DEBUG_KMS("link address reply: %d\n", txmsg->reply.u.link_addr.nports);
+ 1577:                  for (i = 0; i < txmsg->reply.u.link_addr.nports; i++) {
+ 1578:                          DRM_DEBUG_KMS("port %d: input %d, pdt: %d, pn: %d, dpcd_rev: %02x, mcs: %d, ddps: %d, ldps %d, sdp %d/%d\n", i,
+ 1579:                                 txmsg->reply.u.link_addr.ports[i].input_port,
+ 1580:                                 txmsg->reply.u.link_addr.ports[i].peer_device_type,
+ 1581:                                 txmsg->reply.u.link_addr.ports[i].port_number,
+ 1582:                                 txmsg->reply.u.link_addr.ports[i].dpcd_revision,
+ 1583:                                 txmsg->reply.u.link_addr.ports[i].mcs,
+ 1584:                                 txmsg->reply.u.link_addr.ports[i].ddps,
+ 1585:                                 txmsg->reply.u.link_addr.ports[i].legacy_device_plug_status,
+ 1586:                                 txmsg->reply.u.link_addr.ports[i].num_sdp_streams,
+ 1587:                                 txmsg->reply.u.link_addr.ports[i].num_sdp_stream_sinks);
+ 1588:                  }
+ 1589:
+ 1590:                  drm_dp_check_mstb_guid(mstb, txmsg->reply.u.link_addr.guid);
+ 1591:
+ 1592:                  for (i = 0; i < txmsg->reply.u.link_addr.nports; i++) {
+ 1593:                          drm_dp_add_port(mstb, mgr->dev, &txmsg->reply.u.link_addr.ports[i]);
+ 1594:                  }
+ 1595:                  (*mgr->cbs->hotplug)(mgr);
+ 1596:          }
+ 1597:  } else {
+ 1598:          mstb->link_address_sent = false;
+ 1599:          DRM_DEBUG_KMS("link address failed %d\n", ret);
+
+'len' OCCURRENCES IN CONTEXT:
+ 1555:  int len;
+ 1564:  len = build_link_address(txmsg);
+COUNT: 2
+
+----------------------------------------------------------------------------------------------------
+TARGET LINE 1609: variable 'len'
+----------------------------------------------------------------------------------------------------
+CONTEXT 1574-1653:
+ 1574:                  DRM_DEBUG_KMS("link address nak received\n");
+ 1575:          else {
+ 1576:                  DRM_DEBUG_KMS("link address reply: %d\n", txmsg->reply.u.link_addr.nports);
+ 1577:                  for (i = 0; i < txmsg->reply.u.link_addr.nports; i++) {
+ 1578:                          DRM_DEBUG_KMS("port %d: input %d, pdt: %d, pn: %d, dpcd_rev: %02x, mcs: %d, ddps: %d, ldps %d, sdp %d/%d\n", i,
+ 1579:                                 txmsg->reply.u.link_addr.ports[i].input_port,
+ 1580:                                 txmsg->reply.u.link_addr.ports[i].peer_device_type,
+ 1581:                                 txmsg->reply.u.link_addr.ports[i].port_number,
+ 1582:                                 txmsg->reply.u.link_addr.ports[i].dpcd_revision,
+ 1583:                                 txmsg->reply.u.link_addr.ports[i].mcs,
+ 1584:                                 txmsg->reply.u.link_addr.ports[i].ddps,
+ 1585:                                 txmsg->reply.u.link_addr.ports[i].legacy_device_plug_status,
+ 1586:                                 txmsg->reply.u.link_addr.ports[i].num_sdp_streams,
+ 1587:                                 txmsg->reply.u.link_addr.ports[i].num_sdp_stream_sinks);
+ 1588:                  }
+ 1589:
+ 1590:                  drm_dp_check_mstb_guid(mstb, txmsg->reply.u.link_addr.guid);
+ 1591:
+ 1592:                  for (i = 0; i < txmsg->reply.u.link_addr.nports; i++) {
+ 1593:                          drm_dp_add_port(mstb, mgr->dev, &txmsg->reply.u.link_addr.ports[i]);
+ 1594:                  }
+ 1595:                  (*mgr->cbs->hotplug)(mgr);
+ 1596:          }
+ 1597:  } else {
+ 1598:          mstb->link_address_sent = false;
+ 1599:          DRM_DEBUG_KMS("link address failed %d\n", ret);
+ 1600:  }
+ 1601:
+ 1602:  kfree(txmsg);
+ 1603: }
+ 1604:
+ 1605: static int drm_dp_send_enum_path_resources(struct drm_dp_mst_topology_mgr *mgr,
+ 1606:                                     struct drm_dp_mst_branch *mstb,
+ 1607:                                     struct drm_dp_mst_port *port)
+ 1608: {
+ 1609:  int len; <<< TARGET
+ 1610:  struct drm_dp_sideband_msg_tx *txmsg;
+ 1611:  int ret;
+ 1612:
+ 1613:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
+ 1614:  if (!txmsg)
+ 1615:          return -ENOMEM;
+ 1616:
+ 1617:  txmsg->dst = mstb;
+ 1618:  len = build_enum_path_resources(txmsg, port->port_num);
+ 1619:
+ 1620:  drm_dp_queue_down_tx(mgr, txmsg);
+ 1621:
+ 1622:  ret = drm_dp_mst_wait_tx_reply(mstb, txmsg);
+ 1623:  if (ret > 0) {
+ 1624:          if (txmsg->reply.reply_type == 1)
+ 1625:                  DRM_DEBUG_KMS("enum path resources nak received\n");
+ 1626:          else {
+ 1627:                  if (port->port_num != txmsg->reply.u.path_resources.port_number)
+ 1628:                          DRM_ERROR("got incorrect port in response\n");
+ 1629:                  DRM_DEBUG_KMS("enum path resources %d: %d %d\n", txmsg->reply.u.path_resources.port_number, txmsg->reply.u.path_resources.full_payload_bw_number,
+ 1630:                         txmsg->reply.u.path_resources.avail_payload_bw_number);
+ 1631:                  port->available_pbn = txmsg->reply.u.path_resources.avail_payload_bw_number;
+ 1632:          }
+ 1633:  }
+ 1634:
+ 1635:  kfree(txmsg);
+ 1636:  return 0;
+ 1637: }
+ 1638:
+ 1639: static struct drm_dp_mst_port *drm_dp_get_last_connected_port_to_mstb(struct drm_dp_mst_branch *mstb)
+ 1640: {
+ 1641:  if (!mstb->port_parent)
+ 1642:          return NULL;
+ 1643:
+ 1644:  if (mstb->port_parent->mstb != mstb)
+ 1645:          return mstb->port_parent;
+ 1646:
+ 1647:  return drm_dp_get_last_connected_port_to_mstb(mstb->port_parent->parent);
+ 1648: }
+ 1649:
+ 1650: static struct drm_dp_mst_branch *drm_dp_get_last_connected_port_and_mstb(struct drm_dp_mst_topology_mgr *mgr,
+ 1651:                                                                   struct drm_dp_mst_branch *mstb,
+ 1652:                                                                   int *port_num)
+ 1653: {
+
+'len' OCCURRENCES IN CONTEXT:
+ 1609:  int len;
+ 1618:  len = build_enum_path_resources(txmsg, port->port_num);
+COUNT: 2
+
+----------------------------------------------------------------------------------------------------
+TARGET LINE 1677: variable 'len'
+----------------------------------------------------------------------------------------------------
+CONTEXT 1642-1721:
+ 1642:          return NULL;
+ 1643:
+ 1644:  if (mstb->port_parent->mstb != mstb)
+ 1645:          return mstb->port_parent;
+ 1646:
+ 1647:  return drm_dp_get_last_connected_port_to_mstb(mstb->port_parent->parent);
+ 1648: }
+ 1649:
+ 1650: static struct drm_dp_mst_branch *drm_dp_get_last_connected_port_and_mstb(struct drm_dp_mst_topology_mgr *mgr,
+ 1651:                                                                   struct drm_dp_mst_branch *mstb,
+ 1652:                                                                   int *port_num)
+ 1653: {
+ 1654:  struct drm_dp_mst_branch *rmstb = NULL;
+ 1655:  struct drm_dp_mst_port *found_port;
+ 1656:  mutex_lock(&mgr->lock);
+ 1657:  if (mgr->mst_primary) {
+ 1658:          found_port = drm_dp_get_last_connected_port_to_mstb(mstb);
+ 1659:
+ 1660:          if (found_port) {
+ 1661:                  rmstb = found_port->parent;
+ 1662:                  kref_get(&rmstb->kref);
+ 1663:                  *port_num = found_port->port_num;
+ 1664:          }
+ 1665:  }
+ 1666:  mutex_unlock(&mgr->lock);
+ 1667:  return rmstb;
+ 1668: }
+ 1669:
+ 1670: static int drm_dp_payload_send_msg(struct drm_dp_mst_topology_mgr *mgr,
+ 1671:                             struct drm_dp_mst_port *port,
+ 1672:                             int id,
+ 1673:                             int pbn)
+ 1674: {
+ 1675:  struct drm_dp_sideband_msg_tx *txmsg;
+ 1676:  struct drm_dp_mst_branch *mstb;
+ 1677:  int len, ret, port_num; <<< TARGET
+ 1678:  u8 sinks[DRM_DP_MAX_SDP_STREAMS];
+ 1679:  int i;
+ 1680:
+ 1681:  port = drm_dp_get_validated_port_ref(mgr, port);
+ 1682:  if (!port)
+ 1683:          return -EINVAL;
+ 1684:
+ 1685:  port_num = port->port_num;
+ 1686:  mstb = drm_dp_get_validated_mstb_ref(mgr, port->parent);
+ 1687:  if (!mstb) {
+ 1688:          mstb = drm_dp_get_last_connected_port_and_mstb(mgr, port->parent, &port_num);
+ 1689:
+ 1690:          if (!mstb) {
+ 1691:                  drm_dp_put_port(port);
+ 1692:                  return -EINVAL;
+ 1693:          }
+ 1694:  }
+ 1695:
+ 1696:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
+ 1697:  if (!txmsg) {
+ 1698:          ret = -ENOMEM;
+ 1699:          goto fail_put;
+ 1700:  }
+ 1701:
+ 1702:  for (i = 0; i < port->num_sdp_streams; i++)
+ 1703:          sinks[i] = i;
+ 1704:
+ 1705:  txmsg->dst = mstb;
+ 1706:  len = build_allocate_payload(txmsg, port_num,
+ 1707:                               id,
+ 1708:                               pbn, port->num_sdp_streams, sinks);
+ 1709:
+ 1710:  drm_dp_queue_down_tx(mgr, txmsg);
+ 1711:
+ 1712:  ret = drm_dp_mst_wait_tx_reply(mstb, txmsg);
+ 1713:  if (ret > 0) {
+ 1714:          if (txmsg->reply.reply_type == 1) {
+ 1715:                  ret = -EINVAL;
+ 1716:          } else
+ 1717:                  ret = 0;
+ 1718:  }
+ 1719:  kfree(txmsg);
+ 1720: fail_put:
+ 1721:  drm_dp_put_mst_branch_device(mstb);
+
+'len' OCCURRENCES IN CONTEXT:
+ 1677:  int len, ret, port_num;
+ 1706:  len = build_allocate_payload(txmsg, port_num,
+COUNT: 2
+
+----------------------------------------------------------------------------------------------------
+TARGET LINE 1929: variable 'len'
+----------------------------------------------------------------------------------------------------
+CONTEXT 1894-1973:
+ 1894:          if (ret) {
+ 1895:                  mutex_unlock(&mgr->payload_lock);
+ 1896:                  return ret;
+ 1897:          }
+ 1898:  }
+ 1899:  mutex_unlock(&mgr->payload_lock);
+ 1900:  return 0;
+ 1901: }
+ 1902: EXPORT_SYMBOL(drm_dp_update_payload_part2);
+ 1903:
+ 1904: #if 0 /* unused as of yet */
+ 1905: static int drm_dp_send_dpcd_read(struct drm_dp_mst_topology_mgr *mgr,
+ 1906:                           struct drm_dp_mst_port *port,
+ 1907:                           int offset, int size)
+ 1908: {
+ 1909:  int len;
+ 1910:  struct drm_dp_sideband_msg_tx *txmsg;
+ 1911:
+ 1912:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
+ 1913:  if (!txmsg)
+ 1914:          return -ENOMEM;
+ 1915:
+ 1916:  len = build_dpcd_read(txmsg, port->port_num, 0, 8);
+ 1917:  txmsg->dst = port->parent;
+ 1918:
+ 1919:  drm_dp_queue_down_tx(mgr, txmsg);
+ 1920:
+ 1921:  return 0;
+ 1922: }
+ 1923: #endif
+ 1924:
+ 1925: static int drm_dp_send_dpcd_write(struct drm_dp_mst_topology_mgr *mgr,
+ 1926:                            struct drm_dp_mst_port *port,
+ 1927:                            int offset, int size, u8 *bytes)
+ 1928: {
+ 1929:  int len; <<< TARGET
+ 1930:  int ret;
+ 1931:  struct drm_dp_sideband_msg_tx *txmsg;
+ 1932:  struct drm_dp_mst_branch *mstb;
+ 1933:
+ 1934:  mstb = drm_dp_get_validated_mstb_ref(mgr, port->parent);
+ 1935:  if (!mstb)
+ 1936:          return -EINVAL;
+ 1937:
+ 1938:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
+ 1939:  if (!txmsg) {
+ 1940:          ret = -ENOMEM;
+ 1941:          goto fail_put;
+ 1942:  }
+ 1943:
+ 1944:  len = build_dpcd_write(txmsg, port->port_num, offset, size, bytes);
+ 1945:  txmsg->dst = mstb;
+ 1946:
+ 1947:  drm_dp_queue_down_tx(mgr, txmsg);
+ 1948:
+ 1949:  ret = drm_dp_mst_wait_tx_reply(mstb, txmsg);
+ 1950:  if (ret > 0) {
+ 1951:          if (txmsg->reply.reply_type == 1) {
+ 1952:                  ret = -EINVAL;
+ 1953:          } else
+ 1954:                  ret = 0;
+ 1955:  }
+ 1956:  kfree(txmsg);
+ 1957: fail_put:
+ 1958:  drm_dp_put_mst_branch_device(mstb);
+ 1959:  return ret;
+ 1960: }
+ 1961:
+ 1962: static int drm_dp_encode_up_ack_reply(struct drm_dp_sideband_msg_tx *msg, u8 req_type)
+ 1963: {
+ 1964:  struct drm_dp_sideband_msg_reply_body reply;
+ 1965:
+ 1966:  reply.reply_type = 0;
+ 1967:  reply.req_type = req_type;
+ 1968:  drm_dp_encode_sideband_reply(&reply, msg);
+ 1969:  return 0;
+ 1970: }
+ 1971:
+ 1972: static int drm_dp_send_up_ack_reply(struct drm_dp_mst_topology_mgr *mgr,
+ 1973:                              struct drm_dp_mst_branch *mstb,
+
+'len' OCCURRENCES IN CONTEXT:
+ 1909:  int len;
+ 1916:  len = build_dpcd_read(txmsg, port->port_num, 0, 8);
+ 1929:  int len;
+ 1944:  len = build_dpcd_write(txmsg, port->port_num, offset, size, bytes);
+COUNT: 4
+
+----------------------------------------------------------------------------------------------------
+TARGET LINE 2185: variable 'origlen'
+----------------------------------------------------------------------------------------------------
+CONTEXT 2150-2229:
+ 2150:                  ret = -1;
+ 2151:                  goto out_unlock;
+ 2152:          }
+ 2153:
+ 2154:          ret = drm_dp_dpcd_writeb(mgr->aux, DP_MSTM_CTRL,
+ 2155:                                   DP_MST_EN | DP_UP_REQ_EN | DP_UPSTREAM_IS_SRC);
+ 2156:          if (ret < 0) {
+ 2157:                  DRM_DEBUG_KMS("mst write failed - undocked during suspend?\n");
+ 2158:                  ret = -1;
+ 2159:                  goto out_unlock;
+ 2160:          }
+ 2161:
+ 2162:          /* Some hubs forget their guids after they resume */
+ 2163:          sret = drm_dp_dpcd_read(mgr->aux, DP_GUID, guid, 16);
+ 2164:          if (sret != 16) {
+ 2165:                  DRM_DEBUG_KMS("dpcd read failed - undocked during suspend?\n");
+ 2166:                  ret = -1;
+ 2167:                  goto out_unlock;
+ 2168:          }
+ 2169:          drm_dp_check_mstb_guid(mgr->mst_primary, guid);
+ 2170:
+ 2171:          ret = 0;
+ 2172:  } else
+ 2173:          ret = -1;
+ 2174:
+ 2175: out_unlock:
+ 2176:  mutex_unlock(&mgr->lock);
+ 2177:  return ret;
+ 2178: }
+ 2179: EXPORT_SYMBOL(drm_dp_mst_topology_mgr_resume);
+ 2180:
+ 2181: static bool drm_dp_get_one_sb_msg(struct drm_dp_mst_topology_mgr *mgr, bool up)
+ 2182: {
+ 2183:  int len;
+ 2184:  u8 replyblock[32];
+ 2185:  int replylen, origlen, curreply; <<< TARGET
+ 2186:  int ret;
+ 2187:  struct drm_dp_sideband_msg_rx *msg;
+ 2188:  int basereg = up ? DP_SIDEBAND_MSG_UP_REQ_BASE : DP_SIDEBAND_MSG_DOWN_REP_BASE;
+ 2189:  msg = up ? &mgr->up_req_recv : &mgr->down_rep_recv;
+ 2190:
+ 2191:  len = min(mgr->max_dpcd_transaction_bytes, 16);
+ 2192:  ret = drm_dp_dpcd_read(mgr->aux, basereg,
+ 2193:                         replyblock, len);
+ 2194:  if (ret != len) {
+ 2195:          DRM_DEBUG_KMS("failed to read DPCD down rep %d %d\n", len, ret);
+ 2196:          return false;
+ 2197:  }
+ 2198:  ret = drm_dp_sideband_msg_build(msg, replyblock, len, true);
+ 2199:  if (!ret) {
+ 2200:          DRM_DEBUG_KMS("sideband msg build failed %d\n", replyblock[0]);
+ 2201:          return false;
+ 2202:  }
+ 2203:  replylen = msg->curchunk_len + msg->curchunk_hdrlen;
+ 2204:
+ 2205:  origlen = replylen;
+ 2206:  replylen -= len;
+ 2207:  curreply = len;
+ 2208:  while (replylen > 0) {
+ 2209:          len = min3(replylen, mgr->max_dpcd_transaction_bytes, 16);
+ 2210:          ret = drm_dp_dpcd_read(mgr->aux, basereg + curreply,
+ 2211:                              replyblock, len);
+ 2212:          if (ret != len) {
+ 2213:                  DRM_DEBUG_KMS("failed to read a chunk (len %d, ret %d)\n",
+ 2214:                                len, ret);
+ 2215:                  return false;
+ 2216:          }
+ 2217:
+ 2218:          ret = drm_dp_sideband_msg_build(msg, replyblock, len, false);
+ 2219:          if (!ret) {
+ 2220:                  DRM_DEBUG_KMS("failed to build sideband msg\n");
+ 2221:                  return false;
+ 2222:          }
+ 2223:
+ 2224:          curreply += len;
+ 2225:          replylen -= len;
+ 2226:  }
+ 2227:  return true;
+ 2228: }
+ 2229:
+
+'origlen' OCCURRENCES IN CONTEXT:
+ 2185:  int replylen, origlen, curreply;
+ 2205:  origlen = replylen;
+COUNT: 2
+
+----------------------------------------------------------------------------------------------------
+TARGET LINE 2867: variable 'ret'
+----------------------------------------------------------------------------------------------------
+CONTEXT 2832-2911:
+ 2832:  /* dump VCPIs */
+ 2833:  mutex_unlock(&mgr->lock);
+ 2834:
+ 2835:  mutex_lock(&mgr->payload_lock);
+ 2836:  seq_printf(m, "vcpi: %lx %lx %d\n", mgr->payload_mask, mgr->vcpi_mask,
+ 2837:          mgr->max_payloads);
+ 2838:
+ 2839:  for (i = 0; i < mgr->max_payloads; i++) {
+ 2840:          if (mgr->proposed_vcpis[i]) {
+ 2841:                  char name[14];
+ 2842:
+ 2843:                  port = container_of(mgr->proposed_vcpis[i], struct drm_dp_mst_port, vcpi);
+ 2844:                  fetch_monitor_name(mgr, port, name, sizeof(name));
+ 2845:                  seq_printf(m, "vcpi %d: %d %d %d sink name: %s\n", i,
+ 2846:                             port->port_num, port->vcpi.vcpi,
+ 2847:                             port->vcpi.num_slots,
+ 2848:                             (*name != 0) ? name :  "Unknown");
+ 2849:          } else
+ 2850:                  seq_printf(m, "vcpi %d:unused\n", i);
+ 2851:  }
+ 2852:  for (i = 0; i < mgr->max_payloads; i++) {
+ 2853:          seq_printf(m, "payload %d: %d, %d, %d\n",
+ 2854:                     i,
+ 2855:                     mgr->payloads[i].payload_state,
+ 2856:                     mgr->payloads[i].start_slot,
+ 2857:                     mgr->payloads[i].num_slots);
+ 2858:
+ 2859:
+ 2860:  }
+ 2861:  mutex_unlock(&mgr->payload_lock);
+ 2862:
+ 2863:  mutex_lock(&mgr->lock);
+ 2864:  if (mgr->mst_primary) {
+ 2865:          u8 buf[64];
+ 2866:          bool bret;
+ 2867:          int ret; <<< TARGET
+ 2868:          ret = drm_dp_dpcd_read(mgr->aux, DP_DPCD_REV, buf, DP_RECEIVER_CAP_SIZE);
+ 2869:          seq_printf(m, "dpcd: ");
+ 2870:          for (i = 0; i < DP_RECEIVER_CAP_SIZE; i++)
+ 2871:                  seq_printf(m, "%02x ", buf[i]);
+ 2872:          seq_printf(m, "\n");
+ 2873:          ret = drm_dp_dpcd_read(mgr->aux, DP_FAUX_CAP, buf, 2);
+ 2874:          seq_printf(m, "faux/mst: ");
+ 2875:          for (i = 0; i < 2; i++)
+ 2876:                  seq_printf(m, "%02x ", buf[i]);
+ 2877:          seq_printf(m, "\n");
+ 2878:          ret = drm_dp_dpcd_read(mgr->aux, DP_MSTM_CTRL, buf, 1);
+ 2879:          seq_printf(m, "mst ctrl: ");
+ 2880:          for (i = 0; i < 1; i++)
+ 2881:                  seq_printf(m, "%02x ", buf[i]);
+ 2882:          seq_printf(m, "\n");
+ 2883:
+ 2884:          /* dump the standard OUI branch header */
+ 2885:          ret = drm_dp_dpcd_read(mgr->aux, DP_BRANCH_OUI, buf, DP_BRANCH_OUI_HEADER_SIZE);
+ 2886:          seq_printf(m, "branch oui: ");
+ 2887:          for (i = 0; i < 0x3; i++)
+ 2888:                  seq_printf(m, "%02x", buf[i]);
+ 2889:          seq_printf(m, " devid: ");
+ 2890:          for (i = 0x3; i < 0x8 && buf[i]; i++)
+ 2891:                  seq_printf(m, "%c", buf[i]);
+ 2892:
+ 2893:          seq_printf(m, " revision: hw: %x.%x sw: %x.%x", buf[0x9] >> 4, buf[0x9] & 0xf, buf[0xa], buf[0xb]);
+ 2894:          seq_printf(m, "\n");
+ 2895:          bret = dump_dp_payload_table(mgr, buf);
+ 2896:          if (bret == true) {
+ 2897:                  seq_printf(m, "payload table: ");
+ 2898:                  for (i = 0; i < 63; i++)
+ 2899:                          seq_printf(m, "%02x ", buf[i]);
+ 2900:                  seq_printf(m, "\n");
+ 2901:          }
+ 2902:
+ 2903:  }
+ 2904:
+ 2905:  mutex_unlock(&mgr->lock);
+ 2906:
+ 2907: }
+ 2908: EXPORT_SYMBOL(drm_dp_mst_dump_topology);
+ 2909:
+ 2910: static void drm_dp_tx_work(struct work_struct *work)
+ 2911: {
+
+'ret' OCCURRENCES IN CONTEXT:
+ 2867:          int ret;
+ 2868:          ret = drm_dp_dpcd_read(mgr->aux, DP_DPCD_REV, buf, DP_RECEIVER_CAP_SIZE);
+ 2873:          ret = drm_dp_dpcd_read(mgr->aux, DP_FAUX_CAP, buf, 2);
+ 2878:          ret = drm_dp_dpcd_read(mgr->aux, DP_MSTM_CTRL, buf, 1);
+ 2885:          ret = drm_dp_dpcd_read(mgr->aux, DP_BRANCH_OUI, buf, DP_BRANCH_OUI_HEADER_SIZE);
+COUNT: 5
 ====================================================================================================
-FILE: /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/sound/soc/mediatek/codec/mt6357/mtk-auddrv-ana.c
+FILE: /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-i2s0.c
 ====================================================================================================
 
---------------------------------------------------------------------------------
-VARIABLE: ret
-ALL REFERENCES: [72, 74, 75, 76, 89, 100]
-
---- CONTEXT 64-80, TARGET 72 ---
-       64: /*****************************************************************************
-       65:  *                         D A T A   T Y P E S
-       66:  *****************************************************************************/
-       67: unsigned int Ana_Get_Reg(unsigned int offset)
-       68: {
-       69:      /* get pmic register */
-       70:      unsigned int Rdata = 0;
-       71: #ifdef AUDIO_USING_WRAP_DRIVER
->>>    72:      int ret = 0;
-       73:
-       74:      ret = pwrap_read(offset, &Rdata);
-       75:      /* PRINTK_ANA_REG("Ana_Get_Reg offset=0x%x,Rdata=0x%x,ret=%d\n",
-       76:       * offset, Rdata, ret);
-       77:       */
-       78: #endif
-       79:
-       80:      return Rdata;
-
---- CONTEXT 66-82, TARGET 74 ---
-       66:  *****************************************************************************/
-       67: unsigned int Ana_Get_Reg(unsigned int offset)
-       68: {
-       69:      /* get pmic register */
-       70:      unsigned int Rdata = 0;
-       71: #ifdef AUDIO_USING_WRAP_DRIVER
-       72:      int ret = 0;
-       73:
->>>    74:      ret = pwrap_read(offset, &Rdata);
-       75:      /* PRINTK_ANA_REG("Ana_Get_Reg offset=0x%x,Rdata=0x%x,ret=%d\n",
-       76:       * offset, Rdata, ret);
-       77:       */
-       78: #endif
-       79:
-       80:      return Rdata;
-       81: }
-       82: EXPORT_SYMBOL(Ana_Get_Reg);
-
---- CONTEXT 67-83, TARGET 75 ---
-       67: unsigned int Ana_Get_Reg(unsigned int offset)
-       68: {
-       69:      /* get pmic register */
-       70:      unsigned int Rdata = 0;
-       71: #ifdef AUDIO_USING_WRAP_DRIVER
-       72:      int ret = 0;
-       73:
-       74:      ret = pwrap_read(offset, &Rdata);
->>>    75:      /* PRINTK_ANA_REG("Ana_Get_Reg offset=0x%x,Rdata=0x%x,ret=%d\n",
-       76:       * offset, Rdata, ret);
-       77:       */
-       78: #endif
-       79:
-       80:      return Rdata;
-       81: }
-       82: EXPORT_SYMBOL(Ana_Get_Reg);
-       83:
-
---- CONTEXT 68-84, TARGET 76 ---
-       68: {
-       69:      /* get pmic register */
-       70:      unsigned int Rdata = 0;
-       71: #ifdef AUDIO_USING_WRAP_DRIVER
-       72:      int ret = 0;
-       73:
-       74:      ret = pwrap_read(offset, &Rdata);
-       75:      /* PRINTK_ANA_REG("Ana_Get_Reg offset=0x%x,Rdata=0x%x,ret=%d\n",
->>>    76:       * offset, Rdata, ret);
-       77:       */
-       78: #endif
-       79:
-       80:      return Rdata;
-       81: }
-       82: EXPORT_SYMBOL(Ana_Get_Reg);
-       83:
-       84: void Ana_Set_Reg(unsigned int offset, unsigned int value, unsigned int mask)
-
---- CONTEXT 81-97, TARGET 89 ---
-       81: }
-       82: EXPORT_SYMBOL(Ana_Get_Reg);
-       83:
-       84: void Ana_Set_Reg(unsigned int offset, unsigned int value, unsigned int mask)
-       85: {
-       86:      /* set pmic register or analog CONTROL_IFACE_PATH */
-       87:
-       88: #ifdef AUDIO_USING_WRAP_DRIVER
->>>    89:      int ret = 0;
-       90:      unsigned int Reg_Value;
-       91:      unsigned long flags = 0;
-       92:
-       93:      /* pr_debug("Ana_Set_Reg offset= 0x%x, value = 0x%x
-       94:       * mask = 0x%x\n", offset, value, mask);
-       95:       */
-       96:      spin_lock_irqsave(&ana_set_reg_lock, flags);
-       97:      Reg_Value = Ana_Get_Reg(offset);
-
---- CONTEXT 92-108, TARGET 100 ---
-       92:
-       93:      /* pr_debug("Ana_Set_Reg offset= 0x%x, value = 0x%x
-       94:       * mask = 0x%x\n", offset, value, mask);
-       95:       */
-       96:      spin_lock_irqsave(&ana_set_reg_lock, flags);
-       97:      Reg_Value = Ana_Get_Reg(offset);
-       98:      Reg_Value &= (~mask);
-       99:      Reg_Value |= (value & mask);
->>>   100:      ret = pwrap_write(offset, Reg_Value);
-      101:      spin_unlock_irqrestore(&ana_set_reg_lock, flags);
-      102: #endif
-      103: }
-      104: EXPORT_SYMBOL(Ana_Set_Reg);
-      105:
-      106: void Ana_Log_Print(void)
-      107: {
-      108:      audckbufEnable(true);
-
---------------------------------------------------------------------------------
-FUNCTIONS AROUND TARGET LINES
-
---- TARGET LINE 72, RANGE 67-117 ---
-       67: unsigned int Ana_Get_Reg(unsigned int offset)
-       68: {
-       69:      /* get pmic register */
-       70:      unsigned int Rdata = 0;
-       71: #ifdef AUDIO_USING_WRAP_DRIVER
->>>    72:      int ret = 0;
-       73:
-       74:      ret = pwrap_read(offset, &Rdata);
-       75:      /* PRINTK_ANA_REG("Ana_Get_Reg offset=0x%x,Rdata=0x%x,ret=%d\n",
-       76:       * offset, Rdata, ret);
-       77:       */
-       78: #endif
-       79:
-       80:      return Rdata;
-       81: }
-       82: EXPORT_SYMBOL(Ana_Get_Reg);
-       83:
-       84: void Ana_Set_Reg(unsigned int offset, unsigned int value, unsigned int mask)
-       85: {
-       86:      /* set pmic register or analog CONTROL_IFACE_PATH */
-       87:
-       88: #ifdef AUDIO_USING_WRAP_DRIVER
-       89:      int ret = 0;
-       90:      unsigned int Reg_Value;
-       91:      unsigned long flags = 0;
-       92:
-       93:      /* pr_debug("Ana_Set_Reg offset= 0x%x, value = 0x%x
-       94:       * mask = 0x%x\n", offset, value, mask);
-       95:       */
-       96:      spin_lock_irqsave(&ana_set_reg_lock, flags);
-       97:      Reg_Value = Ana_Get_Reg(offset);
-       98:      Reg_Value &= (~mask);
-       99:      Reg_Value |= (value & mask);
-      100:      ret = pwrap_write(offset, Reg_Value);
-      101:      spin_unlock_irqrestore(&ana_set_reg_lock, flags);
-      102: #endif
-      103: }
-      104: EXPORT_SYMBOL(Ana_Set_Reg);
-      105:
-      106: void Ana_Log_Print(void)
-      107: {
-      108:      audckbufEnable(true);
-      109:      pr_debug("AUD_TOP_ID = 0x%x\n",
-      110:              Ana_Get_Reg(AUD_TOP_ID));
-      111:      pr_debug("AUD_TOP_REV0 = 0x%x\n",
-      112:              Ana_Get_Reg(AUD_TOP_REV0));
-      113:      pr_debug("AUD_TOP_REV1 = 0x%x\n",
-      114:              Ana_Get_Reg(AUD_TOP_REV1));
-      115:      pr_debug("AUD_TOP_CKPDN_PM0 = 0x%x\n",
-      116:              Ana_Get_Reg(AUD_TOP_CKPDN_PM0));
-      117:      pr_debug("AUD_TOP_CKPDN_PM1 = 0x%x\n",
-
---- TARGET LINE 89, RANGE 84-134 ---
-       84: void Ana_Set_Reg(unsigned int offset, unsigned int value, unsigned int mask)
-       85: {
-       86:      /* set pmic register or analog CONTROL_IFACE_PATH */
-       87:
-       88: #ifdef AUDIO_USING_WRAP_DRIVER
->>>    89:      int ret = 0;
-       90:      unsigned int Reg_Value;
-       91:      unsigned long flags = 0;
-       92:
-       93:      /* pr_debug("Ana_Set_Reg offset= 0x%x, value = 0x%x
-       94:       * mask = 0x%x\n", offset, value, mask);
-       95:       */
-       96:      spin_lock_irqsave(&ana_set_reg_lock, flags);
-       97:      Reg_Value = Ana_Get_Reg(offset);
-       98:      Reg_Value &= (~mask);
-       99:      Reg_Value |= (value & mask);
-      100:      ret = pwrap_write(offset, Reg_Value);
-      101:      spin_unlock_irqrestore(&ana_set_reg_lock, flags);
-      102: #endif
-      103: }
-      104: EXPORT_SYMBOL(Ana_Set_Reg);
-      105:
-      106: void Ana_Log_Print(void)
-      107: {
-      108:      audckbufEnable(true);
-      109:      pr_debug("AUD_TOP_ID = 0x%x\n",
-      110:              Ana_Get_Reg(AUD_TOP_ID));
-      111:      pr_debug("AUD_TOP_REV0 = 0x%x\n",
-      112:              Ana_Get_Reg(AUD_TOP_REV0));
-      113:      pr_debug("AUD_TOP_REV1 = 0x%x\n",
-      114:              Ana_Get_Reg(AUD_TOP_REV1));
-      115:      pr_debug("AUD_TOP_CKPDN_PM0 = 0x%x\n",
-      116:              Ana_Get_Reg(AUD_TOP_CKPDN_PM0));
-      117:      pr_debug("AUD_TOP_CKPDN_PM1 = 0x%x\n",
-      118:              Ana_Get_Reg(AUD_TOP_CKPDN_PM1));
-      119:      pr_debug("AUD_TOP_CKPDN_CON0 = 0x%x\n",
-      120:              Ana_Get_Reg(AUD_TOP_CKPDN_CON0));
-      121:      pr_debug("AUD_TOP_CKSEL_CON0 = 0x%x\n",
-      122:              Ana_Get_Reg(AUD_TOP_CKSEL_CON0));
-      123:      pr_debug("AUD_TOP_CKTST_CON0 = 0x%x\n",
-      124:              Ana_Get_Reg(AUD_TOP_CKTST_CON0));
-      125:      pr_debug("AUD_TOP_RST_CON0 = 0x%x\n",
-      126:              Ana_Get_Reg(AUD_TOP_RST_CON0));
-      127:      pr_debug("AUD_TOP_RST_BANK_CON0 = 0x%x\n",
-      128:              Ana_Get_Reg(AUD_TOP_RST_BANK_CON0));
-      129:      pr_debug("AUD_TOP_INT_CON0 = 0x%x\n",
-      130:              Ana_Get_Reg(AUD_TOP_INT_CON0));
-      131:      pr_debug("AUD_TOP_INT_CON0_SET = 0x%x\n",
-      132:              Ana_Get_Reg(AUD_TOP_INT_CON0_SET));
-      133:      pr_debug("AUD_TOP_INT_CON0_CLR = 0x%x\n",
-      134:              Ana_Get_Reg(AUD_TOP_INT_CON0_CLR));
-
-====================================================================================================
-FILE: /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/devfreq/helio-dvfsrc-ipi.c
-====================================================================================================
-
---------------------------------------------------------------------------------
-VARIABLE: qos_task
-ALL REFERENCES: [50, 52]
-
---- CONTEXT 42-58, TARGET 50 ---
-       42:              }
-       43:      }
-       44:      return 0;
-       45: }
-       46:
-       47: void helio_dvfsrc_sspm_ipi_init(int dvfsrc_en)
-       48: {
-       49:      struct qos_ipi_data qos_d;
->>>    50:      struct task_struct *qos_task;
-       51:
-       52:      qos_task = kthread_run(qos_recv_thread, NULL, "qos_recv");
-       53:
-       54:      qos_d.cmd = QOS_IPI_QOS_ENABLE;
-       55:      qos_d.u.qos_init.dvfsrc_en = dvfsrc_en;
-       56:      qos_ipi_to_sspm_command(&qos_d, 2);
-       57: }
-       58: #endif
-
---- CONTEXT 44-59, TARGET 52 ---
-       44:      return 0;
-       45: }
-       46:
-       47: void helio_dvfsrc_sspm_ipi_init(int dvfsrc_en)
-       48: {
-       49:      struct qos_ipi_data qos_d;
-       50:      struct task_struct *qos_task;
-       51:
->>>    52:      qos_task = kthread_run(qos_recv_thread, NULL, "qos_recv");
-       53:
-       54:      qos_d.cmd = QOS_IPI_QOS_ENABLE;
-       55:      qos_d.u.qos_init.dvfsrc_en = dvfsrc_en;
-       56:      qos_ipi_to_sspm_command(&qos_d, 2);
-       57: }
-       58: #endif
-       59:
-
---------------------------------------------------------------------------------
-FUNCTIONS AROUND TARGET LINES
-
---- TARGET LINE 50, RANGE 47-59 ---
-       47: void helio_dvfsrc_sspm_ipi_init(int dvfsrc_en)
-       48: {
-       49:      struct qos_ipi_data qos_d;
->>>    50:      struct task_struct *qos_task;
-       51:
-       52:      qos_task = kthread_run(qos_recv_thread, NULL, "qos_recv");
-       53:
-       54:      qos_d.cmd = QOS_IPI_QOS_ENABLE;
-       55:      qos_d.u.qos_init.dvfsrc_en = dvfsrc_en;
-       56:      qos_ipi_to_sspm_command(&qos_d, 2);
-       57: }
-       58: #endif
-       59:
-
-====================================================================================================
-FILE: /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/dma/8250_mtk_dma.c
-====================================================================================================
-
---------------------------------------------------------------------------------
-VARIABLE: dev_width
-ALL REFERENCES: [554, 564, 567]
-
---- CONTEXT 546-562, TARGET 554 ---
-      546:      return size;
-      547: }
-      548:
-      549: static struct dma_async_tx_descriptor *mtk_dma_prep_slave_sg(
-      550:      struct dma_chan *chan, struct scatterlist *sgl, unsigned int sglen,
-      551:      enum dma_transfer_direction dir, unsigned long tx_flags, void *context)
-      552: {
-      553:      struct mtk_chan *c = to_mtk_dma_chan(chan);
->>>   554:      enum dma_slave_buswidth dev_width;
-      555:      struct scatterlist *sgent;
-      556:      struct mtk_dma_desc *d;
-      557:      dma_addr_t dev_addr;
-      558:      unsigned int i, j, en, frame_bytes;
-      559:
-      560:      en = frame_bytes = 1;
-      561:
-      562:      if (dir == DMA_DEV_TO_MEM) {
-
---- CONTEXT 556-572, TARGET 564 ---
-      556:      struct mtk_dma_desc *d;
-      557:      dma_addr_t dev_addr;
-      558:      unsigned int i, j, en, frame_bytes;
-      559:
-      560:      en = frame_bytes = 1;
-      561:
-      562:      if (dir == DMA_DEV_TO_MEM) {
-      563:              dev_addr = c->cfg.src_addr;
->>>   564:              dev_width = c->cfg.src_addr_width;
-      565:      } else if (dir == DMA_MEM_TO_DEV) {
-      566:              dev_addr = c->cfg.dst_addr;
-      567:              dev_width = c->cfg.dst_addr_width;
-      568:      } else {
-      569:              pr_err("%s: bad direction?\n", __func__);
-      570:              return NULL;
-      571:      }
-      572:
-
---- CONTEXT 559-575, TARGET 567 ---
-      559:
-      560:      en = frame_bytes = 1;
-      561:
-      562:      if (dir == DMA_DEV_TO_MEM) {
-      563:              dev_addr = c->cfg.src_addr;
-      564:              dev_width = c->cfg.src_addr_width;
-      565:      } else if (dir == DMA_MEM_TO_DEV) {
-      566:              dev_addr = c->cfg.dst_addr;
->>>   567:              dev_width = c->cfg.dst_addr_width;
-      568:      } else {
-      569:              pr_err("%s: bad direction?\n", __func__);
-      570:              return NULL;
-      571:      }
-      572:
-      573:      /* Now allocate and setup the descriptor. */
-      574:      d = kzalloc(sizeof(*d) + sglen * sizeof(d->sg[0]), GFP_ATOMIC);
-      575:      if (d == NULL)
-
---------------------------------------------------------------------------------
-VARIABLE: mtkd
-ALL REFERENCES: [181, 185, 194, 196, 251, 257, 258, 259, 260, 329, 339, 340, 341, 342, 343, 353, 370, 416, 421, 422, 423, 424, 425, 438, 445, 446, 447, 470, 474, 477, 478, 479, 490, 495, 502, 504, 510, 600, 608, 630, 637, 638, 639, 652, 658, 659, 678, 694, 701, 718, 724, 785, 789, 794, 805, 807, 808, 809, 814, 826, 831, 832, 839, 840, 841, 846, 847, 849, 853, 854, 856, 864, 869, 870, 871, 872, 873, 874, 875, 876, 877, 878, 879, 880, 881, 882, 883, 884, 885, 887, 888, 890, 893, 899, 907, 910, 914, 917, 924, 925, 933, 939, 947, 949, 957, 960, 968, 971, 983, 985, 993, 995, 1025, 1029]
-
---- CONTEXT 173-189, TARGET 181 ---
-      173:              c->desc = NULL;
-      174:
-      175:              if (c->cfg.direction == DMA_DEV_TO_MEM)
-      176:                      atomic_dec(&c->entry);
-      177:      }
-      178:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      179: }
-      180:
->>>   181: static int mtk_dma_clk_enable(struct mtk_dmadev *mtkd)
-      182: {
-      183:      int rc;
-      184:
-      185:      rc = clk_prepare_enable(mtkd->clk);
-      186:      if (rc) {
-      187:              pr_err("Couldn't enable the clock\n");
-      188:              return rc;
-      189:      }
-
---- CONTEXT 177-193, TARGET 185 ---
-      177:      }
-      178:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      179: }
-      180:
-      181: static int mtk_dma_clk_enable(struct mtk_dmadev *mtkd)
-      182: {
-      183:      int rc;
-      184:
->>>   185:      rc = clk_prepare_enable(mtkd->clk);
-      186:      if (rc) {
-      187:              pr_err("Couldn't enable the clock\n");
-      188:              return rc;
-      189:      }
-      190:
-      191:      return 0;
-      192: }
-      193:
-
---- CONTEXT 186-202, TARGET 194 ---
-      186:      if (rc) {
-      187:              pr_err("Couldn't enable the clock\n");
-      188:              return rc;
-      189:      }
-      190:
-      191:      return 0;
-      192: }
-      193:
->>>   194: static void mtk_dma_clk_disable(struct mtk_dmadev *mtkd)
-      195: {
-      196:      clk_disable_unprepare(mtkd->clk);
-      197: }
-      198:
-      199: static void mtk_dma_remove_virt_list(dma_cookie_t cookie, struct virt_dma_chan *vc)
-      200: {
-      201:      struct virt_dma_desc *vd;
-      202:
-
---- CONTEXT 188-204, TARGET 196 ---
-      188:              return rc;
-      189:      }
-      190:
-      191:      return 0;
-      192: }
-      193:
-      194: static void mtk_dma_clk_disable(struct mtk_dmadev *mtkd)
-      195: {
->>>   196:      clk_disable_unprepare(mtkd->clk);
-      197: }
-      198:
-      199: static void mtk_dma_remove_virt_list(dma_cookie_t cookie, struct virt_dma_chan *vc)
-      200: {
-      201:      struct virt_dma_desc *vd;
-      202:
-      203:      if (list_empty(&vc->desc_issued) == 0) {
-      204:              list_for_each_entry(vd, &vc->desc_issued, node) {
-
---- CONTEXT 243-259, TARGET 251 ---
-      243:      }
-      244:
-      245:      return 0;
-      246: }
-      247:
-      248: static void mtk_dma_tx_write(struct dma_chan *chan)
-      249: {
-      250:      struct mtk_chan *c = to_mtk_dma_chan(chan);
->>>   251:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      252:      unsigned int txcount = c->remain_size;
-      253:      unsigned int len, send, left, wpt, wrap;
-      254:
-      255:      if (atomic_inc_return(&c->entry) > 1) {
-      256:              if (vchan_issue_pending(&c->vc) && (c->desc == NULL)) {
-      257:                      spin_lock(&mtkd->lock);
-      258:                      list_add_tail(&c->node, &mtkd->pending);
-      259:                      spin_unlock(&mtkd->lock);
-
---- CONTEXT 249-265, TARGET 257 ---
-      249: {
-      250:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      251:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      252:      unsigned int txcount = c->remain_size;
-      253:      unsigned int len, send, left, wpt, wrap;
-      254:
-      255:      if (atomic_inc_return(&c->entry) > 1) {
-      256:              if (vchan_issue_pending(&c->vc) && (c->desc == NULL)) {
->>>   257:                      spin_lock(&mtkd->lock);
-      258:                      list_add_tail(&c->node, &mtkd->pending);
-      259:                      spin_unlock(&mtkd->lock);
-      260:                      tasklet_schedule(&mtkd->task);
-      261:              }
-      262:      } else {
-      263:              len = mtk_dma_chan_read(c, VFF_LEN);
-      264:              if (mtk_dma_check_flush_result(chan) != 0)
-      265:                      return;
-
---- CONTEXT 250-266, TARGET 258 ---
-      250:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      251:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      252:      unsigned int txcount = c->remain_size;
-      253:      unsigned int len, send, left, wpt, wrap;
-      254:
-      255:      if (atomic_inc_return(&c->entry) > 1) {
-      256:              if (vchan_issue_pending(&c->vc) && (c->desc == NULL)) {
-      257:                      spin_lock(&mtkd->lock);
->>>   258:                      list_add_tail(&c->node, &mtkd->pending);
-      259:                      spin_unlock(&mtkd->lock);
-      260:                      tasklet_schedule(&mtkd->task);
-      261:              }
-      262:      } else {
-      263:              len = mtk_dma_chan_read(c, VFF_LEN);
-      264:              if (mtk_dma_check_flush_result(chan) != 0)
-      265:                      return;
-      266:
-
---- CONTEXT 251-267, TARGET 259 ---
-      251:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      252:      unsigned int txcount = c->remain_size;
-      253:      unsigned int len, send, left, wpt, wrap;
-      254:
-      255:      if (atomic_inc_return(&c->entry) > 1) {
-      256:              if (vchan_issue_pending(&c->vc) && (c->desc == NULL)) {
-      257:                      spin_lock(&mtkd->lock);
-      258:                      list_add_tail(&c->node, &mtkd->pending);
->>>   259:                      spin_unlock(&mtkd->lock);
-      260:                      tasklet_schedule(&mtkd->task);
-      261:              }
-      262:      } else {
-      263:              len = mtk_dma_chan_read(c, VFF_LEN);
-      264:              if (mtk_dma_check_flush_result(chan) != 0)
-      265:                      return;
-      266:
-      267:              while ((left = mtk_dma_chan_read(c, VFF_LEFT_SIZE)) > 0U) {
-
---- CONTEXT 252-268, TARGET 260 ---
-      252:      unsigned int txcount = c->remain_size;
-      253:      unsigned int len, send, left, wpt, wrap;
-      254:
-      255:      if (atomic_inc_return(&c->entry) > 1) {
-      256:              if (vchan_issue_pending(&c->vc) && (c->desc == NULL)) {
-      257:                      spin_lock(&mtkd->lock);
-      258:                      list_add_tail(&c->node, &mtkd->pending);
-      259:                      spin_unlock(&mtkd->lock);
->>>   260:                      tasklet_schedule(&mtkd->task);
-      261:              }
-      262:      } else {
-      263:              len = mtk_dma_chan_read(c, VFF_LEN);
-      264:              if (mtk_dma_check_flush_result(chan) != 0)
-      265:                      return;
-      266:
-      267:              while ((left = mtk_dma_chan_read(c, VFF_LEFT_SIZE)) > 0U) {
-      268:                      send = min(left, c->remain_size);
-
---- CONTEXT 321-337, TARGET 329 ---
-      321:      c->rx_ptr = rdptr;
-      322:
-      323:      mtk_dma_chan_write(c, VFF_RPT, wrreg);
-      324: }
-      325:
-      326: static void mtk_dma_start_rx(struct mtk_chan *c)
-      327: {
-      328:      struct dma_chan *chan = &(c->vc.chan);
->>>   329:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      330:      struct mtk_dma_desc *d = c->desc;
-      331:
-      332:      if (mtk_dma_chan_read(c, VFF_VALID_SIZE) != 0U &&
-      333:              d != NULL && d->vd.tx.cookie != 0) {
-      334:              mtk_dma_get_rx_size(c);
-      335:              mtk_dma_remove_virt_list(d->vd.tx.cookie, &c->vc);
-      336:              vchan_cookie_complete(&d->vd);
-      337:      } else {
-
---- CONTEXT 331-347, TARGET 339 ---
-      331:
-      332:      if (mtk_dma_chan_read(c, VFF_VALID_SIZE) != 0U &&
-      333:              d != NULL && d->vd.tx.cookie != 0) {
-      334:              mtk_dma_get_rx_size(c);
-      335:              mtk_dma_remove_virt_list(d->vd.tx.cookie, &c->vc);
-      336:              vchan_cookie_complete(&d->vd);
-      337:      } else {
-      338:              if (mtk_dma_chan_read(c, VFF_VALID_SIZE) != 0U) {
->>>   339:                      spin_lock(&mtkd->lock);
-      340:                      if (list_empty(&mtkd->pending))
-      341:                              list_add_tail(&c->node, &mtkd->pending);
-      342:                      spin_unlock(&mtkd->lock);
-      343:                      tasklet_schedule(&mtkd->task);
-      344:              } else {
-      345:                      if (atomic_read(&c->entry) > 0UL)
-      346:                              atomic_set(&c->entry, 0);
-      347:              }
-
---- CONTEXT 332-348, TARGET 340 ---
-      332:      if (mtk_dma_chan_read(c, VFF_VALID_SIZE) != 0U &&
-      333:              d != NULL && d->vd.tx.cookie != 0) {
-      334:              mtk_dma_get_rx_size(c);
-      335:              mtk_dma_remove_virt_list(d->vd.tx.cookie, &c->vc);
-      336:              vchan_cookie_complete(&d->vd);
-      337:      } else {
-      338:              if (mtk_dma_chan_read(c, VFF_VALID_SIZE) != 0U) {
-      339:                      spin_lock(&mtkd->lock);
->>>   340:                      if (list_empty(&mtkd->pending))
-      341:                              list_add_tail(&c->node, &mtkd->pending);
-      342:                      spin_unlock(&mtkd->lock);
-      343:                      tasklet_schedule(&mtkd->task);
-      344:              } else {
-      345:                      if (atomic_read(&c->entry) > 0UL)
-      346:                              atomic_set(&c->entry, 0);
-      347:              }
-      348:      }
-
---- CONTEXT 333-349, TARGET 341 ---
-      333:              d != NULL && d->vd.tx.cookie != 0) {
-      334:              mtk_dma_get_rx_size(c);
-      335:              mtk_dma_remove_virt_list(d->vd.tx.cookie, &c->vc);
-      336:              vchan_cookie_complete(&d->vd);
-      337:      } else {
-      338:              if (mtk_dma_chan_read(c, VFF_VALID_SIZE) != 0U) {
-      339:                      spin_lock(&mtkd->lock);
-      340:                      if (list_empty(&mtkd->pending))
->>>   341:                              list_add_tail(&c->node, &mtkd->pending);
-      342:                      spin_unlock(&mtkd->lock);
-      343:                      tasklet_schedule(&mtkd->task);
-      344:              } else {
-      345:                      if (atomic_read(&c->entry) > 0UL)
-      346:                              atomic_set(&c->entry, 0);
-      347:              }
-      348:      }
-      349: }
-
---- CONTEXT 334-350, TARGET 342 ---
-      334:              mtk_dma_get_rx_size(c);
-      335:              mtk_dma_remove_virt_list(d->vd.tx.cookie, &c->vc);
-      336:              vchan_cookie_complete(&d->vd);
-      337:      } else {
-      338:              if (mtk_dma_chan_read(c, VFF_VALID_SIZE) != 0U) {
-      339:                      spin_lock(&mtkd->lock);
-      340:                      if (list_empty(&mtkd->pending))
-      341:                              list_add_tail(&c->node, &mtkd->pending);
->>>   342:                      spin_unlock(&mtkd->lock);
-      343:                      tasklet_schedule(&mtkd->task);
-      344:              } else {
-      345:                      if (atomic_read(&c->entry) > 0UL)
-      346:                              atomic_set(&c->entry, 0);
-      347:              }
-      348:      }
-      349: }
-      350:
-
---- CONTEXT 335-351, TARGET 343 ---
-      335:              mtk_dma_remove_virt_list(d->vd.tx.cookie, &c->vc);
-      336:              vchan_cookie_complete(&d->vd);
-      337:      } else {
-      338:              if (mtk_dma_chan_read(c, VFF_VALID_SIZE) != 0U) {
-      339:                      spin_lock(&mtkd->lock);
-      340:                      if (list_empty(&mtkd->pending))
-      341:                              list_add_tail(&c->node, &mtkd->pending);
-      342:                      spin_unlock(&mtkd->lock);
->>>   343:                      tasklet_schedule(&mtkd->task);
-      344:              } else {
-      345:                      if (atomic_read(&c->entry) > 0UL)
-      346:                              atomic_set(&c->entry, 0);
-      347:              }
-      348:      }
-      349: }
-      350:
-      351: static void mtk_dma_reset(struct mtk_chan *c)
-
---- CONTEXT 345-361, TARGET 353 ---
-      345:                      if (atomic_read(&c->entry) > 0UL)
-      346:                              atomic_set(&c->entry, 0);
-      347:              }
-      348:      }
-      349: }
-      350:
-      351: static void mtk_dma_reset(struct mtk_chan *c)
-      352: {
->>>   353:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(c->vc.chan.device);
-      354:
-      355:      mtk_dma_chan_write(c, VFF_ADDR, 0);
-      356:      mtk_dma_chan_write(c, VFF_THRE, 0);
-      357:      mtk_dma_chan_write(c, VFF_LEN, 0);
-      358:      mtk_dma_chan_write(c, VFF_RST, VFF_WARM_RST_B);
-      359:
-      360:      while
-      361:              (mtk_dma_chan_read(c, VFF_EN));
-
---- CONTEXT 362-378, TARGET 370 ---
-      362:
-      363:      if (c->cfg.direction == DMA_DEV_TO_MEM)
-      364:              mtk_dma_chan_write(c, VFF_RPT, 0);
-      365:      else if (c->cfg.direction == DMA_MEM_TO_DEV)
-      366:              mtk_dma_chan_write(c, VFF_WPT, 0);
-      367:      else
-      368:              pr_info("Unknown direction.\n");
-      369:
->>>   370:      if (mtkd->support_bits)
-      371:              mtk_dma_chan_write(c, VFF_4G_SUPPORT, VFF_4G_SUPPORT_CLR_B);
-      372: }
-      373:
-      374: static void mtk_dma_stop(struct mtk_chan *c)
-      375: {
-      376:      int polling_cnt;
-      377:
-      378:      mtk_dma_chan_write(c, VFF_FLUSH, VFF_FLUSH_CLR_B);
-
---- CONTEXT 408-424, TARGET 416 ---
-      408: }
-      409:
-      410: /*
-      411:  * We need to deal with 'all channels in-use'
-      412:  */
-      413: static void mtk_dma_rx_sched(struct mtk_chan *c)
-      414: {
-      415:      struct dma_chan *chan = &(c->vc.chan);
->>>   416:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      417:
-      418:      if (atomic_read(&c->entry) < 1) {
-      419:              mtk_dma_start_rx(c);
-      420:      } else {
-      421:              spin_lock(&mtkd->lock);
-      422:              if (list_empty(&mtkd->pending))
-      423:                      list_add_tail(&c->node, &mtkd->pending);
-      424:              spin_unlock(&mtkd->lock);
-
---- CONTEXT 413-429, TARGET 421 ---
-      413: static void mtk_dma_rx_sched(struct mtk_chan *c)
-      414: {
-      415:      struct dma_chan *chan = &(c->vc.chan);
-      416:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      417:
-      418:      if (atomic_read(&c->entry) < 1) {
-      419:              mtk_dma_start_rx(c);
-      420:      } else {
->>>   421:              spin_lock(&mtkd->lock);
-      422:              if (list_empty(&mtkd->pending))
-      423:                      list_add_tail(&c->node, &mtkd->pending);
-      424:              spin_unlock(&mtkd->lock);
-      425:              tasklet_schedule(&mtkd->task);
-      426:      }
-      427: }
-      428:
-      429: /*
-
---- CONTEXT 414-430, TARGET 422 ---
-      414: {
-      415:      struct dma_chan *chan = &(c->vc.chan);
-      416:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      417:
-      418:      if (atomic_read(&c->entry) < 1) {
-      419:              mtk_dma_start_rx(c);
-      420:      } else {
-      421:              spin_lock(&mtkd->lock);
->>>   422:              if (list_empty(&mtkd->pending))
-      423:                      list_add_tail(&c->node, &mtkd->pending);
-      424:              spin_unlock(&mtkd->lock);
-      425:              tasklet_schedule(&mtkd->task);
-      426:      }
-      427: }
-      428:
-      429: /*
-      430:  * This callback schedules all pending channels. We could be more
-
---- CONTEXT 415-431, TARGET 423 ---
-      415:      struct dma_chan *chan = &(c->vc.chan);
-      416:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      417:
-      418:      if (atomic_read(&c->entry) < 1) {
-      419:              mtk_dma_start_rx(c);
-      420:      } else {
-      421:              spin_lock(&mtkd->lock);
-      422:              if (list_empty(&mtkd->pending))
->>>   423:                      list_add_tail(&c->node, &mtkd->pending);
-      424:              spin_unlock(&mtkd->lock);
-      425:              tasklet_schedule(&mtkd->task);
-      426:      }
-      427: }
-      428:
-      429: /*
-      430:  * This callback schedules all pending channels. We could be more
-      431:  * clever here by postponing allocation of the real DMA channels to
-
---- CONTEXT 416-432, TARGET 424 ---
-      416:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      417:
-      418:      if (atomic_read(&c->entry) < 1) {
-      419:              mtk_dma_start_rx(c);
-      420:      } else {
-      421:              spin_lock(&mtkd->lock);
-      422:              if (list_empty(&mtkd->pending))
-      423:                      list_add_tail(&c->node, &mtkd->pending);
->>>   424:              spin_unlock(&mtkd->lock);
-      425:              tasklet_schedule(&mtkd->task);
-      426:      }
-      427: }
-      428:
-      429: /*
-      430:  * This callback schedules all pending channels. We could be more
-      431:  * clever here by postponing allocation of the real DMA channels to
-      432:  * this point, and freeing them when our virtual channel becomes idle.
-
---- CONTEXT 417-433, TARGET 425 ---
-      417:
-      418:      if (atomic_read(&c->entry) < 1) {
-      419:              mtk_dma_start_rx(c);
-      420:      } else {
-      421:              spin_lock(&mtkd->lock);
-      422:              if (list_empty(&mtkd->pending))
-      423:                      list_add_tail(&c->node, &mtkd->pending);
-      424:              spin_unlock(&mtkd->lock);
->>>   425:              tasklet_schedule(&mtkd->task);
-      426:      }
-      427: }
-      428:
-      429: /*
-      430:  * This callback schedules all pending channels. We could be more
-      431:  * clever here by postponing allocation of the real DMA channels to
-      432:  * this point, and freeing them when our virtual channel becomes idle.
-      433:  *
-
---- CONTEXT 430-446, TARGET 438 ---
-      430:  * This callback schedules all pending channels. We could be more
-      431:  * clever here by postponing allocation of the real DMA channels to
-      432:  * this point, and freeing them when our virtual channel becomes idle.
-      433:  *
-      434:  * We would then need to deal with 'all channels in-use'
-      435:  */
-      436: static void mtk_dma_sched(unsigned long data)
-      437: {
->>>   438:      struct mtk_dmadev *mtkd = (struct mtk_dmadev *)data;
-      439:      struct mtk_chan *c;
-      440:      struct virt_dma_desc *vd;
-      441:      dma_cookie_t cookie;
-      442:      LIST_HEAD(head);
-      443:      unsigned long flags;
-      444:
-      445:      spin_lock_irq(&mtkd->lock);
-      446:      list_splice_tail_init(&mtkd->pending, &head);
-
---- CONTEXT 437-453, TARGET 445 ---
-      437: {
-      438:      struct mtk_dmadev *mtkd = (struct mtk_dmadev *)data;
-      439:      struct mtk_chan *c;
-      440:      struct virt_dma_desc *vd;
-      441:      dma_cookie_t cookie;
-      442:      LIST_HEAD(head);
-      443:      unsigned long flags;
-      444:
->>>   445:      spin_lock_irq(&mtkd->lock);
-      446:      list_splice_tail_init(&mtkd->pending, &head);
-      447:      spin_unlock_irq(&mtkd->lock);
-      448:
-      449:      if (list_empty(&head) == 0) {
-      450:              c = list_first_entry(&head, struct mtk_chan, node);
-      451:              cookie = c->vc.chan.cookie;
-      452:
-      453:              spin_lock_irqsave(&c->vc.lock, flags);
-
---- CONTEXT 438-454, TARGET 446 ---
-      438:      struct mtk_dmadev *mtkd = (struct mtk_dmadev *)data;
-      439:      struct mtk_chan *c;
-      440:      struct virt_dma_desc *vd;
-      441:      dma_cookie_t cookie;
-      442:      LIST_HEAD(head);
-      443:      unsigned long flags;
-      444:
-      445:      spin_lock_irq(&mtkd->lock);
->>>   446:      list_splice_tail_init(&mtkd->pending, &head);
-      447:      spin_unlock_irq(&mtkd->lock);
-      448:
-      449:      if (list_empty(&head) == 0) {
-      450:              c = list_first_entry(&head, struct mtk_chan, node);
-      451:              cookie = c->vc.chan.cookie;
-      452:
-      453:              spin_lock_irqsave(&c->vc.lock, flags);
-      454:              if (c->cfg.direction == DMA_DEV_TO_MEM) {
-
---- CONTEXT 439-455, TARGET 447 ---
-      439:      struct mtk_chan *c;
-      440:      struct virt_dma_desc *vd;
-      441:      dma_cookie_t cookie;
-      442:      LIST_HEAD(head);
-      443:      unsigned long flags;
-      444:
-      445:      spin_lock_irq(&mtkd->lock);
-      446:      list_splice_tail_init(&mtkd->pending, &head);
->>>   447:      spin_unlock_irq(&mtkd->lock);
-      448:
-      449:      if (list_empty(&head) == 0) {
-      450:              c = list_first_entry(&head, struct mtk_chan, node);
-      451:              cookie = c->vc.chan.cookie;
-      452:
-      453:              spin_lock_irqsave(&c->vc.lock, flags);
-      454:              if (c->cfg.direction == DMA_DEV_TO_MEM) {
-      455:                      list_del_init(&c->node);
-
---- CONTEXT 462-478, TARGET 470 ---
-      462:                      mtk_dma_start_tx(c);
-      463:              }
-      464:              spin_unlock_irqrestore(&c->vc.lock, flags);
-      465:      }
-      466: }
-      467:
-      468: static int mtk_dma_alloc_chan_resources(struct dma_chan *chan)
-      469: {
->>>   470:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      471:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      472:      int ret;
-      473:
-      474:      pm_runtime_get_sync(mtkd->ddev.dev);
-      475:      ret = -EBUSY;
-      476:
-      477:      if (mtkd->lch_map[c->dma_ch] == NULL) {
-      478:              c->channel_base = mtkd->mem_base[c->dma_ch];
-
---- CONTEXT 466-482, TARGET 474 ---
-      466: }
-      467:
-      468: static int mtk_dma_alloc_chan_resources(struct dma_chan *chan)
-      469: {
-      470:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      471:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      472:      int ret;
-      473:
->>>   474:      pm_runtime_get_sync(mtkd->ddev.dev);
-      475:      ret = -EBUSY;
-      476:
-      477:      if (mtkd->lch_map[c->dma_ch] == NULL) {
-      478:              c->channel_base = mtkd->mem_base[c->dma_ch];
-      479:              mtkd->lch_map[c->dma_ch] = c;
-      480:              ret = 1;
-      481:      }
-      482:      c->requested = false;
-
---- CONTEXT 469-485, TARGET 477 ---
-      469: {
-      470:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      471:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      472:      int ret;
-      473:
-      474:      pm_runtime_get_sync(mtkd->ddev.dev);
-      475:      ret = -EBUSY;
-      476:
->>>   477:      if (mtkd->lch_map[c->dma_ch] == NULL) {
-      478:              c->channel_base = mtkd->mem_base[c->dma_ch];
-      479:              mtkd->lch_map[c->dma_ch] = c;
-      480:              ret = 1;
-      481:      }
-      482:      c->requested = false;
-      483:      mtk_dma_reset(c);
-      484:
-      485:      return ret;
-
---- CONTEXT 470-486, TARGET 478 ---
-      470:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      471:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      472:      int ret;
-      473:
-      474:      pm_runtime_get_sync(mtkd->ddev.dev);
-      475:      ret = -EBUSY;
-      476:
-      477:      if (mtkd->lch_map[c->dma_ch] == NULL) {
->>>   478:              c->channel_base = mtkd->mem_base[c->dma_ch];
-      479:              mtkd->lch_map[c->dma_ch] = c;
-      480:              ret = 1;
-      481:      }
-      482:      c->requested = false;
-      483:      mtk_dma_reset(c);
-      484:
-      485:      return ret;
-      486: }
-
---- CONTEXT 471-487, TARGET 479 ---
-      471:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      472:      int ret;
-      473:
-      474:      pm_runtime_get_sync(mtkd->ddev.dev);
-      475:      ret = -EBUSY;
-      476:
-      477:      if (mtkd->lch_map[c->dma_ch] == NULL) {
-      478:              c->channel_base = mtkd->mem_base[c->dma_ch];
->>>   479:              mtkd->lch_map[c->dma_ch] = c;
-      480:              ret = 1;
-      481:      }
-      482:      c->requested = false;
-      483:      mtk_dma_reset(c);
-      484:
-      485:      return ret;
-      486: }
-      487:
-
---- CONTEXT 482-498, TARGET 490 ---
-      482:      c->requested = false;
-      483:      mtk_dma_reset(c);
-      484:
-      485:      return ret;
-      486: }
-      487:
-      488: static void mtk_dma_free_chan_resources(struct dma_chan *chan)
-      489: {
->>>   490:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      491:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      492:
-      493:      if (c->requested == true) {
-      494:              c->requested = false;
-      495:              free_irq(mtkd->dma_irq[c->dma_ch], chan);
-      496:      }
-      497:
-      498:      /* disable the tasklet. if the task is running, wait for it finish and
-
---- CONTEXT 487-503, TARGET 495 ---
-      487:
-      488: static void mtk_dma_free_chan_resources(struct dma_chan *chan)
-      489: {
-      490:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      491:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      492:
-      493:      if (c->requested == true) {
-      494:              c->requested = false;
->>>   495:              free_irq(mtkd->dma_irq[c->dma_ch], chan);
-      496:      }
-      497:
-      498:      /* disable the tasklet. if the task is running, wait for it finish and
-      499:       * remove it from tasklet list. Put it before reset channel paremeter
-      500:       * because it may running.
-      501:       */
-      502:      tasklet_kill(&mtkd->task);
-      503:      c->channel_base = NULL;
-
---- CONTEXT 494-510, TARGET 502 ---
-      494:              c->requested = false;
-      495:              free_irq(mtkd->dma_irq[c->dma_ch], chan);
-      496:      }
-      497:
-      498:      /* disable the tasklet. if the task is running, wait for it finish and
-      499:       * remove it from tasklet list. Put it before reset channel paremeter
-      500:       * because it may running.
-      501:       */
->>>   502:      tasklet_kill(&mtkd->task);
-      503:      c->channel_base = NULL;
-      504:      mtkd->lch_map[c->dma_ch] = NULL;
-      505:      vchan_free_chan_resources(&c->vc);
-      506:
-      507:      pr_debug("freeing channel for %u\n", c->dma_sig);
-      508:      c->dma_sig = 0;
-      509:
-      510:      pm_runtime_put_sync(mtkd->ddev.dev);
-
---- CONTEXT 496-512, TARGET 504 ---
-      496:      }
-      497:
-      498:      /* disable the tasklet. if the task is running, wait for it finish and
-      499:       * remove it from tasklet list. Put it before reset channel paremeter
-      500:       * because it may running.
-      501:       */
-      502:      tasklet_kill(&mtkd->task);
-      503:      c->channel_base = NULL;
->>>   504:      mtkd->lch_map[c->dma_ch] = NULL;
-      505:      vchan_free_chan_resources(&c->vc);
-      506:
-      507:      pr_debug("freeing channel for %u\n", c->dma_sig);
-      508:      c->dma_sig = 0;
-      509:
-      510:      pm_runtime_put_sync(mtkd->ddev.dev);
-      511: }
-      512:
-
---- CONTEXT 502-518, TARGET 510 ---
-      502:      tasklet_kill(&mtkd->task);
-      503:      c->channel_base = NULL;
-      504:      mtkd->lch_map[c->dma_ch] = NULL;
-      505:      vchan_free_chan_resources(&c->vc);
-      506:
-      507:      pr_debug("freeing channel for %u\n", c->dma_sig);
-      508:      c->dma_sig = 0;
-      509:
->>>   510:      pm_runtime_put_sync(mtkd->ddev.dev);
-      511: }
-      512:
-      513: static enum dma_status mtk_dma_tx_status(struct dma_chan *chan,
-      514:      dma_cookie_t cookie, struct dma_tx_state *txstate)
-      515: {
-      516:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      517:      enum dma_status ret;
-      518:      unsigned long flags;
-
---- CONTEXT 592-608, TARGET 600 ---
-      592:              c->remain_size = mtk_dma_desc_size(d);
-      593:
-      594:      return vchan_tx_prep(&c->vc, &d->vd, tx_flags);
-      595: }
-      596:
-      597: static void mtk_dma_issue_pending(struct dma_chan *chan)
-      598: {
-      599:      struct mtk_chan *c = to_mtk_dma_chan(chan);
->>>   600:      struct mtk_dmadev *mtkd;
-      601:      struct virt_dma_desc *vd;
-      602:      dma_cookie_t cookie;
-      603:      unsigned long flags;
-      604:
-      605:      spin_lock_irqsave(&c->vc.lock, flags);
-      606:      if (c->cfg.direction == DMA_DEV_TO_MEM) {
-      607:              cookie = c->vc.chan.cookie;
-      608:              mtkd = to_mtk_dma_dev(chan->device);
-
---- CONTEXT 600-616, TARGET 608 ---
-      600:      struct mtk_dmadev *mtkd;
-      601:      struct virt_dma_desc *vd;
-      602:      dma_cookie_t cookie;
-      603:      unsigned long flags;
-      604:
-      605:      spin_lock_irqsave(&c->vc.lock, flags);
-      606:      if (c->cfg.direction == DMA_DEV_TO_MEM) {
-      607:              cookie = c->vc.chan.cookie;
->>>   608:              mtkd = to_mtk_dma_dev(chan->device);
-      609:              if (vchan_issue_pending(&c->vc) && (c->desc == NULL)) {
-      610:                      vd = vchan_find_desc(&c->vc, cookie);
-      611:                      c->desc = to_mtk_dma_desc(&vd->tx);
-      612:                      if (atomic_read(&c->entry) > 0)
-      613:                              atomic_set(&c->entry, 0);
-      614:              }
-      615:      } else if (c->cfg.direction == DMA_MEM_TO_DEV) {
-      616:              cookie = c->vc.chan.cookie;
-
---- CONTEXT 622-638, TARGET 630 ---
-      622:      }
-      623:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      624: }
-      625:
-      626: static irqreturn_t mtk_dma_rx_interrupt(int irq, void *dev_id)
-      627: {
-      628:      struct dma_chan *chan = (struct dma_chan *)dev_id;
-      629:      struct mtk_chan *c = to_mtk_dma_chan(chan);
->>>   630:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      631:      unsigned long flags;
-      632:
-      633:      spin_lock_irqsave(&c->vc.lock, flags);
-      634:      mtk_dma_chan_write(c, VFF_INT_FLAG, VFF_RX_INT_FLAG_CLR_B);
-      635:
-      636:      if (atomic_inc_return(&c->entry) > 1) {
-      637:              if (list_empty(&mtkd->pending))
-      638:                      list_add_tail(&c->node, &mtkd->pending);
-
---- CONTEXT 629-645, TARGET 637 ---
-      629:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      630:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      631:      unsigned long flags;
-      632:
-      633:      spin_lock_irqsave(&c->vc.lock, flags);
-      634:      mtk_dma_chan_write(c, VFF_INT_FLAG, VFF_RX_INT_FLAG_CLR_B);
-      635:
-      636:      if (atomic_inc_return(&c->entry) > 1) {
->>>   637:              if (list_empty(&mtkd->pending))
-      638:                      list_add_tail(&c->node, &mtkd->pending);
-      639:              tasklet_schedule(&mtkd->task);
-      640:      } else {
-      641:              mtk_dma_start_rx(c);
-      642:      }
-      643:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      644:
-      645:      return IRQ_HANDLED;
-
---- CONTEXT 630-646, TARGET 638 ---
-      630:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      631:      unsigned long flags;
-      632:
-      633:      spin_lock_irqsave(&c->vc.lock, flags);
-      634:      mtk_dma_chan_write(c, VFF_INT_FLAG, VFF_RX_INT_FLAG_CLR_B);
-      635:
-      636:      if (atomic_inc_return(&c->entry) > 1) {
-      637:              if (list_empty(&mtkd->pending))
->>>   638:                      list_add_tail(&c->node, &mtkd->pending);
-      639:              tasklet_schedule(&mtkd->task);
-      640:      } else {
-      641:              mtk_dma_start_rx(c);
-      642:      }
-      643:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      644:
-      645:      return IRQ_HANDLED;
-      646: }
-
---- CONTEXT 631-647, TARGET 639 ---
-      631:      unsigned long flags;
-      632:
-      633:      spin_lock_irqsave(&c->vc.lock, flags);
-      634:      mtk_dma_chan_write(c, VFF_INT_FLAG, VFF_RX_INT_FLAG_CLR_B);
-      635:
-      636:      if (atomic_inc_return(&c->entry) > 1) {
-      637:              if (list_empty(&mtkd->pending))
-      638:                      list_add_tail(&c->node, &mtkd->pending);
->>>   639:              tasklet_schedule(&mtkd->task);
-      640:      } else {
-      641:              mtk_dma_start_rx(c);
-      642:      }
-      643:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      644:
-      645:      return IRQ_HANDLED;
-      646: }
-      647:
-
---- CONTEXT 644-660, TARGET 652 ---
-      644:
-      645:      return IRQ_HANDLED;
-      646: }
-      647:
-      648: static irqreturn_t mtk_dma_tx_interrupt(int irq, void *dev_id)
-      649: {
-      650:      struct dma_chan *chan = (struct dma_chan *)dev_id;
-      651:      struct mtk_chan *c = to_mtk_dma_chan(chan);
->>>   652:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      653:      struct mtk_dma_desc *d = c->desc;
-      654:      unsigned long flags;
-      655:
-      656:      spin_lock_irqsave(&c->vc.lock, flags);
-      657:      if (c->remain_size != 0) {
-      658:              list_add_tail(&c->node, &mtkd->pending);
-      659:              tasklet_schedule(&mtkd->task);
-      660:      } else {
-
---- CONTEXT 650-666, TARGET 658 ---
-      650:      struct dma_chan *chan = (struct dma_chan *)dev_id;
-      651:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      652:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      653:      struct mtk_dma_desc *d = c->desc;
-      654:      unsigned long flags;
-      655:
-      656:      spin_lock_irqsave(&c->vc.lock, flags);
-      657:      if (c->remain_size != 0) {
->>>   658:              list_add_tail(&c->node, &mtkd->pending);
-      659:              tasklet_schedule(&mtkd->task);
-      660:      } else {
-      661:              mtk_dma_remove_virt_list(d->vd.tx.cookie, &c->vc);
-      662:              vchan_cookie_complete(&d->vd);
-      663:      }
-      664:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      665:
-      666:      mtk_dma_chan_write(c, VFF_INT_FLAG, VFF_TX_INT_FLAG_CLR_B);
-
---- CONTEXT 651-667, TARGET 659 ---
-      651:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      652:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      653:      struct mtk_dma_desc *d = c->desc;
-      654:      unsigned long flags;
-      655:
-      656:      spin_lock_irqsave(&c->vc.lock, flags);
-      657:      if (c->remain_size != 0) {
-      658:              list_add_tail(&c->node, &mtkd->pending);
->>>   659:              tasklet_schedule(&mtkd->task);
-      660:      } else {
-      661:              mtk_dma_remove_virt_list(d->vd.tx.cookie, &c->vc);
-      662:              vchan_cookie_complete(&d->vd);
-      663:      }
-      664:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      665:
-      666:      mtk_dma_chan_write(c, VFF_INT_FLAG, VFF_TX_INT_FLAG_CLR_B);
-      667:      if (atomic_dec_and_test(&c->loopcnt))
-
---- CONTEXT 670-686, TARGET 678 ---
-      670:      return IRQ_HANDLED;
-      671:
-      672: }
-      673:
-      674: static int mtk_dma_slave_config(struct dma_chan *chan,
-      675:                      struct dma_slave_config *cfg)
-      676: {
-      677:      struct mtk_chan *c = to_mtk_dma_chan(chan);
->>>   678:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(c->vc.chan.device);
-      679:      int ret;
-      680:
-      681:      c->cfg = *cfg;
-      682:
-      683:      if (cfg->direction == DMA_DEV_TO_MEM) {
-      684:              unsigned int rx_len = cfg->src_addr_width * 1024;
-      685:
-      686:              mtk_dma_chan_write(c, VFF_ADDR, cfg->src_addr);
-
---- CONTEXT 686-702, TARGET 694 ---
-      686:              mtk_dma_chan_write(c, VFF_ADDR, cfg->src_addr);
-      687:              mtk_dma_chan_write(c, VFF_LEN, rx_len);
-      688:              mtk_dma_chan_write(c, VFF_THRE, VFF_RX_THRE(rx_len));
-      689:              mtk_dma_chan_write(c, VFF_INT_EN, VFF_RX_INT_EN0_B |
-      690:                                                      VFF_RX_INT_EN1_B);
-      691:              mtk_dma_chan_write(c, VFF_INT_FLAG, VFF_RX_INT_FLAG_CLR_B);
-      692:              mtk_dma_chan_write(c, VFF_EN, VFF_EN_B);
-      693:
->>>   694:              if (mtkd->support_bits > VFF_ORI_ADDR_BITS_NUM)
-      695:                      mtk_dma_chan_write(c, VFF_4G_SUPPORT,
-      696:                                      upper_32_bits(cfg->src_addr));
-      697:
-      698:              if (c->requested == false) {
-      699:                      atomic_set(&c->entry, 0);
-      700:                      c->requested = true;
-      701:                      ret = request_irq(mtkd->dma_irq[c->dma_ch],
-      702:                              mtk_dma_rx_interrupt, IRQF_TRIGGER_NONE,
-
---- CONTEXT 693-709, TARGET 701 ---
-      693:
-      694:              if (mtkd->support_bits > VFF_ORI_ADDR_BITS_NUM)
-      695:                      mtk_dma_chan_write(c, VFF_4G_SUPPORT,
-      696:                                      upper_32_bits(cfg->src_addr));
-      697:
-      698:              if (c->requested == false) {
-      699:                      atomic_set(&c->entry, 0);
-      700:                      c->requested = true;
->>>   701:                      ret = request_irq(mtkd->dma_irq[c->dma_ch],
-      702:                              mtk_dma_rx_interrupt, IRQF_TRIGGER_NONE,
-      703:                              DRV_NAME, chan);
-      704:                      if (ret) {
-      705:                              pr_err("Cannot request rx dma IRQ\n");
-      706:                              return -EINVAL;
-      707:                      }
-      708:              }
-      709:      } else if (cfg->direction == DMA_MEM_TO_DEV)    {
-
---- CONTEXT 710-726, TARGET 718 ---
-      710:              unsigned int tx_len = cfg->dst_addr_width * 1024;
-      711:
-      712:              mtk_dma_chan_write(c, VFF_ADDR, cfg->dst_addr);
-      713:              mtk_dma_chan_write(c, VFF_LEN, tx_len);
-      714:              mtk_dma_chan_write(c, VFF_THRE, VFF_TX_THRE(tx_len));
-      715:              mtk_dma_chan_write(c, VFF_INT_FLAG, VFF_TX_INT_FLAG_CLR_B);
-      716:              mtk_dma_chan_write(c, VFF_EN, VFF_EN_B);
-      717:
->>>   718:              if (mtkd->support_bits > VFF_ORI_ADDR_BITS_NUM)
-      719:                      mtk_dma_chan_write(c, VFF_4G_SUPPORT,
-      720:                                      upper_32_bits(cfg->dst_addr));
-      721:
-      722:              if (c->requested == false) {
-      723:                      c->requested = true;
-      724:                      ret = request_irq(mtkd->dma_irq[c->dma_ch],
-      725:                              mtk_dma_tx_interrupt, IRQF_TRIGGER_NONE,
-      726:                              DRV_NAME, chan);
-
---- CONTEXT 716-732, TARGET 724 ---
-      716:              mtk_dma_chan_write(c, VFF_EN, VFF_EN_B);
-      717:
-      718:              if (mtkd->support_bits > VFF_ORI_ADDR_BITS_NUM)
-      719:                      mtk_dma_chan_write(c, VFF_4G_SUPPORT,
-      720:                                      upper_32_bits(cfg->dst_addr));
-      721:
-      722:              if (c->requested == false) {
-      723:                      c->requested = true;
->>>   724:                      ret = request_irq(mtkd->dma_irq[c->dma_ch],
-      725:                              mtk_dma_tx_interrupt, IRQF_TRIGGER_NONE,
-      726:                              DRV_NAME, chan);
-      727:                      if (ret) {
-      728:                              pr_err("Cannot request tx dma IRQ\n");
-      729:                              return -EINVAL;
-      730:                      }
-      731:              }
-      732:      } else
-
---- CONTEXT 777-793, TARGET 785 ---
-      777: }
-      778:
-      779: static int mtk_dma_device_resume(struct dma_chan *chan)
-      780: {
-      781:      /* Pause/Resume only allowed with cyclic mode */
-      782:      return -EINVAL;
-      783: }
-      784:
->>>   785: static int mtk_dma_chan_init(struct mtk_dmadev *mtkd)
-      786: {
-      787:      struct mtk_chan *c;
-      788:
-      789:      c = devm_kzalloc(mtkd->ddev.dev, sizeof(*c), GFP_KERNEL);
-      790:      if (c == NULL)
-      791:              return -ENOMEM;
-      792:
-      793:      c->vc.desc_free = mtk_dma_desc_free;
-
---- CONTEXT 781-797, TARGET 789 ---
-      781:      /* Pause/Resume only allowed with cyclic mode */
-      782:      return -EINVAL;
-      783: }
-      784:
-      785: static int mtk_dma_chan_init(struct mtk_dmadev *mtkd)
-      786: {
-      787:      struct mtk_chan *c;
-      788:
->>>   789:      c = devm_kzalloc(mtkd->ddev.dev, sizeof(*c), GFP_KERNEL);
-      790:      if (c == NULL)
-      791:              return -ENOMEM;
-      792:
-      793:      c->vc.desc_free = mtk_dma_desc_free;
-      794:      vchan_init(&c->vc, &mtkd->ddev);
-      795:      spin_lock_init(&c->lock);
-      796:      INIT_LIST_HEAD(&c->node);
-      797:
-
---- CONTEXT 786-802, TARGET 794 ---
-      786: {
-      787:      struct mtk_chan *c;
-      788:
-      789:      c = devm_kzalloc(mtkd->ddev.dev, sizeof(*c), GFP_KERNEL);
-      790:      if (c == NULL)
-      791:              return -ENOMEM;
-      792:
-      793:      c->vc.desc_free = mtk_dma_desc_free;
->>>   794:      vchan_init(&c->vc, &mtkd->ddev);
-      795:      spin_lock_init(&c->lock);
-      796:      INIT_LIST_HEAD(&c->node);
-      797:
-      798:      init_completion(&c->done);
-      799:      atomic_set(&c->loopcnt, 0);
-      800:      atomic_set(&c->entry, 0);
-      801:
-      802:      return 0;
-
---- CONTEXT 797-813, TARGET 805 ---
-      797:
-      798:      init_completion(&c->done);
-      799:      atomic_set(&c->loopcnt, 0);
-      800:      atomic_set(&c->entry, 0);
-      801:
-      802:      return 0;
-      803: }
-      804:
->>>   805: static void mtk_dma_free(struct mtk_dmadev *mtkd)
-      806: {
-      807:      tasklet_kill(&mtkd->task);
-      808:      while (list_empty(&mtkd->ddev.channels) == 0) {
-      809:              struct mtk_chan *c = list_first_entry(&mtkd->ddev.channels,
-      810:                      struct mtk_chan, vc.chan.device_node);
-      811:
-      812:              list_del(&c->vc.chan.device_node);
-      813:              tasklet_kill(&c->vc.task);
-
---- CONTEXT 799-815, TARGET 807 ---
-      799:      atomic_set(&c->loopcnt, 0);
-      800:      atomic_set(&c->entry, 0);
-      801:
-      802:      return 0;
-      803: }
-      804:
-      805: static void mtk_dma_free(struct mtk_dmadev *mtkd)
-      806: {
->>>   807:      tasklet_kill(&mtkd->task);
-      808:      while (list_empty(&mtkd->ddev.channels) == 0) {
-      809:              struct mtk_chan *c = list_first_entry(&mtkd->ddev.channels,
-      810:                      struct mtk_chan, vc.chan.device_node);
-      811:
-      812:              list_del(&c->vc.chan.device_node);
-      813:              tasklet_kill(&c->vc.task);
-      814:              devm_kfree(mtkd->ddev.dev, c);
-      815:      }
-
---- CONTEXT 800-816, TARGET 808 ---
-      800:      atomic_set(&c->entry, 0);
-      801:
-      802:      return 0;
-      803: }
-      804:
-      805: static void mtk_dma_free(struct mtk_dmadev *mtkd)
-      806: {
-      807:      tasklet_kill(&mtkd->task);
->>>   808:      while (list_empty(&mtkd->ddev.channels) == 0) {
-      809:              struct mtk_chan *c = list_first_entry(&mtkd->ddev.channels,
-      810:                      struct mtk_chan, vc.chan.device_node);
-      811:
-      812:              list_del(&c->vc.chan.device_node);
-      813:              tasklet_kill(&c->vc.task);
-      814:              devm_kfree(mtkd->ddev.dev, c);
-      815:      }
-      816: }
-
---- CONTEXT 801-817, TARGET 809 ---
-      801:
-      802:      return 0;
-      803: }
-      804:
-      805: static void mtk_dma_free(struct mtk_dmadev *mtkd)
-      806: {
-      807:      tasklet_kill(&mtkd->task);
-      808:      while (list_empty(&mtkd->ddev.channels) == 0) {
->>>   809:              struct mtk_chan *c = list_first_entry(&mtkd->ddev.channels,
-      810:                      struct mtk_chan, vc.chan.device_node);
-      811:
-      812:              list_del(&c->vc.chan.device_node);
-      813:              tasklet_kill(&c->vc.task);
-      814:              devm_kfree(mtkd->ddev.dev, c);
-      815:      }
-      816: }
-      817:
-
---- CONTEXT 806-822, TARGET 814 ---
-      806: {
-      807:      tasklet_kill(&mtkd->task);
-      808:      while (list_empty(&mtkd->ddev.channels) == 0) {
-      809:              struct mtk_chan *c = list_first_entry(&mtkd->ddev.channels,
-      810:                      struct mtk_chan, vc.chan.device_node);
-      811:
-      812:              list_del(&c->vc.chan.device_node);
-      813:              tasklet_kill(&c->vc.task);
->>>   814:              devm_kfree(mtkd->ddev.dev, c);
-      815:      }
-      816: }
-      817:
-      818: static const struct of_device_id mtk_uart_dma_match[] = {
-      819:      { .compatible = "mediatek,mt6577-uart-dma", },
-      820:      { /* sentinel */ },
-      821: };
-      822: MODULE_DEVICE_TABLE(of, mtk_uart_dma_match);
-
---- CONTEXT 818-834, TARGET 826 ---
-      818: static const struct of_device_id mtk_uart_dma_match[] = {
-      819:      { .compatible = "mediatek,mt6577-uart-dma", },
-      820:      { /* sentinel */ },
-      821: };
-      822: MODULE_DEVICE_TABLE(of, mtk_uart_dma_match);
-      823:
-      824: static int mtk_dma_probe(struct platform_device *pdev)
-      825: {
->>>   826:      struct mtk_dmadev *mtkd;
-      827:      struct resource *res;
-      828:      int rc, i;
-      829:      unsigned int addr_bits = VFF_ORI_ADDR_BITS_NUM;
-      830:
-      831:      mtkd = devm_kzalloc(&pdev->dev, sizeof(*mtkd), GFP_KERNEL);
-      832:      if (mtkd == NULL)
-      833:              return -ENOMEM;
-      834:
-
---- CONTEXT 823-839, TARGET 831 ---
-      823:
-      824: static int mtk_dma_probe(struct platform_device *pdev)
-      825: {
-      826:      struct mtk_dmadev *mtkd;
-      827:      struct resource *res;
-      828:      int rc, i;
-      829:      unsigned int addr_bits = VFF_ORI_ADDR_BITS_NUM;
-      830:
->>>   831:      mtkd = devm_kzalloc(&pdev->dev, sizeof(*mtkd), GFP_KERNEL);
-      832:      if (mtkd == NULL)
-      833:              return -ENOMEM;
-      834:
-      835:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      836:              res = platform_get_resource(pdev, IORESOURCE_MEM, i);
-      837:              if (res == NULL)
-      838:                      return -ENODEV;
-      839:              mtkd->mem_base[i] = devm_ioremap_resource(&pdev->dev, res);
-
---- CONTEXT 824-840, TARGET 832 ---
-      824: static int mtk_dma_probe(struct platform_device *pdev)
-      825: {
-      826:      struct mtk_dmadev *mtkd;
-      827:      struct resource *res;
-      828:      int rc, i;
-      829:      unsigned int addr_bits = VFF_ORI_ADDR_BITS_NUM;
-      830:
-      831:      mtkd = devm_kzalloc(&pdev->dev, sizeof(*mtkd), GFP_KERNEL);
->>>   832:      if (mtkd == NULL)
-      833:              return -ENOMEM;
-      834:
-      835:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      836:              res = platform_get_resource(pdev, IORESOURCE_MEM, i);
-      837:              if (res == NULL)
-      838:                      return -ENODEV;
-      839:              mtkd->mem_base[i] = devm_ioremap_resource(&pdev->dev, res);
-      840:              if (IS_ERR(mtkd->mem_base[i]))
-
---- CONTEXT 831-847, TARGET 839 ---
-      831:      mtkd = devm_kzalloc(&pdev->dev, sizeof(*mtkd), GFP_KERNEL);
-      832:      if (mtkd == NULL)
-      833:              return -ENOMEM;
-      834:
-      835:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      836:              res = platform_get_resource(pdev, IORESOURCE_MEM, i);
-      837:              if (res == NULL)
-      838:                      return -ENODEV;
->>>   839:              mtkd->mem_base[i] = devm_ioremap_resource(&pdev->dev, res);
-      840:              if (IS_ERR(mtkd->mem_base[i]))
-      841:                      return PTR_ERR(mtkd->mem_base[i]);
-      842:      }
-      843:
-      844:      /* request irq */
-      845:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      846:              mtkd->dma_irq[i] = platform_get_irq(pdev, i);
-      847:              if ((int)mtkd->dma_irq[i] < 0) {
-
---- CONTEXT 832-848, TARGET 840 ---
-      832:      if (mtkd == NULL)
-      833:              return -ENOMEM;
-      834:
-      835:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      836:              res = platform_get_resource(pdev, IORESOURCE_MEM, i);
-      837:              if (res == NULL)
-      838:                      return -ENODEV;
-      839:              mtkd->mem_base[i] = devm_ioremap_resource(&pdev->dev, res);
->>>   840:              if (IS_ERR(mtkd->mem_base[i]))
-      841:                      return PTR_ERR(mtkd->mem_base[i]);
-      842:      }
-      843:
-      844:      /* request irq */
-      845:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      846:              mtkd->dma_irq[i] = platform_get_irq(pdev, i);
-      847:              if ((int)mtkd->dma_irq[i] < 0) {
-      848:                      pr_err("Cannot claim IRQ%d\n", i);
-
---- CONTEXT 833-849, TARGET 841 ---
-      833:              return -ENOMEM;
-      834:
-      835:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      836:              res = platform_get_resource(pdev, IORESOURCE_MEM, i);
-      837:              if (res == NULL)
-      838:                      return -ENODEV;
-      839:              mtkd->mem_base[i] = devm_ioremap_resource(&pdev->dev, res);
-      840:              if (IS_ERR(mtkd->mem_base[i]))
->>>   841:                      return PTR_ERR(mtkd->mem_base[i]);
-      842:      }
-      843:
-      844:      /* request irq */
-      845:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      846:              mtkd->dma_irq[i] = platform_get_irq(pdev, i);
-      847:              if ((int)mtkd->dma_irq[i] < 0) {
-      848:                      pr_err("Cannot claim IRQ%d\n", i);
-      849:                      return mtkd->dma_irq[i];
-
---- CONTEXT 838-854, TARGET 846 ---
-      838:                      return -ENODEV;
-      839:              mtkd->mem_base[i] = devm_ioremap_resource(&pdev->dev, res);
-      840:              if (IS_ERR(mtkd->mem_base[i]))
-      841:                      return PTR_ERR(mtkd->mem_base[i]);
-      842:      }
-      843:
-      844:      /* request irq */
-      845:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
->>>   846:              mtkd->dma_irq[i] = platform_get_irq(pdev, i);
-      847:              if ((int)mtkd->dma_irq[i] < 0) {
-      848:                      pr_err("Cannot claim IRQ%d\n", i);
-      849:                      return mtkd->dma_irq[i];
-      850:              }
-      851:      }
-      852:
-      853:      mtkd->clk = devm_clk_get(&pdev->dev, NULL);
-      854:      if (IS_ERR(mtkd->clk)) {
-
---- CONTEXT 839-855, TARGET 847 ---
-      839:              mtkd->mem_base[i] = devm_ioremap_resource(&pdev->dev, res);
-      840:              if (IS_ERR(mtkd->mem_base[i]))
-      841:                      return PTR_ERR(mtkd->mem_base[i]);
-      842:      }
-      843:
-      844:      /* request irq */
-      845:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      846:              mtkd->dma_irq[i] = platform_get_irq(pdev, i);
->>>   847:              if ((int)mtkd->dma_irq[i] < 0) {
-      848:                      pr_err("Cannot claim IRQ%d\n", i);
-      849:                      return mtkd->dma_irq[i];
-      850:              }
-      851:      }
-      852:
-      853:      mtkd->clk = devm_clk_get(&pdev->dev, NULL);
-      854:      if (IS_ERR(mtkd->clk)) {
-      855:              pr_err("No clock specified\n");
-
---- CONTEXT 841-857, TARGET 849 ---
-      841:                      return PTR_ERR(mtkd->mem_base[i]);
-      842:      }
-      843:
-      844:      /* request irq */
-      845:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      846:              mtkd->dma_irq[i] = platform_get_irq(pdev, i);
-      847:              if ((int)mtkd->dma_irq[i] < 0) {
-      848:                      pr_err("Cannot claim IRQ%d\n", i);
->>>   849:                      return mtkd->dma_irq[i];
-      850:              }
-      851:      }
-      852:
-      853:      mtkd->clk = devm_clk_get(&pdev->dev, NULL);
-      854:      if (IS_ERR(mtkd->clk)) {
-      855:              pr_err("No clock specified\n");
-      856:              return PTR_ERR(mtkd->clk);
-      857:      }
-
---- CONTEXT 845-861, TARGET 853 ---
-      845:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      846:              mtkd->dma_irq[i] = platform_get_irq(pdev, i);
-      847:              if ((int)mtkd->dma_irq[i] < 0) {
-      848:                      pr_err("Cannot claim IRQ%d\n", i);
-      849:                      return mtkd->dma_irq[i];
-      850:              }
-      851:      }
-      852:
->>>   853:      mtkd->clk = devm_clk_get(&pdev->dev, NULL);
-      854:      if (IS_ERR(mtkd->clk)) {
-      855:              pr_err("No clock specified\n");
-      856:              return PTR_ERR(mtkd->clk);
-      857:      }
-      858:
-      859:      if (of_property_read_u32(pdev->dev.of_node, "dma-bits", &addr_bits))
-      860:              addr_bits = VFF_ORI_ADDR_BITS_NUM;
-      861:
-
---- CONTEXT 846-862, TARGET 854 ---
-      846:              mtkd->dma_irq[i] = platform_get_irq(pdev, i);
-      847:              if ((int)mtkd->dma_irq[i] < 0) {
-      848:                      pr_err("Cannot claim IRQ%d\n", i);
-      849:                      return mtkd->dma_irq[i];
-      850:              }
-      851:      }
-      852:
-      853:      mtkd->clk = devm_clk_get(&pdev->dev, NULL);
->>>   854:      if (IS_ERR(mtkd->clk)) {
-      855:              pr_err("No clock specified\n");
-      856:              return PTR_ERR(mtkd->clk);
-      857:      }
-      858:
-      859:      if (of_property_read_u32(pdev->dev.of_node, "dma-bits", &addr_bits))
-      860:              addr_bits = VFF_ORI_ADDR_BITS_NUM;
-      861:
-      862:      pr_info("DMA address bits: %d\n", addr_bits);
-
---- CONTEXT 848-864, TARGET 856 ---
-      848:                      pr_err("Cannot claim IRQ%d\n", i);
-      849:                      return mtkd->dma_irq[i];
-      850:              }
-      851:      }
-      852:
-      853:      mtkd->clk = devm_clk_get(&pdev->dev, NULL);
-      854:      if (IS_ERR(mtkd->clk)) {
-      855:              pr_err("No clock specified\n");
->>>   856:              return PTR_ERR(mtkd->clk);
-      857:      }
-      858:
-      859:      if (of_property_read_u32(pdev->dev.of_node, "dma-bits", &addr_bits))
-      860:              addr_bits = VFF_ORI_ADDR_BITS_NUM;
-      861:
-      862:      pr_info("DMA address bits: %d\n", addr_bits);
-      863:
-      864:      mtkd->support_bits = addr_bits;
-
---- CONTEXT 856-872, TARGET 864 ---
-      856:              return PTR_ERR(mtkd->clk);
-      857:      }
-      858:
-      859:      if (of_property_read_u32(pdev->dev.of_node, "dma-bits", &addr_bits))
-      860:              addr_bits = VFF_ORI_ADDR_BITS_NUM;
-      861:
-      862:      pr_info("DMA address bits: %d\n", addr_bits);
-      863:
->>>   864:      mtkd->support_bits = addr_bits;
-      865:      rc = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(addr_bits));
-      866:      if (rc)
-      867:              return rc;
-      868:
-      869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-
---- CONTEXT 861-877, TARGET 869 ---
-      861:
-      862:      pr_info("DMA address bits: %d\n", addr_bits);
-      863:
-      864:      mtkd->support_bits = addr_bits;
-      865:      rc = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(addr_bits));
-      866:      if (rc)
-      867:              return rc;
-      868:
->>>   869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-
---- CONTEXT 862-878, TARGET 870 ---
-      862:      pr_info("DMA address bits: %d\n", addr_bits);
-      863:
-      864:      mtkd->support_bits = addr_bits;
-      865:      rc = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(addr_bits));
-      866:      if (rc)
-      867:              return rc;
-      868:
-      869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
->>>   870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-
---- CONTEXT 863-879, TARGET 871 ---
-      863:
-      864:      mtkd->support_bits = addr_bits;
-      865:      rc = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(addr_bits));
-      866:      if (rc)
-      867:              return rc;
-      868:
-      869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
->>>   871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-
---- CONTEXT 864-880, TARGET 872 ---
-      864:      mtkd->support_bits = addr_bits;
-      865:      rc = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(addr_bits));
-      866:      if (rc)
-      867:              return rc;
-      868:
-      869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
->>>   872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-
---- CONTEXT 865-881, TARGET 873 ---
-      865:      rc = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(addr_bits));
-      866:      if (rc)
-      867:              return rc;
-      868:
-      869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
->>>   873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-
---- CONTEXT 866-882, TARGET 874 ---
-      866:      if (rc)
-      867:              return rc;
-      868:
-      869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
->>>   874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-
---- CONTEXT 867-883, TARGET 875 ---
-      867:              return rc;
-      868:
-      869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
->>>   875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-
---- CONTEXT 868-884, TARGET 876 ---
-      868:
-      869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
->>>   876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-
---- CONTEXT 869-885, TARGET 877 ---
-      869:      dma_cap_set(DMA_SLAVE, mtkd->ddev.cap_mask);
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
->>>   877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-
---- CONTEXT 870-886, TARGET 878 ---
-      870:      mtkd->ddev.device_alloc_chan_resources = mtk_dma_alloc_chan_resources;
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
->>>   878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-
---- CONTEXT 871-887, TARGET 879 ---
-      871:      mtkd->ddev.device_free_chan_resources = mtk_dma_free_chan_resources;
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
->>>   879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
-
---- CONTEXT 872-888, TARGET 880 ---
-      872:      mtkd->ddev.device_tx_status = mtk_dma_tx_status;
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
->>>   880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
-      888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-
---- CONTEXT 873-889, TARGET 881 ---
-      873:      mtkd->ddev.device_issue_pending = mtk_dma_issue_pending;
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
->>>   881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
-      888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-      889:
-
---- CONTEXT 874-890, TARGET 882 ---
-      874:      mtkd->ddev.device_prep_slave_sg = mtk_dma_prep_slave_sg;
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
->>>   882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
-      888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-      889:
-      890:      mtkd->dma_requests = MTK_SDMA_REQUESTS;
-
---- CONTEXT 875-891, TARGET 883 ---
-      875:      mtkd->ddev.device_config = mtk_dma_slave_config;
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
->>>   883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
-      888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-      889:
-      890:      mtkd->dma_requests = MTK_SDMA_REQUESTS;
-      891:      if ((pdev->dev.of_node != NULL) &&
-
---- CONTEXT 876-892, TARGET 884 ---
-      876:      mtkd->ddev.device_pause = mtk_dma_device_pause;
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
->>>   884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
-      888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-      889:
-      890:      mtkd->dma_requests = MTK_SDMA_REQUESTS;
-      891:      if ((pdev->dev.of_node != NULL) &&
-      892:              (of_property_read_u32(pdev->dev.of_node,
-
---- CONTEXT 877-893, TARGET 885 ---
-      877:      mtkd->ddev.device_resume = mtk_dma_device_resume;
-      878:      mtkd->ddev.device_terminate_all = mtk_dma_terminate_all;
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
->>>   885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
-      888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-      889:
-      890:      mtkd->dma_requests = MTK_SDMA_REQUESTS;
-      891:      if ((pdev->dev.of_node != NULL) &&
-      892:              (of_property_read_u32(pdev->dev.of_node,
-      893:                      "dma-requests", &mtkd->dma_requests) != 0)) {
-
---- CONTEXT 879-895, TARGET 887 ---
-      879:      mtkd->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
->>>   887:      spin_lock_init(&mtkd->lock);
-      888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-      889:
-      890:      mtkd->dma_requests = MTK_SDMA_REQUESTS;
-      891:      if ((pdev->dev.of_node != NULL) &&
-      892:              (of_property_read_u32(pdev->dev.of_node,
-      893:                      "dma-requests", &mtkd->dma_requests) != 0)) {
-      894:              pr_info("Missing dma-requests property, using %u.\n",
-      895:                       MTK_SDMA_REQUESTS);
-
---- CONTEXT 880-896, TARGET 888 ---
-      880:      mtkd->ddev.dst_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_1_BYTE);
-      881:      mtkd->ddev.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
->>>   888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-      889:
-      890:      mtkd->dma_requests = MTK_SDMA_REQUESTS;
-      891:      if ((pdev->dev.of_node != NULL) &&
-      892:              (of_property_read_u32(pdev->dev.of_node,
-      893:                      "dma-requests", &mtkd->dma_requests) != 0)) {
-      894:              pr_info("Missing dma-requests property, using %u.\n",
-      895:                       MTK_SDMA_REQUESTS);
-      896:      }
-
---- CONTEXT 882-898, TARGET 890 ---
-      882:      mtkd->ddev.residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-      883:      mtkd->ddev.dev = &pdev->dev;
-      884:      INIT_LIST_HEAD(&mtkd->ddev.channels);
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
-      888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-      889:
->>>   890:      mtkd->dma_requests = MTK_SDMA_REQUESTS;
-      891:      if ((pdev->dev.of_node != NULL) &&
-      892:              (of_property_read_u32(pdev->dev.of_node,
-      893:                      "dma-requests", &mtkd->dma_requests) != 0)) {
-      894:              pr_info("Missing dma-requests property, using %u.\n",
-      895:                       MTK_SDMA_REQUESTS);
-      896:      }
-      897:
-      898:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-
---- CONTEXT 885-901, TARGET 893 ---
-      885:      INIT_LIST_HEAD(&mtkd->pending);
-      886:
-      887:      spin_lock_init(&mtkd->lock);
-      888:      tasklet_init(&mtkd->task, mtk_dma_sched, (unsigned long)mtkd);
-      889:
-      890:      mtkd->dma_requests = MTK_SDMA_REQUESTS;
-      891:      if ((pdev->dev.of_node != NULL) &&
-      892:              (of_property_read_u32(pdev->dev.of_node,
->>>   893:                      "dma-requests", &mtkd->dma_requests) != 0)) {
-      894:              pr_info("Missing dma-requests property, using %u.\n",
-      895:                       MTK_SDMA_REQUESTS);
-      896:      }
-      897:
-      898:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
-      899:              rc = mtk_dma_chan_init(mtkd);
-      900:              if (rc)
-      901:                      goto err_no_dma;
-
---- CONTEXT 891-907, TARGET 899 ---
-      891:      if ((pdev->dev.of_node != NULL) &&
-      892:              (of_property_read_u32(pdev->dev.of_node,
-      893:                      "dma-requests", &mtkd->dma_requests) != 0)) {
-      894:              pr_info("Missing dma-requests property, using %u.\n",
-      895:                       MTK_SDMA_REQUESTS);
-      896:      }
-      897:
-      898:      for (i = 0; i < MTK_SDMA_CHANNELS; i++) {
->>>   899:              rc = mtk_dma_chan_init(mtkd);
-      900:              if (rc)
-      901:                      goto err_no_dma;
-      902:      }
-      903:
-      904:      pm_runtime_enable(&pdev->dev);
-      905:      pm_runtime_set_active(&pdev->dev);
-      906:
-      907:      rc = dma_async_device_register(&mtkd->ddev);
-
---- CONTEXT 899-915, TARGET 907 ---
-      899:              rc = mtk_dma_chan_init(mtkd);
-      900:              if (rc)
-      901:                      goto err_no_dma;
-      902:      }
-      903:
-      904:      pm_runtime_enable(&pdev->dev);
-      905:      pm_runtime_set_active(&pdev->dev);
-      906:
->>>   907:      rc = dma_async_device_register(&mtkd->ddev);
-      908:      if (rc) {
-      909:              pr_warn("fail to register slave DMA device: %d\n", rc);
-      910:              mtk_dma_clk_disable(mtkd);
-      911:              goto err_no_dma;
-      912:      }
-      913:
-      914:      platform_set_drvdata(pdev, mtkd);
-      915:
-
---- CONTEXT 902-918, TARGET 910 ---
-      902:      }
-      903:
-      904:      pm_runtime_enable(&pdev->dev);
-      905:      pm_runtime_set_active(&pdev->dev);
-      906:
-      907:      rc = dma_async_device_register(&mtkd->ddev);
-      908:      if (rc) {
-      909:              pr_warn("fail to register slave DMA device: %d\n", rc);
->>>   910:              mtk_dma_clk_disable(mtkd);
-      911:              goto err_no_dma;
-      912:      }
-      913:
-      914:      platform_set_drvdata(pdev, mtkd);
-      915:
-      916:      if (pdev->dev.of_node) {
-      917:              mtk_dma_info.dma_cap = mtkd->ddev.cap_mask;
-      918:
-
---- CONTEXT 906-922, TARGET 914 ---
-      906:
-      907:      rc = dma_async_device_register(&mtkd->ddev);
-      908:      if (rc) {
-      909:              pr_warn("fail to register slave DMA device: %d\n", rc);
-      910:              mtk_dma_clk_disable(mtkd);
-      911:              goto err_no_dma;
-      912:      }
-      913:
->>>   914:      platform_set_drvdata(pdev, mtkd);
-      915:
-      916:      if (pdev->dev.of_node) {
-      917:              mtk_dma_info.dma_cap = mtkd->ddev.cap_mask;
-      918:
-      919:              /* Device-tree DMA controller registration */
-      920:              rc = of_dma_controller_register(pdev->dev.of_node,
-      921:                              of_dma_simple_xlate, &mtk_dma_info);
-      922:              if (rc) {
-
---- CONTEXT 909-925, TARGET 917 ---
-      909:              pr_warn("fail to register slave DMA device: %d\n", rc);
-      910:              mtk_dma_clk_disable(mtkd);
-      911:              goto err_no_dma;
-      912:      }
-      913:
-      914:      platform_set_drvdata(pdev, mtkd);
-      915:
-      916:      if (pdev->dev.of_node) {
->>>   917:              mtk_dma_info.dma_cap = mtkd->ddev.cap_mask;
-      918:
-      919:              /* Device-tree DMA controller registration */
-      920:              rc = of_dma_controller_register(pdev->dev.of_node,
-      921:                              of_dma_simple_xlate, &mtk_dma_info);
-      922:              if (rc) {
-      923:                      pr_warn("fail to register DMA controller\n");
-      924:                      dma_async_device_unregister(&mtkd->ddev);
-      925:                      mtk_dma_clk_disable(mtkd);
-
---- CONTEXT 916-932, TARGET 924 ---
-      916:      if (pdev->dev.of_node) {
-      917:              mtk_dma_info.dma_cap = mtkd->ddev.cap_mask;
-      918:
-      919:              /* Device-tree DMA controller registration */
-      920:              rc = of_dma_controller_register(pdev->dev.of_node,
-      921:                              of_dma_simple_xlate, &mtk_dma_info);
-      922:              if (rc) {
-      923:                      pr_warn("fail to register DMA controller\n");
->>>   924:                      dma_async_device_unregister(&mtkd->ddev);
-      925:                      mtk_dma_clk_disable(mtkd);
-      926:                      goto err_no_dma;
-      927:              }
-      928:      }
-      929:
-      930:      return rc;
-      931:
-      932: err_no_dma:
-
---- CONTEXT 917-933, TARGET 925 ---
-      917:              mtk_dma_info.dma_cap = mtkd->ddev.cap_mask;
-      918:
-      919:              /* Device-tree DMA controller registration */
-      920:              rc = of_dma_controller_register(pdev->dev.of_node,
-      921:                              of_dma_simple_xlate, &mtk_dma_info);
-      922:              if (rc) {
-      923:                      pr_warn("fail to register DMA controller\n");
-      924:                      dma_async_device_unregister(&mtkd->ddev);
->>>   925:                      mtk_dma_clk_disable(mtkd);
-      926:                      goto err_no_dma;
-      927:              }
-      928:      }
-      929:
-      930:      return rc;
-      931:
-      932: err_no_dma:
-      933:      mtk_dma_free(mtkd);
-
---- CONTEXT 925-941, TARGET 933 ---
-      925:                      mtk_dma_clk_disable(mtkd);
-      926:                      goto err_no_dma;
-      927:              }
-      928:      }
-      929:
-      930:      return rc;
-      931:
-      932: err_no_dma:
->>>   933:      mtk_dma_free(mtkd);
-      934:      return rc;
-      935: }
-      936:
-      937: static int mtk_dma_remove(struct platform_device *pdev)
-      938: {
-      939:      struct mtk_dmadev *mtkd = platform_get_drvdata(pdev);
-      940:
-      941:      if (pdev->dev.of_node)
-
---- CONTEXT 931-947, TARGET 939 ---
-      931:
-      932: err_no_dma:
-      933:      mtk_dma_free(mtkd);
-      934:      return rc;
-      935: }
-      936:
-      937: static int mtk_dma_remove(struct platform_device *pdev)
-      938: {
->>>   939:      struct mtk_dmadev *mtkd = platform_get_drvdata(pdev);
-      940:
-      941:      if (pdev->dev.of_node)
-      942:              of_dma_controller_free(pdev->dev.of_node);
-      943:
-      944:      pm_runtime_disable(&pdev->dev);
-      945:      pm_runtime_put_noidle(&pdev->dev);
-      946:
-      947:      dma_async_device_unregister(&mtkd->ddev);
-
---- CONTEXT 939-955, TARGET 947 ---
-      939:      struct mtk_dmadev *mtkd = platform_get_drvdata(pdev);
-      940:
-      941:      if (pdev->dev.of_node)
-      942:              of_dma_controller_free(pdev->dev.of_node);
-      943:
-      944:      pm_runtime_disable(&pdev->dev);
-      945:      pm_runtime_put_noidle(&pdev->dev);
-      946:
->>>   947:      dma_async_device_unregister(&mtkd->ddev);
-      948:
-      949:      mtk_dma_free(mtkd);
-      950:
-      951:      return 0;
-      952: }
-      953:
-      954: #ifdef CONFIG_PM_SLEEP
-      955: static int mtk_dma_suspend(struct device *dev)
-
---- CONTEXT 941-957, TARGET 949 ---
-      941:      if (pdev->dev.of_node)
-      942:              of_dma_controller_free(pdev->dev.of_node);
-      943:
-      944:      pm_runtime_disable(&pdev->dev);
-      945:      pm_runtime_put_noidle(&pdev->dev);
-      946:
-      947:      dma_async_device_unregister(&mtkd->ddev);
-      948:
->>>   949:      mtk_dma_free(mtkd);
-      950:
-      951:      return 0;
-      952: }
-      953:
-      954: #ifdef CONFIG_PM_SLEEP
-      955: static int mtk_dma_suspend(struct device *dev)
-      956: {
-      957:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-
---- CONTEXT 949-965, TARGET 957 ---
-      949:      mtk_dma_free(mtkd);
-      950:
-      951:      return 0;
-      952: }
-      953:
-      954: #ifdef CONFIG_PM_SLEEP
-      955: static int mtk_dma_suspend(struct device *dev)
-      956: {
->>>   957:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-      958:
-      959:      if (!pm_runtime_suspended(dev))
-      960:              mtk_dma_clk_disable(mtkd);
-      961:
-      962:      return 0;
-      963: }
-      964:
-      965: static int mtk_dma_resume(struct device *dev)
-
---- CONTEXT 952-968, TARGET 960 ---
-      952: }
-      953:
-      954: #ifdef CONFIG_PM_SLEEP
-      955: static int mtk_dma_suspend(struct device *dev)
-      956: {
-      957:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-      958:
-      959:      if (!pm_runtime_suspended(dev))
->>>   960:              mtk_dma_clk_disable(mtkd);
-      961:
-      962:      return 0;
-      963: }
-      964:
-      965: static int mtk_dma_resume(struct device *dev)
-      966: {
-      967:      int ret;
-      968:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-
---- CONTEXT 960-976, TARGET 968 ---
-      960:              mtk_dma_clk_disable(mtkd);
-      961:
-      962:      return 0;
-      963: }
-      964:
-      965: static int mtk_dma_resume(struct device *dev)
-      966: {
-      967:      int ret;
->>>   968:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-      969:
-      970:      if (!pm_runtime_suspended(dev)) {
-      971:              ret = mtk_dma_clk_enable(mtkd);
-      972:              if (ret) {
-      973:                      pr_info("fail to enable clk: %d\n", ret);
-      974:                      return ret;
-      975:              }
-      976:      }
-
---- CONTEXT 963-979, TARGET 971 ---
-      963: }
-      964:
-      965: static int mtk_dma_resume(struct device *dev)
-      966: {
-      967:      int ret;
-      968:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-      969:
-      970:      if (!pm_runtime_suspended(dev)) {
->>>   971:              ret = mtk_dma_clk_enable(mtkd);
-      972:              if (ret) {
-      973:                      pr_info("fail to enable clk: %d\n", ret);
-      974:                      return ret;
-      975:              }
-      976:      }
-      977:
-      978:      return 0;
-      979: }
-
---- CONTEXT 975-991, TARGET 983 ---
-      975:              }
-      976:      }
-      977:
-      978:      return 0;
-      979: }
-      980:
-      981: static int mtk_dma_runtime_suspend(struct device *dev)
-      982: {
->>>   983:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-      984:
-      985:      mtk_dma_clk_disable(mtkd);
-      986:
-      987:      return 0;
-      988: }
-      989:
-      990: static int mtk_dma_runtime_resume(struct device *dev)
-      991: {
-
---- CONTEXT 977-993, TARGET 985 ---
-      977:
-      978:      return 0;
-      979: }
-      980:
-      981: static int mtk_dma_runtime_suspend(struct device *dev)
-      982: {
-      983:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-      984:
->>>   985:      mtk_dma_clk_disable(mtkd);
-      986:
-      987:      return 0;
-      988: }
-      989:
-      990: static int mtk_dma_runtime_resume(struct device *dev)
-      991: {
-      992:      int ret;
-      993:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-
---- CONTEXT 985-1001, TARGET 993 ---
-      985:      mtk_dma_clk_disable(mtkd);
-      986:
-      987:      return 0;
-      988: }
-      989:
-      990: static int mtk_dma_runtime_resume(struct device *dev)
-      991: {
-      992:      int ret;
->>>   993:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-      994:
-      995:      ret = mtk_dma_clk_enable(mtkd);
-      996:      if (ret) {
-      997:              pr_info("fail to enable clk: %d\n", ret);
-      998:              return ret;
-      999:      }
-     1000:
-     1001:      return 0;
-
---- CONTEXT 987-1003, TARGET 995 ---
-      987:      return 0;
-      988: }
-      989:
-      990: static int mtk_dma_runtime_resume(struct device *dev)
-      991: {
-      992:      int ret;
-      993:      struct mtk_dmadev *mtkd = dev_get_drvdata(dev);
-      994:
->>>   995:      ret = mtk_dma_clk_enable(mtkd);
-      996:      if (ret) {
-      997:              pr_info("fail to enable clk: %d\n", ret);
-      998:              return ret;
-      999:      }
-     1000:
-     1001:      return 0;
-     1002: }
-     1003:
-
---- CONTEXT 1017-1033, TARGET 1025 ---
-     1017:              .pm     = &mtk_dma_pm,
-     1018:              .of_match_table = of_match_ptr(mtk_uart_dma_match),
-     1019:      },
-     1020: };
-     1021:
-     1022: static bool mtk_dma_filter_fn(struct dma_chan *chan, void *param)
-     1023: {
-     1024:      if (chan->device->dev->driver == &mtk_dma_driver.driver) {
->>>  1025:              struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-     1026:              struct mtk_chan *c = to_mtk_dma_chan(chan);
-     1027:              unsigned int req = *(unsigned int *)param;
-     1028:
-     1029:              if (req <= mtkd->dma_requests) {
-     1030:                      c->dma_sig = req;
-     1031:                      c->dma_ch = req;
-     1032:                      return true;
-     1033:              }
-
---- CONTEXT 1021-1037, TARGET 1029 ---
-     1021:
-     1022: static bool mtk_dma_filter_fn(struct dma_chan *chan, void *param)
-     1023: {
-     1024:      if (chan->device->dev->driver == &mtk_dma_driver.driver) {
-     1025:              struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-     1026:              struct mtk_chan *c = to_mtk_dma_chan(chan);
-     1027:              unsigned int req = *(unsigned int *)param;
-     1028:
->>>  1029:              if (req <= mtkd->dma_requests) {
-     1030:                      c->dma_sig = req;
-     1031:                      c->dma_ch = req;
-     1032:                      return true;
-     1033:              }
-     1034:      }
-     1035:      return false;
-     1036: }
-     1037:
-
---------------------------------------------------------------------------------
-FUNCTIONS AROUND TARGET LINES
-
---- TARGET LINE 554, RANGE 536-599 ---
-      536: static unsigned int mtk_dma_desc_size(struct mtk_dma_desc *d)
-      537: {
-      538:      struct mtk_dma_sg *sg;
-      539:      unsigned int i;
-      540:      unsigned int size;
-      541:
-      542:      for (size = i = 0; i < d->sglen; i++) {
-      543:              sg = &d->sg[i];
-      544:              size += sg->en * sg->fn;
-      545:      }
-      546:      return size;
-      547: }
-      548:
-      549: static struct dma_async_tx_descriptor *mtk_dma_prep_slave_sg(
-      550:      struct dma_chan *chan, struct scatterlist *sgl, unsigned int sglen,
-      551:      enum dma_transfer_direction dir, unsigned long tx_flags, void *context)
-      552: {
-      553:      struct mtk_chan *c = to_mtk_dma_chan(chan);
->>>   554:      enum dma_slave_buswidth dev_width;
-      555:      struct scatterlist *sgent;
-      556:      struct mtk_dma_desc *d;
-      557:      dma_addr_t dev_addr;
-      558:      unsigned int i, j, en, frame_bytes;
-      559:
-      560:      en = frame_bytes = 1;
-      561:
-      562:      if (dir == DMA_DEV_TO_MEM) {
-      563:              dev_addr = c->cfg.src_addr;
-      564:              dev_width = c->cfg.src_addr_width;
-      565:      } else if (dir == DMA_MEM_TO_DEV) {
-      566:              dev_addr = c->cfg.dst_addr;
-      567:              dev_width = c->cfg.dst_addr_width;
-      568:      } else {
-      569:              pr_err("%s: bad direction?\n", __func__);
-      570:              return NULL;
-      571:      }
-      572:
-      573:      /* Now allocate and setup the descriptor. */
-      574:      d = kzalloc(sizeof(*d) + sglen * sizeof(d->sg[0]), GFP_ATOMIC);
-      575:      if (d == NULL)
-      576:              return NULL;
-      577:
-      578:      d->dir = dir;
-      579:      d->dev_addr = dev_addr;
-      580:
-      581:      j = 0;
-      582:      for_each_sg(sgl, sgent, sglen, i) {
-      583:              d->sg[j].addr = sg_dma_address(sgent);
-      584:              d->sg[j].en = en;
-      585:              d->sg[j].fn = sg_dma_len(sgent) / frame_bytes;
-      586:              j++;
-      587:      }
-      588:
-      589:      d->sglen = j;
-      590:
-      591:      if (dir == DMA_MEM_TO_DEV)
-      592:              c->remain_size = mtk_dma_desc_size(d);
-      593:
-      594:      return vchan_tx_prep(&c->vc, &d->vd, tx_flags);
-      595: }
-      596:
-      597: static void mtk_dma_issue_pending(struct dma_chan *chan)
-      598: {
-      599:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-
---- TARGET LINE 600, RANGE 597-645 ---
-      597: static void mtk_dma_issue_pending(struct dma_chan *chan)
-      598: {
-      599:      struct mtk_chan *c = to_mtk_dma_chan(chan);
->>>   600:      struct mtk_dmadev *mtkd;
-      601:      struct virt_dma_desc *vd;
-      602:      dma_cookie_t cookie;
-      603:      unsigned long flags;
-      604:
-      605:      spin_lock_irqsave(&c->vc.lock, flags);
-      606:      if (c->cfg.direction == DMA_DEV_TO_MEM) {
-      607:              cookie = c->vc.chan.cookie;
-      608:              mtkd = to_mtk_dma_dev(chan->device);
-      609:              if (vchan_issue_pending(&c->vc) && (c->desc == NULL)) {
-      610:                      vd = vchan_find_desc(&c->vc, cookie);
-      611:                      c->desc = to_mtk_dma_desc(&vd->tx);
-      612:                      if (atomic_read(&c->entry) > 0)
-      613:                              atomic_set(&c->entry, 0);
-      614:              }
-      615:      } else if (c->cfg.direction == DMA_MEM_TO_DEV) {
-      616:              cookie = c->vc.chan.cookie;
-      617:              if (vchan_issue_pending(&c->vc) && !c->desc) {
-      618:                      vd = vchan_find_desc(&c->vc, cookie);
-      619:                      c->desc = to_mtk_dma_desc(&vd->tx);
-      620:                      mtk_dma_start_tx(c);
-      621:              }
-      622:      }
-      623:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      624: }
-      625:
-      626: static irqreturn_t mtk_dma_rx_interrupt(int irq, void *dev_id)
-      627: {
-      628:      struct dma_chan *chan = (struct dma_chan *)dev_id;
-      629:      struct mtk_chan *c = to_mtk_dma_chan(chan);
-      630:      struct mtk_dmadev *mtkd = to_mtk_dma_dev(chan->device);
-      631:      unsigned long flags;
-      632:
-      633:      spin_lock_irqsave(&c->vc.lock, flags);
-      634:      mtk_dma_chan_write(c, VFF_INT_FLAG, VFF_RX_INT_FLAG_CLR_B);
-      635:
-      636:      if (atomic_inc_return(&c->entry) > 1) {
-      637:              if (list_empty(&mtkd->pending))
-      638:                      list_add_tail(&c->node, &mtkd->pending);
-      639:              tasklet_schedule(&mtkd->task);
-      640:      } else {
-      641:              mtk_dma_start_rx(c);
-      642:      }
-      643:      spin_unlock_irqrestore(&c->vc.lock, flags);
-      644:
-      645:      return IRQ_HANDLED;
+----------------------------------------------------------------------------------------------------
+TARGET LINE 101: variable 'ret'
+----------------------------------------------------------------------------------------------------
+CONTEXT 66-145:
+   66: /*
+   67:  *    function implementation
+   68:  */
+   69:
+   70: static int mtk_i2s0_probe(struct platform_device *pdev);
+   71: static int mtk_pcm_i2s0_close(struct snd_pcm_substream *substream);
+   72: static int mtk_afe_i2s0_probe(struct snd_soc_platform *platform);
+   73:
+   74: int mtk_soc_always_hd;
+   75: int extcodec_echoref_control;
+   76: static int mi2s0_sidegen_control;
+   77: static int hdoutput_control;
+   78: const char *const i2s0_SIDEGEN[] = {"Off",     "On8000",  "On16000",
+   79:                              "On32000", "On44100", "On48000",
+   80:                              "On96000", "On192000"};
+   81: const char *const i2s0_HD_output[] = {"Off", "On"};
+   82: const char *const ExtCodec_EchoRef_Routing[] = {"Off", "MD1", "MD3", "SCP"};
+   83:
+   84: static const struct soc_enum Audio_i2s0_Enum[] = {
+   85:  SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(i2s0_SIDEGEN), i2s0_SIDEGEN),
+   86:  SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(i2s0_HD_output), i2s0_HD_output),
+   87:  SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(ExtCodec_EchoRef_Routing),
+   88:                      ExtCodec_EchoRef_Routing),
+   89: };
+   90:
+   91: static int Audio_i2s0_SideGen_Get(struct snd_kcontrol *kcontrol,
+   92:                            struct snd_ctl_elem_value *ucontrol)
+   93: {
+   94:  ucontrol->value.integer.value[0] = mi2s0_sidegen_control;
+   95:  return 0;
+   96: }
+   97:
+   98: static int Audio_i2s0_SideGen_Set(struct snd_kcontrol *kcontrol,
+   99:                            struct snd_ctl_elem_value *ucontrol)
+  100: {
+  101:  bool ret = false; <<< TARGET
+  102:  static int samplerate;
+  103:  unsigned int u32AudioI2sOut = 0;
+  104:  unsigned int u32Audio2ndI2sIn = 0;
+  105:
+  106:  AudDrv_Clk_On();
+  107:
+  108:  if (ucontrol->value.enumerated.item[0] > ARRAY_SIZE(i2s0_SIDEGEN)) {
+  109:          pr_err("return -EINVAL\n");
+  110:          return -EINVAL;
+  111:  }
+  112:  mi2s0_sidegen_control = ucontrol->value.integer.value[0];
+  113:
+  114:  /* Config smart pa I2S pin */
+  115:  AudDrv_GPIO_SMARTPA_Select(mi2s0_sidegen_control > 0 ? 1 : 0);
+  116:
+  117:  pr_debug(
+  118:          "%s(), sidegen = %d, hdoutput = %d, extcodec_echoref = %d, always_hd = %d\n",
+  119:          __func__, mi2s0_sidegen_control, hdoutput_control,
+  120:          extcodec_echoref_control, mtk_soc_always_hd);
+  121:
+  122:  /* Set SmartPa i2s by platform. Return false if no platform implement,
+  123:   * then use default i2s3/0.
+  124:   */
+  125:  if (get_afe_platform_ops()->set_smartpa_i2s != NULL) {
+  126:          ret = get_afe_platform_ops()->set_smartpa_i2s(
+  127:                  mi2s0_sidegen_control, hdoutput_control,
+  128:                  extcodec_echoref_control, mtk_soc_always_hd);
+  129:          goto i2s_config_done;
+  130:  }
+  131:
+  132:  if (mi2s0_sidegen_control) {
+  133:          /* Phone call echo ref, speaker mode connection*/
+  134:          switch (extcodec_echoref_control) {
+  135:          case 1:
+  136:                  /* MD1 connection */
+  137:                  SetIntfConnection(
+  138:                          Soc_Aud_InterCon_Connection,
+  139:                          Soc_Aud_AFE_IO_Block_MODEM_PCM_2_I_CH1,
+  140:                          Soc_Aud_AFE_IO_Block_I2S3);
+  141:                  SetIntfConnection(
+  142:                          Soc_Aud_InterCon_Connection,
+  143:                          Soc_Aud_AFE_IO_Block_I2S0_CH2,
+  144:                          Soc_Aud_AFE_IO_Block_MODEM_PCM_2_O_CH4);
+  145:                  break;
+
+'ret' OCCURRENCES IN CONTEXT:
+  101:  bool ret = false;
+  126:          ret = get_afe_platform_ops()->set_smartpa_i2s(
+COUNT: 2
 
 ====================================================================================================
-FORENSIC COMPLETE
+FORENSIC V2 COMPLETE
 ====================================================================================================
 🐧 [root@debian:~]#
