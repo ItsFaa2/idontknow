@@ -1,4 +1,32 @@
-🐧 [root@debian:~]# ~/kernel-source/build_ksu_vmlinux_v2.py 2>&1 | tee -a ~/kernel-source/build/ksu-32915384-49/build-manual.log
+🐧 [root@debian:~]# ~/kernel-source/build_ksu_vmlinux_v2.py
+================================================================================
+FAA KERNEL 4.9.205 KSU FULL VMLINUX BUILD V2
+================================================================================
+
+=== STEP 1: EXECUTABLE SCRIPT VALIDATION ===
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/ld-version.sh
+  mode: 0o755
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/kernel/vdso/gen_vdso_offsets.sh
+  mode: 0o755
+
+=== STEP 2: KSU CONFIG ===
+OK: CONFIG_KSU=y
+OK: CONFIG_MODULES=y
+OK: CONFIG_KPROBES=y
+OK: CONFIG_OVERLAY_FS=y
+
+=== STEP 3: VDSO OFFSET HEADER ===
+#define vdso_offset_sigtramp    0x0820
+VDSO OFFSET: VALID
+
+=== STEP 4: VDSO ELF ===
+SIZE: 18624
+VDSO_sigtramp: PRESENT
+
+=== STEP 5: FULL VMLINUX BUILD ===
+
+$ make LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabihf- CC=clang-13 LD=ld.lld-13 AR=llvm-ar-13 NM=llvm-nm-13 OBJCOPY=llvm-objcopy-13 OBJDUMP=llvm-objdump-13 STRIP=llvm-strip-13 -C /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15 O=/root/kernel-source/build/ksu-32915384-49 ARCH=arm64 -j2 vmlinux
+
 make: Entering directory '/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
 make[1]: Entering directory '/root/kernel-source/build/ksu-32915384-49'
   CHK     include/config/kernel.release
@@ -112,101 +140,54 @@ make[6]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt67
 make[5]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek/videocodec/mt6765] Error 2
 make[4]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek/videocodec] Error 2
 make[4]: *** Waiting for unfinished jobs....
+  CC      drivers/misc/mediatek/video/mt6765/dispsys/ddp_rsz.o
 /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/dispsys/ddp_dsi.c:1208:15: error: variable 'prediv' set but not used [-Werror,-Wunused-but-set-variable]
         unsigned int prediv = 0;
                      ^
-  CC      drivers/misc/mediatek/video/mt6765/videox/debug.o
 1 error generated.
 make[7]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/misc/mediatek/video/mt6765/dispsys/ddp_dsi.o] Error 1
+make[7]: *** Waiting for unfinished jobs....
+  CC      drivers/misc/mediatek/video/mt6765/videox/debug.o
 make[6]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek/video/mt6765/dispsys] Error 2
 make[6]: *** Waiting for unfinished jobs....
   CC      drivers/misc/mediatek/video/mt6765/videox/primary_display.o
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:495:11: error: expected ')'
-        (void)ret;
-                 ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:494:22: note: to match this '('
-                ret = m4u_alloc_mva(buf_info->m4u_client,
-                                   ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:497:43: error: extraneous ')' before ';'
-                        M4U_PROT_READ | M4U_PROT_WRITE, 0, &mva);
-                                                               ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:576:2: error: expected expression
-        else
-        ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1022:11: error: expected ')'
-        (void)ret;
-                 ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1021:16: note: to match this '('
-                        ret = sscanf(opt, "fake_eng:%d,%d,%d,%d,%d\n",
-                                    ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1024:30: error: extraneous ')' before ';'
-                                     &burst_len, &latency);
-                                                         ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1254:11: error: expected ')'
-        (void)ret;
-                 ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1253:16: note: to match this '('
-                        ret = sscanf(opt, "dump_layer:on,%d,%d,%d\n",
-                                    ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1256:25: error: extraneous ')' before ';'
-                                &gCapturePriLayerNum);
-                                                    ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1282:11: error: expected ')'
-        (void)ret;
-                 ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1281:16: note: to match this '('
-                        ret = sscanf(opt, "dump_wdma_layer:on,%d,%d\n",
-                                    ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1283:51: error: extraneous ')' before ';'
-                                &gCapturePriLayerDownX, &gCapturePriLayerDownY);
-                                                                              ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1307:11: error: expected ')'
-        (void)ret;
-                 ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1306:16: note: to match this '('
-                        ret = sscanf(opt, "dump_rdma_layer:on,%d,%d\n",
-                                    ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1309:32: error: extraneous ')' before ';'
-                                     &gCapturePriLayerDownY);
-                                                           ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1406:11: error: expected ')'
-        (void)ret;
-                 ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1405:15: note: to match this '('
-                ret = sscanf(opt,
-                            ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1410:46: error: extraneous ')' before ';'
-                             &x, &y, &r, &g, &b, &a, &mode, &cksum);
-                                                                  ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1489:11: error: expected ')'
-        (void)ret;
-                 ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1488:15: note: to match this '('
-                ret = sscanf(opt, "layout_noncontinuous:%d\n",
-                            ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1490:38: error: extraneous ')' before ';'
-                        &layer_layout_allow_non_continuous);
-                                                          ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1512:11: error: expected ')'
-        (void)ret;
-                 ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1511:15: note: to match this '('
-                ret = sscanf(opt, "layer_statistic:%d\n",
-                            ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1513:27: error: extraneous ')' before ';'
-                        &layer_statistic_enable);
-                                               ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1538:11: error: expected ')'
-        (void)ret;
-                 ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1537:15: note: to match this '('
-                ret = sscanf(opt, "change_mipi_date_rate:%d\n",
-                            ^
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1539:19: error: extraneous ')' before ';'
-                        &mipi_date_rate);
-                                       ^
-fatal error: too many errors emitted, stopping now [-ferror-limit=]
-20 errors generated.
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1795:14: error: expected ')'
+        (void)d_file;
+                    ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1794:31: note: to match this '('
+                d_file = debugfs_create_file("kickdump",
+                                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1796:50: error: extraneous ')' before ';'
+                        S_IFREG | 0444, d_folder, NULL, &kickidle_fops);
+                                                                      ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1798:14: error: expected ')'
+        (void)d_file;
+                    ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1797:31: note: to match this '('
+                d_file = debugfs_create_file("partial",
+                                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1799:49: error: extraneous ')' before ';'
+                        S_IFREG | 0444, d_folder, NULL, &partial_fops);
+                                                                     ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1801:14: error: expected ')'
+        (void)d_file;
+                    ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1800:31: note: to match this '('
+                d_file = debugfs_create_file("idletime",
+                                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1802:50: error: extraneous ')' before ';'
+                        S_IFREG | 0666, d_folder, NULL, &idletime_fops);
+                                                                      ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1804:14: error: expected ')'
+        (void)d_file;
+                    ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1803:31: note: to match this '('
+                d_file = debugfs_create_file("idlevfp",
+                                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1805:49: error: extraneous ')' before ';'
+                        S_IFREG | 0666, d_folder, NULL, &idlevfp_fops);
+                                                                     ^
+8 errors generated.
 make[7]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/misc/mediatek/video/mt6765/videox/debug.o] Error 1
 make[7]: *** Waiting for unfinished jobs....
 /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:564:11: error: expected ')'
@@ -426,34 +407,6 @@ make[1]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt67
 make[1]: Leaving directory '/root/kernel-source/build/ksu-32915384-49'
 make: *** [Makefile:152: sub-make] Error 2
 make: Leaving directory '/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
-================================================================================
-FAA KERNEL 4.9.205 KSU FULL VMLINUX BUILD V2
-================================================================================
-
-=== STEP 1: EXECUTABLE SCRIPT VALIDATION ===
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/ld-version.sh
-  mode: 0o755
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/kernel/vdso/gen_vdso_offsets.sh
-  mode: 0o755
-
-=== STEP 2: KSU CONFIG ===
-OK: CONFIG_KSU=y
-OK: CONFIG_MODULES=y
-OK: CONFIG_KPROBES=y
-OK: CONFIG_OVERLAY_FS=y
-
-=== STEP 3: VDSO OFFSET HEADER ===
-#define vdso_offset_sigtramp    0x0820
-VDSO OFFSET: VALID
-
-=== STEP 4: VDSO ELF ===
-SIZE: 18624
-VDSO_sigtramp: PRESENT
-
-=== STEP 5: FULL VMLINUX BUILD ===
-
-$ make LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabihf- CC=clang-13 LD=ld.lld-13 AR=llvm-ar-13 NM=llvm-nm-13 OBJCOPY=llvm-objcopy-13 OBJDUMP=llvm-objdump-13 STRIP=llvm-strip-13 -C /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15 O=/root/kernel-source/build/ksu-32915384-49 ARCH=arm64 -j2 vmlinux
-
 
 BUILD EXIT CODE: 2
 
