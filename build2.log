@@ -1,3 +1,431 @@
+🐧 [root@debian:~]# ~/kernel-source/build_ksu_vmlinux_v2.py 2>&1 | tee -a ~/kernel-source/build/ksu-32915384-49/build-manual.log
+make: Entering directory '/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
+make[1]: Entering directory '/root/kernel-source/build/ksu-32915384-49'
+  CHK     include/config/kernel.release
+  GEN     ./Makefile
+  CHK     include/generated/uapi/linux/version.h
+  CHK     include/generated/utsrelease.h
+  Using /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15 as source for kernel
+  CHK     scripts/mod/devicetable-offsets.h
+  CHK     include/generated/timeconst.h
+  CHK     include/generated/bounds.h
+  CHK     include/generated/asm-offsets.h
+  CALL    /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/checksyscalls.sh
+  CHK     include/generated/compile.h
+  CHK     kernel/config_data.h
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/kernelsu/Makefile:29: "KSU_GIT_VERSION not defined! It is better to make KernelSU a git submodule!"
+-- KernelSU Manager signature size: 0x033b
+-- KernelSU Manager signature hash: c371061b19d8c7d7d6133c6a9bafe198fa944e50c1b31c9d8daa8d7f1fc2d2d6
+-- Did you know you can backport path_umount to fs/namespace.c from 5.9?
+-- Read: https://kernelsu.org/guide/how-to-integrate-for-non-gki.html#how-to-backport-path_umount
+  CC      drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.o
+  CC      drivers/misc/mediatek/video/mt6765/dispsys/ddp_dsi.o
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1001:15: error: expected ')'
+        (void)eValRet;
+                     ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1000:29: note: to match this '('
+                        eValRet = eVideoWaitEvent(&HWLockEvent,
+                                                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1002:33: error: extraneous ')' before ';'
+                                                sizeof(struct VAL_EVENT_T));
+                                                                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1032:15: error: expected ')'
+        (void)eValRet;
+                     ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1031:29: note: to match this '('
+                        eValRet = eVideoWaitEvent(&HWLockEvent,
+                                                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1033:33: error: extraneous ')' before ';'
+                                                sizeof(struct VAL_EVENT_T));
+                                                                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1136:41: error: invalid operands to binary expression ('unsigned int' and 'void')
+                        u4TimeInterval = (((((rCurTime.u4Sec -
+                                              ~~~~~~~~~~~~~~ ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1137:22: error: expected ')'
+        (void)u4TimeInterval;
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1136:25: note: to match this '('
+                        u4TimeInterval = (((((rCurTime.u4Sec -
+                                             ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1137:22: error: expected ')'
+        (void)u4TimeInterval;
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1136:24: note: to match this '('
+                        u4TimeInterval = (((((rCurTime.u4Sec -
+                                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1137:22: error: expected ')'
+        (void)u4TimeInterval;
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1136:23: note: to match this '('
+                        u4TimeInterval = (((((rCurTime.u4Sec -
+                                           ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1137:22: error: expected ')'
+        (void)u4TimeInterval;
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1136:22: note: to match this '('
+                        u4TimeInterval = (((((rCurTime.u4Sec -
+                                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1137:22: error: expected ')'
+        (void)u4TimeInterval;
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1136:21: note: to match this '('
+                        u4TimeInterval = (((((rCurTime.u4Sec -
+                                         ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1138:35: error: expected ';' after expression
+                                        CodecHWLock.rLockedTime.u4Sec) *
+                                                                     ^
+                                                                     ;
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1138:35: error: expected expression
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:963:7: error: ISO C90 forbids mixing declarations and code [-Werror,-Wdeclaration-after-statement]
+        long ret = 0;
+             ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1222:15: error: expected ')'
+        (void)eValRet;
+                     ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1221:29: note: to match this '('
+                        eValRet = eVideoWaitEvent(&HWLockEvent,
+                                                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1223:33: error: extraneous ')' before ';'
+                                                sizeof(struct VAL_EVENT_T));
+                                                                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1263:15: error: expected ')'
+        (void)eValRet;
+                     ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1262:29: note: to match this '('
+                        eValRet = eVideoWaitEvent(&HWLockEvent,
+                                                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1264:33: error: extraneous ')' before ';'
+                                                sizeof(struct VAL_EVENT_T));
+                                                                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1371:41: error: invalid operands to binary expression ('unsigned int' and 'void')
+                        u4TimeInterval = (((((rCurTime.u4Sec -
+                                              ~~~~~~~~~~~~~~ ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1372:22: error: expected ')'
+        (void)u4TimeInterval;
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.c:1371:25: note: to match this '('
+                        u4TimeInterval = (((((rCurTime.u4Sec -
+                                             ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+make[6]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/misc/mediatek/videocodec/mt6765/videocodec_kernel_driver.o] Error 1
+make[5]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek/videocodec/mt6765] Error 2
+make[4]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek/videocodec] Error 2
+make[4]: *** Waiting for unfinished jobs....
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/dispsys/ddp_dsi.c:1208:15: error: variable 'prediv' set but not used [-Werror,-Wunused-but-set-variable]
+        unsigned int prediv = 0;
+                     ^
+  CC      drivers/misc/mediatek/video/mt6765/videox/debug.o
+1 error generated.
+make[7]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/misc/mediatek/video/mt6765/dispsys/ddp_dsi.o] Error 1
+make[6]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek/video/mt6765/dispsys] Error 2
+make[6]: *** Waiting for unfinished jobs....
+  CC      drivers/misc/mediatek/video/mt6765/videox/primary_display.o
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:495:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:494:22: note: to match this '('
+                ret = m4u_alloc_mva(buf_info->m4u_client,
+                                   ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:497:43: error: extraneous ')' before ';'
+                        M4U_PROT_READ | M4U_PROT_WRITE, 0, &mva);
+                                                               ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:576:2: error: expected expression
+        else
+        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1022:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1021:16: note: to match this '('
+                        ret = sscanf(opt, "fake_eng:%d,%d,%d,%d,%d\n",
+                                    ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1024:30: error: extraneous ')' before ';'
+                                     &burst_len, &latency);
+                                                         ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1254:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1253:16: note: to match this '('
+                        ret = sscanf(opt, "dump_layer:on,%d,%d,%d\n",
+                                    ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1256:25: error: extraneous ')' before ';'
+                                &gCapturePriLayerNum);
+                                                    ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1282:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1281:16: note: to match this '('
+                        ret = sscanf(opt, "dump_wdma_layer:on,%d,%d\n",
+                                    ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1283:51: error: extraneous ')' before ';'
+                                &gCapturePriLayerDownX, &gCapturePriLayerDownY);
+                                                                              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1307:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1306:16: note: to match this '('
+                        ret = sscanf(opt, "dump_rdma_layer:on,%d,%d\n",
+                                    ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1309:32: error: extraneous ')' before ';'
+                                     &gCapturePriLayerDownY);
+                                                           ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1406:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1405:15: note: to match this '('
+                ret = sscanf(opt,
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1410:46: error: extraneous ')' before ';'
+                             &x, &y, &r, &g, &b, &a, &mode, &cksum);
+                                                                  ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1489:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1488:15: note: to match this '('
+                ret = sscanf(opt, "layout_noncontinuous:%d\n",
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1490:38: error: extraneous ')' before ';'
+                        &layer_layout_allow_non_continuous);
+                                                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1512:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1511:15: note: to match this '('
+                ret = sscanf(opt, "layer_statistic:%d\n",
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1513:27: error: extraneous ')' before ';'
+                        &layer_statistic_enable);
+                                               ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1538:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1537:15: note: to match this '('
+                ret = sscanf(opt, "change_mipi_date_rate:%d\n",
+                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/debug.c:1539:19: error: extraneous ')' before ';'
+                        &mipi_date_rate);
+                                       ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+make[7]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/misc/mediatek/video/mt6765/videox/debug.o] Error 1
+make[7]: *** Waiting for unfinished jobs....
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:564:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:563:8: note: to match this '('
+        ret = __primary_display_wait_state(
+              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:381:7: note: expanded from macro 'wait_event_timeout'
+        if (!___wait_cond_timeout(condition))                           \
+             ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:16: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+                      ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:563:8: error: initializing 'bool' (aka '_Bool') with an expression of incompatible type 'void'
+        ret = __primary_display_wait_state(
+              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^                                            ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:381:7: note: expanded from macro 'wait_event_timeout'
+        if (!___wait_cond_timeout(condition))                           \
+             ^                    ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:7: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+             ^         ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:563:8: error: extraneous ')' before ';'
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:381:7: note: expanded from macro 'wait_event_timeout'
+        if (!___wait_cond_timeout(condition))                           \
+             ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:26: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+                                ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:564:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:563:8: note: to match this '('
+        ret = __primary_display_wait_state(
+              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:382:11: note: expanded from macro 'wait_event_timeout'
+                __ret = __wait_event_timeout(wq, condition, timeout);   \
+                        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:354:20: note: expanded from macro '__wait_event_timeout'
+        ___wait_event(wq, ___wait_cond_timeout(condition),              \
+                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:16: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+                      ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:563:8: error: initializing 'bool' (aka '_Bool') with an expression of incompatible type 'void'
+        ret = __primary_display_wait_state(
+              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^                                            ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:382:11: note: expanded from macro 'wait_event_timeout'
+                __ret = __wait_event_timeout(wq, condition, timeout);   \
+                        ^                        ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:354:20: note: expanded from macro '__wait_event_timeout'
+        ___wait_event(wq, ___wait_cond_timeout(condition),              \
+                          ^                    ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:7: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+             ^         ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:275:7: note: expanded from macro '___wait_event'
+                if (condition)                                          \
+                    ^~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:563:8: error: extraneous ')' before ';'
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:382:11: note: expanded from macro 'wait_event_timeout'
+                __ret = __wait_event_timeout(wq, condition, timeout);   \
+                        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:354:20: note: expanded from macro '__wait_event_timeout'
+        ___wait_event(wq, ___wait_cond_timeout(condition),              \
+                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:26: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+                                ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:574:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:573:8: note: to match this '('
+        ret = __primary_display_wait_state(
+              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:381:7: note: expanded from macro 'wait_event_timeout'
+        if (!___wait_cond_timeout(condition))                           \
+             ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:16: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+                      ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:573:8: error: initializing 'bool' (aka '_Bool') with an expression of incompatible type 'void'
+        ret = __primary_display_wait_state(
+              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^                                            ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:381:7: note: expanded from macro 'wait_event_timeout'
+        if (!___wait_cond_timeout(condition))                           \
+             ^                    ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:7: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+             ^         ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:573:8: error: extraneous ')' before ';'
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:381:7: note: expanded from macro 'wait_event_timeout'
+        if (!___wait_cond_timeout(condition))                           \
+             ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:26: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+                                ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:574:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:573:8: note: to match this '('
+        ret = __primary_display_wait_state(
+              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:382:11: note: expanded from macro 'wait_event_timeout'
+                __ret = __wait_event_timeout(wq, condition, timeout);   \
+                        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:354:20: note: expanded from macro '__wait_event_timeout'
+        ___wait_event(wq, ___wait_cond_timeout(condition),              \
+                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:16: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+                      ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:573:8: error: initializing 'bool' (aka '_Bool') with an expression of incompatible type 'void'
+        ret = __primary_display_wait_state(
+              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^                                            ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:382:11: note: expanded from macro 'wait_event_timeout'
+                __ret = __wait_event_timeout(wq, condition, timeout);   \
+                        ^                        ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:354:20: note: expanded from macro '__wait_event_timeout'
+        ___wait_event(wq, ___wait_cond_timeout(condition),              \
+                          ^                    ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:7: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+             ^         ~~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:275:7: note: expanded from macro '___wait_event'
+                if (condition)                                          \
+                    ^~~~~~~~~
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:573:8: error: extraneous ')' before ';'
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:557:2: note: expanded from macro '__primary_display_wait_state'
+        wait_event_timeout(display_state_wait_queue, condition, timeout)
+        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:382:11: note: expanded from macro 'wait_event_timeout'
+                __ret = __wait_event_timeout(wq, condition, timeout);   \
+                        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:354:20: note: expanded from macro '__wait_event_timeout'
+        ___wait_event(wq, ___wait_cond_timeout(condition),              \
+                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/wait.h:241:26: note: expanded from macro '___wait_cond_timeout'
+        bool __cond = (condition);                                      \
+                                ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:593:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:592:27: note: to match this '('
+                ret = m4u_query_mva_info(mva, layer_size,
+                                        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:594:27: error: extraneous ')' before ';'
+                                        &real_mva, &real_size);
+                                                             ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:600:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:599:27: note: to match this '('
+                ret = m4u_mva_map_kernel(real_mva, real_size,
+                                        ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:601:22: error: extraneous ')' before ';'
+                        &kva, &mapped_size);
+                                          ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:612:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:611:17: note: to match this '('
+                ret = MFC_Open(&mfc_handle,
+                              ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:618:24: error: extraneous ')' before ';'
+                               DAL_COLOR_RED);
+                                            ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:1426:11: error: expected ')'
+        (void)ret;
+                 ^
+/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/misc/mediatek/video/mt6765/videox/primary_display.c:1425:21: note: to match this '('
+                        ret = cmdqRecWait(pgc->cmdq_handle_trigger,
+                                         ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+make[7]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/misc/mediatek/video/mt6765/videox/primary_display.o] Error 1
+make[6]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek/video/mt6765/videox] Error 2
+make[5]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek/video/mt6765] Error 2
+make[4]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek/video] Error 2
+make[3]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc/mediatek] Error 2
+make[2]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/misc] Error 2
+make[1]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/Makefile:1120: drivers] Error 2
+make[1]: Leaving directory '/root/kernel-source/build/ksu-32915384-49'
+make: *** [Makefile:152: sub-make] Error 2
+make: Leaving directory '/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
 ================================================================================
 FAA KERNEL 4.9.205 KSU FULL VMLINUX BUILD V2
 ================================================================================
@@ -15,425 +443,17 @@ OK: CONFIG_KPROBES=y
 OK: CONFIG_OVERLAY_FS=y
 
 === STEP 3: VDSO OFFSET HEADER ===
-#define vdso_offset_sigtramp    0x07e0
+#define vdso_offset_sigtramp    0x0820
 VDSO OFFSET: VALID
 
 === STEP 4: VDSO ELF ===
-SIZE: 19840
+SIZE: 18624
 VDSO_sigtramp: PRESENT
 
 === STEP 5: FULL VMLINUX BUILD ===
 
-$ make -C /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15 O=/root/kernel-source/build/ksu-32915384-49 ARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE_ARM32=arm-linux-gnueabihf- -j2 vmlinux
+$ make LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabihf- CC=clang-13 LD=ld.lld-13 AR=llvm-ar-13 NM=llvm-nm-13 OBJCOPY=llvm-objcopy-13 OBJDUMP=llvm-objdump-13 STRIP=llvm-strip-13 -C /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15 O=/root/kernel-source/build/ksu-32915384-49 ARCH=arm64 -j2 vmlinux
 
-make: Entering directory '/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
-make[1]: Entering directory '/root/kernel-source/build/ksu-32915384-49'
-  CHK     include/config/kernel.release
-  GEN     ./Makefile
-  CHK     include/generated/uapi/linux/version.h
-  CHK     include/generated/utsrelease.h
-  Using /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15 as source for kernel
-  CHK     scripts/mod/devicetable-offsets.h
-  CHK     include/generated/timeconst.h
-  CHK     include/generated/bounds.h
-  CHK     include/generated/asm-offsets.h
-  CALL    /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/checksyscalls.sh
-  CHK     include/generated/compile.h
-  CHK     kernel/config_data.h
-  CC      drivers/clocksource/clksrc-probe.o
-  CC      drivers/clk/mediatek/clk-mtk.o
-  CC      drivers/clocksource/mmio.o
-  CC      drivers/clk/mediatek/clk-pll.o
-  CC      drivers/clocksource/mtk_apxgpt.o
-  CC      drivers/clk/mediatek/clk-gate.o
-  CC      drivers/clk/mediatek/clk-mux.o
-  CC      drivers/clocksource/mtk_systimer.o
-  CC      drivers/clk/mediatek/clk-apmixed.o
-  CC      drivers/clocksource/arm_arch_timer.o
-  CC      drivers/clk/mediatek/clk-mt6765.o
-  CC      drivers/clk/mediatek/clk-mt6765-pg.o
-  CC      drivers/clocksource/dummy_timer.o
-  LD      drivers/clocksource/built-in.o
-  CC      drivers/cpufreq/cpufreq.o
-  CC      drivers/clk/mediatek/clk-mtk-v1.o
-  CC      drivers/clk/mediatek/clk-bringup.o
-  CC      drivers/clk/mediatek/clkdbg.o
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c: In function ‘get_all_provider_clks.part.0’:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:515:42: warning: dangling pointer to ‘name’ may be used [-Wdangling-pointer=]
-  515 |                         struct clk *ck = __clk_lookup(node_name);
-      |                                          ^~~~~~~~~~~~~~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:461:21: note: ‘name’ declared here
-  461 |         const char *name;
-      |                     ^~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:542:64: warning: dangling pointer to ‘name’ may be used [-Wdangling-pointer=]
-  542 |                                 provider_clks[n].provider_name = node_name;
-      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/clk/mediatek/clkdbg.c:461:21: note: ‘name’ declared here
-  461 |         const char *name;
-      |                     ^~~~
-  CC      drivers/cpufreq/freq_table.o
-  CC      drivers/clk/mediatek/clkchk.o
-  CC      drivers/cpufreq/cpufreq_stats.o
-  CC      drivers/clk/mediatek/clkdbg_mt6765.o
-  CC      drivers/cpufreq/cpufreq_times.o
-  CC      drivers/clk/mediatek/clkchk-mt6765.o
-  LD      drivers/clk/mediatek/built-in.o
-  LD      drivers/clk/mvebu/built-in.o
-  LD      drivers/clk/ti/built-in.o
-  LD      drivers/clk/built-in.o
-  CC      drivers/cpuidle/cpuidle.o
-  CC      drivers/cpufreq/cpufreq_performance.o
-  CC      drivers/cpufreq/cpufreq_powersave.o
-  CC      drivers/cpufreq/cpufreq_userspace.o
-  CC      drivers/cpufreq/cpufreq_ondemand.o
-  CC      drivers/cpuidle/driver.o
-  CC      drivers/cpuidle/governor.o
-  CC      drivers/cpuidle/sysfs.o
-  CC      drivers/cpufreq/cpufreq_interactive.o
-  CC      drivers/cpuidle/governors/mtk_menu.o
-  LD      drivers/cpuidle/governors/built-in.o
-  CC      drivers/cpuidle/cpuidle-mtk_acao.o
-  CC      drivers/cpufreq/cpufreq_governor.o
-  CC      drivers/cpufreq/cpufreq_governor_attr_set.o
-  LD      drivers/cpuidle/built-in.o
-  LD      drivers/crypto/built-in.o
-  CC      drivers/devfreq/devfreq.o
-  LD      drivers/cpufreq/built-in.o
-  CC      drivers/dma/dmaengine.o
-  CC      drivers/devfreq/helio-dvfsrc-opp.o
-  CC      drivers/devfreq/helio-dvfsrc-sysfs.o
-  CC      drivers/dma/virt-dma.o
-  CC      drivers/devfreq/helio-dvfsrc-ipi.o
-  CC      drivers/devfreq/helio-dvfsrc.o
-  CC      drivers/dma/of-dma.o
-  CC      drivers/devfreq/helio-dvfsrc-mt6765.o
-  CC      drivers/dma/8250_mtk_dma.o
-  CC      drivers/devfreq/helio-dvfsrc-opp-mt6765.o
-  LD      drivers/dma/qcom/built-in.o
-  LD      drivers/dma/xilinx/built-in.o
-  LD      drivers/dma/built-in.o
-  CC      drivers/dma-buf/dma-buf.o
-  LD      drivers/devfreq/built-in.o
-  LD      drivers/firewire/built-in.o
-  CC      drivers/firmware/psci.o
-  LD      drivers/firmware/broadcom/built-in.o
-  LD      drivers/firmware/meson/built-in.o
-  LD      drivers/firmware/built-in.o
-  CC      drivers/gpio/devres.o
-  CC      drivers/dma-buf/fence.o
-  CC      drivers/gpio/gpiolib.o
-  CC      drivers/dma-buf/reservation.o
-  CC      drivers/dma-buf/seqno-fence.o
-  CC      drivers/dma-buf/fence-array.o
-  CC      drivers/dma-buf/sync_file.o
-  CC      drivers/gpio/gpiolib-legacy.o
-  CC      drivers/dma-buf/sw_sync.o
-  CC      drivers/gpio/gpiolib-of.o
-  CC      drivers/dma-buf/sync_debug.o
-  LD      drivers/gpio/built-in.o
-  LD      drivers/gpu/arm/built-in.o
-  CC      drivers/gpu/drm/drm_crtc_helper.o
-  LD      drivers/dma-buf/built-in.o
-  CC      drivers/hid/hid-core.o
-  CC      drivers/gpu/drm/drm_dp_helper.o
-  CC      drivers/hid/hid-input.o
-  CC      drivers/gpu/drm/drm_probe_helper.o
-  CC      drivers/gpu/drm/drm_plane_helper.o
-  CC      drivers/hid/hid-debug.o
-In function ‘drm_plane_helper_check_update’,
-    inlined from ‘drm_primary_helper_update’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_plane_helper.c:338:8:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_plane_helper.c:236:32: error: ‘visible’ is used uninitialized [-Werror=uninitialized]
-  236 |         struct drm_plane_state state = {
-      |                                ^~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_plane_helper.c: In function ‘drm_primary_helper_update’:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_plane_helper.c:336:14: note: ‘visible’ was declared here
-  336 |         bool visible;
-      |              ^~~~~~~
-cc1: all warnings being treated as errors
-make[4]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/gpu/drm/drm_plane_helper.o] Error 1
-make[3]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/gpu/drm] Error 2
-make[2]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/gpu] Error 2
-make[2]: *** Waiting for unfinished jobs....
-  CC      sound/sound_core.o
-  CC      sound/core/sound.o
-  CC      drivers/hid/hidraw.o
-  CC      sound/core/init.o
-  CC      drivers/hid/uhid.o
-  CC      sound/core/memory.o
-  CC      drivers/hid/hid-generic.o
-  CC      drivers/hid/hid-a4tech.o
-  CC      sound/core/control.o
-  CC      drivers/hid/hid-axff.o
-  CC      drivers/hid/hid-apple.o
-  CC      drivers/hid/hid-belkin.o
-  CC      drivers/hid/hid-cherry.o
-  CC      drivers/hid/hid-chicony.o
-  CC      sound/core/misc.o
-  CC      drivers/hid/hid-cypress.o
-  CC      sound/core/device.o
-  CC      drivers/hid/hid-dr.o
-  CC      sound/core/info.o
-  CC      drivers/hid/hid-emsff.o
-  CC      drivers/hid/hid-elecom.o
-  CC      drivers/hid/hid-ezkey.o
-  CC      sound/core/info_oss.o
-  CC      drivers/hid/hid-gyration.o
-  CC      drivers/hid/hid-holtek-kbd.o
-  CC      sound/core/sound_oss.o
-  CC      drivers/hid/hid-holtek-mouse.o
-  CC      sound/core/ctljack.o
-  CC      drivers/hid/hid-holtekff.o
-  CC      sound/core/jack.o
-  CC      drivers/hid/hid-kensington.o
-  CC      drivers/hid/hid-keytouch.o
-  CC      sound/core/hwdep.o
-  CC      drivers/hid/hid-kye.o
-  CC      drivers/hid/hid-lcpower.o
-  CC      drivers/hid/hid-lg.o
-  CC      sound/core/timer.o
-  CC      drivers/hid/hid-lgff.o
-  CC      drivers/hid/hid-lg2ff.o
-  CC      drivers/hid/hid-lg3ff.o
-  CC      drivers/hid/hid-lg4ff.o
-  CC      sound/core/hrtimer.o
-  CC      sound/core/pcm.o
-  CC      drivers/hid/hid-logitech-dj.o
-  CC      drivers/hid/hid-logitech-hidpp.o
-  CC      sound/core/pcm_native.o
-  CC      drivers/hid/hid-magicmouse.o
-  CC      drivers/hid/hid-microsoft.o
-  CC      drivers/hid/hid-monterey.o
-  CC      drivers/hid/hid-multitouch.o
-  CC      drivers/hid/hid-ntrig.o
-  CC      drivers/hid/hid-ortek.o
-  CC      drivers/hid/hid-prodikeys.o
-  CC      drivers/hid/hid-pl.o
-  CC      sound/core/pcm_lib.o
-  CC      drivers/hid/hid-petalynx.o
-  CC      drivers/hid/hid-picolcd_core.o
-  CC      drivers/hid/hid-picolcd_debugfs.o
-In file included from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/asm-generic/preempt.h:4,
-                 from ./arch/arm64/include/generated/asm/preempt.h:1,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/preempt.h:59,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/spinlock.h:50,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/mmzone.h:7,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/gfp.h:5,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/slab.h:14,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/hid.h:30,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/hid/hid-picolcd_debugfs.c:20:
-In function ‘check_object_size’,
-    inlined from ‘copy_from_user’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/uaccess.h:451:3,
-    inlined from ‘picolcd_debug_reset_write’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/hid/hid-picolcd_debugfs.c:53:6:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:91:17: error: ‘buf’ may be used uninitialized [-Werror=maybe-uninitialized]
-   91 |                 __check_object_size(ptr, n, to_user);
-      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h: In function ‘picolcd_debug_reset_write’:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:84:13: note: by argument 1 of type ‘const void *’ to ‘__check_object_size’ declared here
-   84 | extern void __check_object_size(const void *ptr, unsigned long n,
-      |             ^~~~~~~~~~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/hid/hid-picolcd_debugfs.c:51:14: note: ‘buf’ declared here
-   51 |         char buf[32];
-      |              ^~~
-cc1: all warnings being treated as errors
-make[3]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: drivers/hid/hid-picolcd_debugfs.o] Error 1
-make[2]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:648: drivers/hid] Error 2
-make[1]: *** [/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/Makefile:1120: drivers] Error 2
-make[1]: *** Waiting for unfinished jobs....
-  CC      sound/core/pcm_misc.o
-  CC      sound/soc/soc-core.o
-  CC      sound/core/pcm_memory.o
-  CC      sound/core/memalloc.o
-In file included from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/asm-generic/preempt.h:4,
-                 from ./arch/arm64/include/generated/asm/preempt.h:1,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/preempt.h:59,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/spinlock.h:50,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/seqlock.h:35,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/time.h:5,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/uapi/linux/timex.h:56,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/timex.h:56,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/sched.h:18,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/compat.h:25,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/stat.h:23,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/stat.h:5,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/module.h:10,
-                 from /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/sound/soc/soc-core.c:25:
-In function ‘check_object_size’,
-    inlined from ‘copy_from_user’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/arch/arm64/include/asm/uaccess.h:451:3,
-    inlined from ‘codec_reg_write_file’ at /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/sound/soc/soc-core.c:258:6:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:91:17: warning: ‘buf’ may be used uninitialized [-Wmaybe-uninitialized]
-   91 |                 __check_object_size(ptr, n, to_user);
-      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h: In function ‘codec_reg_write_file’:
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/include/linux/thread_info.h:84:13: note: by argument 1 of type ‘const void *’ to ‘__check_object_size’ declared here
-   84 | extern void __check_object_size(const void *ptr, unsigned long n,
-      |             ^~~~~~~~~~~~~~~~~~~
-/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/sound/soc/soc-core.c:250:14: note: ‘buf’ declared here
-  250 |         char buf[32];
-      |              ^~~
-  CC      sound/core/pcm_timer.o
-  CC      sound/core/rawmidi.o
-  CC      sound/soc/soc-dapm.o
-  CC      sound/core/seq/seq.o
-  CC      sound/core/seq/seq_lock.o
-  CC      sound/core/seq/seq_clientmgr.o
-  CC      sound/soc/soc-jack.o
-  CC      sound/core/seq/seq_memory.o
-  CC      sound/soc/soc-cache.o
-  CC      sound/core/seq/seq_queue.o
-  CC      sound/soc/soc-utils.o
-  CC      sound/core/seq/seq_fifo.o
-  CC      sound/soc/soc-pcm.o
-  CC      sound/core/seq/seq_prioq.o
-  CC      sound/core/seq/seq_timer.o
-  CC      sound/core/seq/seq_system.o
-  CC      sound/core/seq/seq_ports.o
-  CC      sound/core/seq/seq_info.o
-  CC      sound/soc/soc-io.o
-  CC      sound/core/seq/seq_device.o
-  CC      sound/core/seq/seq_midi_event.o
-  CC      sound/soc/soc-devres.o
-  CC      sound/soc/soc-ops.o
-  CC      sound/core/seq/oss/seq_oss.o
-  CC      sound/core/seq/oss/seq_oss_init.o
-  LD      sound/soc/adi/built-in.o
-  LD      sound/soc/amd/built-in.o
-  LD      sound/soc/atmel/built-in.o
-  CC      sound/core/seq/oss/seq_oss_timer.o
-  LD      sound/soc/au1x/built-in.o
-  LD      sound/soc/bcm/built-in.o
-  LD      sound/soc/blackfin/built-in.o
-  LD      sound/soc/cirrus/built-in.o
-  CC      sound/soc/codecs/rt5509.o
-  CC      sound/core/seq/oss/seq_oss_ioctl.o
-  CC      sound/core/seq/oss/seq_oss_event.o
-  CC      sound/core/seq/oss/seq_oss_rw.o
-  CC      sound/soc/codecs/rt5509-regmap.o
-  CC      sound/core/seq/oss/seq_oss_synth.o
-  CC      sound/soc/codecs/rt5509-calib.o
-  CC      sound/core/seq/oss/seq_oss_midi.o
-  LD      sound/soc/codecs/snd-soc-rt5509.o
-  LD      sound/soc/codecs/built-in.o
-  LD      sound/soc/davinci/built-in.o
-  LD      sound/soc/dwc/built-in.o
-  LD      sound/soc/fsl/built-in.o
-  LD      sound/soc/generic/built-in.o
-  LD      sound/soc/img/built-in.o
-  LD      sound/soc/intel/boards/built-in.o
-  LD      sound/soc/intel/built-in.o
-  LD      sound/soc/jz4740/built-in.o
-  LD      sound/soc/kirkwood/built-in.o
-  CC      sound/soc/mediatek/codec/mt6357/mtk-soc-codec-6357.o
-  CC      sound/core/seq/oss/seq_oss_readq.o
-  CC      sound/core/seq/oss/seq_oss_writeq.o
-  LD      sound/core/seq/oss/snd-seq-oss.o
-  LD      sound/core/seq/oss/built-in.o
-  CC      sound/core/seq/seq_dummy.o
-  CC      sound/core/seq/seq_midi.o
-  LD      sound/core/seq/snd-seq.o
-  LD      sound/core/seq/snd-seq-device.o
-  LD      sound/core/seq/snd-seq-midi-event.o
-  LD      sound/core/seq/snd-seq-dummy.o
-  LD      sound/core/seq/snd-seq-midi.o
-  LD      sound/core/seq/built-in.o
-  LD      sound/core/snd.o
-  LD      sound/core/snd-hwdep.o
-  LD      sound/core/snd-timer.o
-  LD      sound/core/snd-hrtimer.o
-  LD      sound/core/snd-pcm.o
-  LD      sound/core/snd-rawmidi.o
-  LD      sound/core/built-in.o
-  CC      sound/usb/card.o
-  CC      sound/usb/clock.o
-  CC      sound/soc/mediatek/codec/mt6357/mtk-auddrv-ana.o
-  CC      sound/usb/endpoint.o
-  CC      sound/usb/format.o
-  LD      sound/soc/mediatek/codec/mt6357/built-in.o
-  CC      sound/soc/mediatek/common/mtk-btcvsd.o
-  CC      sound/usb/helper.o
-  CC      sound/usb/mixer.o
-  LD      sound/soc/mediatek/common/built-in.o
-  CC      sound/soc/mediatek/common_int/mtk-auddrv-devtree-parser.o
-  CC      sound/soc/mediatek/common_int/mtk-auddrv-underflow-mach.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-speaker-amp.o
-  CC      sound/usb/mixer_quirks.o
-  CC      sound/soc/mediatek/common_int/mtk-auddrv-afe.o
-  CC      sound/soc/mediatek/common_int/mtk-auddrv-gpio.o
-  CC      sound/usb/mixer_scarlett.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-afe-control.o
-  CC      sound/usb/pcm.o
-  CC      sound/usb/proc.o
-  CC      sound/usb/quirks.o
-  CC      sound/usb/stream.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-common.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-capture.o
-  CC      sound/usb/midi.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dummy.o
-  LD      sound/usb/snd-usb-audio.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-routing.o
-  LD      sound/usb/snd-usbmidi-lib.o
-  LD      sound/usb/built-in.o
-  CC      sound/last.o
-  LD      sound/soundcore.o
-  LD      sound/soc/mxs/built-in.o
-  LD      sound/soc/nuc900/built-in.o
-  LD      sound/soc/omap/built-in.o
-  LD      sound/soc/pxa/built-in.o
-  LD      sound/soc/qcom/built-in.o
-  LD      sound/soc/rockchip/built-in.o
-  LD      sound/soc/samsung/built-in.o
-  LD      sound/soc/sh/built-in.o
-  LD      sound/soc/sirf/built-in.o
-  LD      sound/soc/spear/built-in.o
-  LD      sound/soc/sti/built-in.o
-  LD      sound/soc/sunxi/built-in.o
-  LD      sound/soc/tegra/built-in.o
-  LD      sound/soc/txx9/built-in.o
-  LD      sound/soc/ux500/built-in.o
-  LD      sound/soc/xtensa/built-in.o
-  LD      sound/soc/zte/built-in.o
-  LD      sound/soc/snd-soc-core.o
-  CC      sound/soc/mediatek/mt6765/mtk-auddrv-clk.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-capture2.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-i2s2-adc2.o
-  CC      sound/soc/mediatek/mt6765/mtk-soc-afe-connection.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-md1.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-md2.o
-  CC      sound/soc/mediatek/mt6765/mt6765-sound.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-md1-bt.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-md2-bt.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-usb.o
-  LD      sound/soc/mediatek/mt6765/built-in.o
-  CC      sound/soc/mediatek/vendor/mtk-hw-component.o
-  LD      sound/soc/mediatek/vendor/built-in.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-voice-usb-echoref.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-i2s0.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-i2s0Dl1.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-i2s0-awb.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-uldlloopback.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl2.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-deep-buffer-dl.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-mrgrx.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-mrgrx-awb.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-fm-i2s.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-fm-i2s-awb.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-awb.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-bt.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-bt-dai.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-dai-stub.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-dai-routing.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-codec-dummy.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-fmtx.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-tdm-capture.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-pcm-hp-impedance.o
-  CC      sound/soc/mediatek/common_int/mtk-soc-machine.o
-  LD      sound/soc/mediatek/common_int/built-in.o
-  LD      sound/soc/mediatek/built-in.o
-  LD      sound/soc/built-in.o
-  LD      sound/built-in.o
-make[1]: Leaving directory '/root/kernel-source/build/ksu-32915384-49'
-make: *** [Makefile:152: sub-make] Error 2
-make: Leaving directory '/root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
 
 BUILD EXIT CODE: 2
 
