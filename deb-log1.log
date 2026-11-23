@@ -1,925 +1,1494 @@
-====================================================================================================
-FILE: /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/drivers/gpu/drm/drm_dp_mst_topology.c
-====================================================================================================
+================================================================================
+FAA FOLKPATCH 115404 FORENSIC
+================================================================================
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 322: variable 'crc4'
-----------------------------------------------------------------------------------------------------
-CONTEXT 287-366:
-  287:          idx++;
-  288:          buf[idx] = (req->u.i2c_write.write_i2c_device_id) & 0x7f;
-  289:          idx++;
-  290:          buf[idx] = (req->u.i2c_write.num_bytes);
-  291:          idx++;
-  292:          memcpy(&buf[idx], req->u.i2c_write.bytes, req->u.i2c_write.num_bytes);
-  293:          idx += req->u.i2c_write.num_bytes;
-  294:          break;
-  295:  }
-  296:  raw->cur_len = idx;
-  297: }
-  298:
-  299: static void drm_dp_crc_sideband_chunk_req(u8 *msg, u8 len)
-  300: {
-  301:  u8 crc4;
-  302:  crc4 = drm_dp_msg_data_crc4(msg, len);
-  303:  msg[len] = crc4;
-  304: }
-  305:
-  306: static void drm_dp_encode_sideband_reply(struct drm_dp_sideband_msg_reply_body *rep,
-  307:                                   struct drm_dp_sideband_msg_tx *raw)
-  308: {
-  309:  int idx = 0;
-  310:  u8 *buf = raw->msg;
-  311:
-  312:  buf[idx++] = (rep->reply_type & 0x1) << 7 | (rep->req_type & 0x7f);
-  313:
-  314:  raw->cur_len = idx;
-  315: }
-  316:
-  317: /* this adds a chunk of msg to the builder to get the final msg */
-  318: static bool drm_dp_sideband_msg_build(struct drm_dp_sideband_msg_rx *msg,
-  319:                                u8 *replybuf, u8 replybuflen, bool hdr)
-  320: {
-  321:  int ret;
-  322:  u8 crc4; <<< TARGET
-  323:
-  324:  if (hdr) {
-  325:          u8 hdrlen;
-  326:          struct drm_dp_sideband_msg_hdr recv_hdr;
-  327:          ret = drm_dp_decode_sideband_msg_hdr(&recv_hdr, replybuf, replybuflen, &hdrlen);
-  328:          if (ret == false) {
-  329:                  print_hex_dump(KERN_DEBUG, "failed hdr", DUMP_PREFIX_NONE, 16, 1, replybuf, replybuflen, false);
-  330:                  return false;
-  331:          }
-  332:
-  333:          /*
-  334:           * ignore out-of-order messages or messages that are part of a
-  335:           * failed transaction
-  336:           */
-  337:          if (!recv_hdr.somt && !msg->have_somt)
-  338:                  return false;
-  339:
-  340:          /* get length contained in this portion */
-  341:          msg->curchunk_len = recv_hdr.msg_len;
-  342:          msg->curchunk_hdrlen = hdrlen;
-  343:
-  344:          /* we have already gotten an somt - don't bother parsing */
-  345:          if (recv_hdr.somt && msg->have_somt)
-  346:                  return false;
-  347:
-  348:          if (recv_hdr.somt) {
-  349:                  memcpy(&msg->initial_hdr, &recv_hdr, sizeof(struct drm_dp_sideband_msg_hdr));
-  350:                  msg->have_somt = true;
-  351:          }
-  352:          if (recv_hdr.eomt)
-  353:                  msg->have_eomt = true;
-  354:
-  355:          /* copy the bytes for the remainder of this header chunk */
-  356:          msg->curchunk_idx = min(msg->curchunk_len, (u8)(replybuflen - hdrlen));
-  357:          memcpy(&msg->chunk[0], replybuf + hdrlen, msg->curchunk_idx);
-  358:  } else {
-  359:          memcpy(&msg->chunk[msg->curchunk_idx], replybuf, replybuflen);
-  360:          msg->curchunk_idx += replybuflen;
-  361:  }
-  362:
-  363:  if (msg->curchunk_idx >= msg->curchunk_len) {
-  364:          /* do CRC */
-  365:          crc4 = drm_dp_msg_data_crc4(msg->chunk, msg->curchunk_len - 1);
-  366:          /* copy chunk into bigger msg */
+[1] GIT
+--------------------------------------------------------------------------------
+0f3f42ba02d6441dbbeb247f34c0f5eabc14e393
+115404
+0f3f42ba02d6441dbbeb247f34c0f5eabc14e393
 
-'crc4' OCCURRENCES IN CONTEXT:
-  301:  u8 crc4;
-  302:  crc4 = drm_dp_msg_data_crc4(msg, len);
-  303:  msg[len] = crc4;
-  322:  u8 crc4;
-  365:          crc4 = drm_dp_msg_data_crc4(msg->chunk, msg->curchunk_len - 1);
-COUNT: 5
+fix(home): use dimension tokens for the press border
+2026-10-31 00:22:03 +0800
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 1030: variable 'ret'
-----------------------------------------------------------------------------------------------------
-CONTEXT 995-1074:
-  995:          if (port->port_num == port_num) {
-  996:                  kref_get(&port->kref);
-  997:                  return port;
-  998:          }
-  999:  }
- 1000:
- 1001:  return NULL;
- 1002: }
- 1003:
- 1004: /*
- 1005:  * calculate a new RAD for this MST branch device
- 1006:  * if parent has an LCT of 2 then it has 1 nibble of RAD,
- 1007:  * if parent has an LCT of 3 then it has 2 nibbles of RAD,
- 1008:  */
- 1009: static u8 drm_dp_calculate_rad(struct drm_dp_mst_port *port,
- 1010:                           u8 *rad)
- 1011: {
- 1012:  int parent_lct = port->parent->lct;
- 1013:  int shift = 4;
- 1014:  int idx = (parent_lct - 1) / 2;
- 1015:  if (parent_lct > 1) {
- 1016:          memcpy(rad, port->parent->rad, idx + 1);
- 1017:          shift = (parent_lct % 2) ? 4 : 0;
- 1018:  } else
- 1019:          rad[0] = 0;
- 1020:
- 1021:  rad[idx] |= port->port_num << shift;
- 1022:  return parent_lct + 1;
- 1023: }
- 1024:
- 1025: /*
- 1026:  * return sends link address for new mstb
- 1027:  */
- 1028: static bool drm_dp_port_setup_pdt(struct drm_dp_mst_port *port)
- 1029: {
- 1030:  int ret; <<< TARGET
- 1031:  u8 rad[6], lct;
- 1032:  bool send_link = false;
- 1033:  switch (port->pdt) {
- 1034:  case DP_PEER_DEVICE_DP_LEGACY_CONV:
- 1035:  case DP_PEER_DEVICE_SST_SINK:
- 1036:          /* add i2c over sideband */
- 1037:          ret = drm_dp_mst_register_i2c_bus(&port->aux);
- 1038:          break;
- 1039:  case DP_PEER_DEVICE_MST_BRANCHING:
- 1040:          lct = drm_dp_calculate_rad(port, rad);
- 1041:
- 1042:          port->mstb = drm_dp_add_mst_branch_device(lct, rad);
- 1043:          port->mstb->mgr = port->mgr;
- 1044:          port->mstb->port_parent = port;
- 1045:
- 1046:          send_link = true;
- 1047:          break;
- 1048:  }
- 1049:  return send_link;
- 1050: }
- 1051:
- 1052: static void drm_dp_check_mstb_guid(struct drm_dp_mst_branch *mstb, u8 *guid)
- 1053: {
- 1054:  int ret;
- 1055:
- 1056:  memcpy(mstb->guid, guid, 16);
- 1057:
- 1058:  if (!drm_dp_validate_guid(mstb->mgr, mstb->guid)) {
- 1059:          if (mstb->port_parent) {
- 1060:                  ret = drm_dp_send_dpcd_write(
- 1061:                                  mstb->mgr,
- 1062:                                  mstb->port_parent,
- 1063:                                  DP_GUID,
- 1064:                                  16,
- 1065:                                  mstb->guid);
- 1066:          } else {
- 1067:
- 1068:                  ret = drm_dp_dpcd_write(
- 1069:                                  mstb->mgr->aux,
- 1070:                                  DP_GUID,
- 1071:                                  mstb->guid,
- 1072:                                  16);
- 1073:          }
- 1074:  }
+[2] KERNELPATCH / KPATCH REFERENCES
+--------------------------------------------------------------------------------
 
-'ret' OCCURRENCES IN CONTEXT:
- 1030:  int ret;
- 1037:          ret = drm_dp_mst_register_i2c_bus(&port->aux);
- 1054:  int ret;
- 1060:                  ret = drm_dp_send_dpcd_write(
- 1068:                  ret = drm_dp_dpcd_write(
-COUNT: 5
+FILE: .github/ISSUE_TEMPLATE/bug_report.yml
+MATCH: KernelPatch, kernelpatch, kpatch
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 1054: variable 'ret'
-----------------------------------------------------------------------------------------------------
-CONTEXT 1019-1098:
- 1019:          rad[0] = 0;
- 1020:
- 1021:  rad[idx] |= port->port_num << shift;
- 1022:  return parent_lct + 1;
- 1023: }
- 1024:
- 1025: /*
- 1026:  * return sends link address for new mstb
- 1027:  */
- 1028: static bool drm_dp_port_setup_pdt(struct drm_dp_mst_port *port)
- 1029: {
- 1030:  int ret;
- 1031:  u8 rad[6], lct;
- 1032:  bool send_link = false;
- 1033:  switch (port->pdt) {
- 1034:  case DP_PEER_DEVICE_DP_LEGACY_CONV:
- 1035:  case DP_PEER_DEVICE_SST_SINK:
- 1036:          /* add i2c over sideband */
- 1037:          ret = drm_dp_mst_register_i2c_bus(&port->aux);
- 1038:          break;
- 1039:  case DP_PEER_DEVICE_MST_BRANCHING:
- 1040:          lct = drm_dp_calculate_rad(port, rad);
- 1041:
- 1042:          port->mstb = drm_dp_add_mst_branch_device(lct, rad);
- 1043:          port->mstb->mgr = port->mgr;
- 1044:          port->mstb->port_parent = port;
- 1045:
- 1046:          send_link = true;
- 1047:          break;
- 1048:  }
- 1049:  return send_link;
- 1050: }
- 1051:
- 1052: static void drm_dp_check_mstb_guid(struct drm_dp_mst_branch *mstb, u8 *guid)
- 1053: {
- 1054:  int ret; <<< TARGET
- 1055:
- 1056:  memcpy(mstb->guid, guid, 16);
- 1057:
- 1058:  if (!drm_dp_validate_guid(mstb->mgr, mstb->guid)) {
- 1059:          if (mstb->port_parent) {
- 1060:                  ret = drm_dp_send_dpcd_write(
- 1061:                                  mstb->mgr,
- 1062:                                  mstb->port_parent,
- 1063:                                  DP_GUID,
- 1064:                                  16,
- 1065:                                  mstb->guid);
- 1066:          } else {
- 1067:
- 1068:                  ret = drm_dp_dpcd_write(
- 1069:                                  mstb->mgr->aux,
- 1070:                                  DP_GUID,
- 1071:                                  mstb->guid,
- 1072:                                  16);
- 1073:          }
- 1074:  }
- 1075: }
- 1076:
- 1077: static void build_mst_prop_path(const struct drm_dp_mst_branch *mstb,
- 1078:                          int pnum,
- 1079:                          char *proppath,
- 1080:                          size_t proppath_size)
- 1081: {
- 1082:  int i;
- 1083:  char temp[8];
- 1084:  snprintf(proppath, proppath_size, "mst:%d", mstb->mgr->conn_base_id);
- 1085:  for (i = 0; i < (mstb->lct - 1); i++) {
- 1086:          int shift = (i % 2) ? 0 : 4;
- 1087:          int port_num = (mstb->rad[i / 2] >> shift) & 0xf;
- 1088:          snprintf(temp, sizeof(temp), "-%d", port_num);
- 1089:          strlcat(proppath, temp, proppath_size);
- 1090:  }
- 1091:  snprintf(temp, sizeof(temp), "-%d", pnum);
- 1092:  strlcat(proppath, temp, proppath_size);
- 1093: }
- 1094:
- 1095: static void drm_dp_add_port(struct drm_dp_mst_branch *mstb,
- 1096:                      struct device *dev,
- 1097:                      struct drm_dp_link_addr_reply_port *port_msg)
- 1098: {
+FILE: .github/ISSUE_TEMPLATE/config.yml
+MATCH: kpatch
 
-'ret' OCCURRENCES IN CONTEXT:
- 1030:  int ret;
- 1037:          ret = drm_dp_mst_register_i2c_bus(&port->aux);
- 1054:  int ret;
- 1060:                  ret = drm_dp_send_dpcd_write(
- 1068:                  ret = drm_dp_dpcd_write(
-COUNT: 5
+FILE: .github/workflows/CI_up.yml
+MATCH: kpatch
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 1555: variable 'len'
-----------------------------------------------------------------------------------------------------
-CONTEXT 1520-1599:
- 1520:          if (txmsg->seqno != -1)
- 1521:                  txmsg->dst->tx_slots[txmsg->seqno] = NULL;
- 1522:          txmsg->state = DRM_DP_SIDEBAND_TX_TIMEOUT;
- 1523:          wake_up(&mgr->tx_waitq);
- 1524:  }
- 1525: }
- 1526:
- 1527: /* called holding qlock */
- 1528: static void process_single_up_tx_qlock(struct drm_dp_mst_topology_mgr *mgr,
- 1529:                                 struct drm_dp_sideband_msg_tx *txmsg)
- 1530: {
- 1531:  int ret;
- 1532:
- 1533:  /* construct a chunk from the first msg in the tx_msg queue */
- 1534:  ret = process_single_tx_qlock(mgr, txmsg, true);
- 1535:
- 1536:  if (ret != 1)
- 1537:          DRM_DEBUG_KMS("failed to send msg in q %d\n", ret);
- 1538:
- 1539:  txmsg->dst->tx_slots[txmsg->seqno] = NULL;
- 1540: }
- 1541:
- 1542: static void drm_dp_queue_down_tx(struct drm_dp_mst_topology_mgr *mgr,
- 1543:                           struct drm_dp_sideband_msg_tx *txmsg)
- 1544: {
- 1545:  mutex_lock(&mgr->qlock);
- 1546:  list_add_tail(&txmsg->next, &mgr->tx_msg_downq);
- 1547:  if (list_is_singular(&mgr->tx_msg_downq))
- 1548:          process_single_down_tx_qlock(mgr);
- 1549:  mutex_unlock(&mgr->qlock);
- 1550: }
- 1551:
- 1552: static void drm_dp_send_link_address(struct drm_dp_mst_topology_mgr *mgr,
- 1553:                               struct drm_dp_mst_branch *mstb)
- 1554: {
- 1555:  int len; <<< TARGET
- 1556:  struct drm_dp_sideband_msg_tx *txmsg;
- 1557:  int ret;
- 1558:
- 1559:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
- 1560:  if (!txmsg)
- 1561:          return;
- 1562:
- 1563:  txmsg->dst = mstb;
- 1564:  len = build_link_address(txmsg);
- 1565:
- 1566:  mstb->link_address_sent = true;
- 1567:  drm_dp_queue_down_tx(mgr, txmsg);
- 1568:
- 1569:  ret = drm_dp_mst_wait_tx_reply(mstb, txmsg);
- 1570:  if (ret > 0) {
- 1571:          int i;
- 1572:
- 1573:          if (txmsg->reply.reply_type == 1)
- 1574:                  DRM_DEBUG_KMS("link address nak received\n");
- 1575:          else {
- 1576:                  DRM_DEBUG_KMS("link address reply: %d\n", txmsg->reply.u.link_addr.nports);
- 1577:                  for (i = 0; i < txmsg->reply.u.link_addr.nports; i++) {
- 1578:                          DRM_DEBUG_KMS("port %d: input %d, pdt: %d, pn: %d, dpcd_rev: %02x, mcs: %d, ddps: %d, ldps %d, sdp %d/%d\n", i,
- 1579:                                 txmsg->reply.u.link_addr.ports[i].input_port,
- 1580:                                 txmsg->reply.u.link_addr.ports[i].peer_device_type,
- 1581:                                 txmsg->reply.u.link_addr.ports[i].port_number,
- 1582:                                 txmsg->reply.u.link_addr.ports[i].dpcd_revision,
- 1583:                                 txmsg->reply.u.link_addr.ports[i].mcs,
- 1584:                                 txmsg->reply.u.link_addr.ports[i].ddps,
- 1585:                                 txmsg->reply.u.link_addr.ports[i].legacy_device_plug_status,
- 1586:                                 txmsg->reply.u.link_addr.ports[i].num_sdp_streams,
- 1587:                                 txmsg->reply.u.link_addr.ports[i].num_sdp_stream_sinks);
- 1588:                  }
- 1589:
- 1590:                  drm_dp_check_mstb_guid(mstb, txmsg->reply.u.link_addr.guid);
- 1591:
- 1592:                  for (i = 0; i < txmsg->reply.u.link_addr.nports; i++) {
- 1593:                          drm_dp_add_port(mstb, mgr->dev, &txmsg->reply.u.link_addr.ports[i]);
- 1594:                  }
- 1595:                  (*mgr->cbs->hotplug)(mgr);
- 1596:          }
- 1597:  } else {
- 1598:          mstb->link_address_sent = false;
- 1599:          DRM_DEBUG_KMS("link address failed %d\n", ret);
+FILE: .github/workflows/build.yml
+MATCH: kpatch
 
-'len' OCCURRENCES IN CONTEXT:
- 1555:  int len;
- 1564:  len = build_link_address(txmsg);
-COUNT: 2
+FILE: .gitignore
+MATCH: KernelPatch, kernelpatch, kpatch
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 1609: variable 'len'
-----------------------------------------------------------------------------------------------------
-CONTEXT 1574-1653:
- 1574:                  DRM_DEBUG_KMS("link address nak received\n");
- 1575:          else {
- 1576:                  DRM_DEBUG_KMS("link address reply: %d\n", txmsg->reply.u.link_addr.nports);
- 1577:                  for (i = 0; i < txmsg->reply.u.link_addr.nports; i++) {
- 1578:                          DRM_DEBUG_KMS("port %d: input %d, pdt: %d, pn: %d, dpcd_rev: %02x, mcs: %d, ddps: %d, ldps %d, sdp %d/%d\n", i,
- 1579:                                 txmsg->reply.u.link_addr.ports[i].input_port,
- 1580:                                 txmsg->reply.u.link_addr.ports[i].peer_device_type,
- 1581:                                 txmsg->reply.u.link_addr.ports[i].port_number,
- 1582:                                 txmsg->reply.u.link_addr.ports[i].dpcd_revision,
- 1583:                                 txmsg->reply.u.link_addr.ports[i].mcs,
- 1584:                                 txmsg->reply.u.link_addr.ports[i].ddps,
- 1585:                                 txmsg->reply.u.link_addr.ports[i].legacy_device_plug_status,
- 1586:                                 txmsg->reply.u.link_addr.ports[i].num_sdp_streams,
- 1587:                                 txmsg->reply.u.link_addr.ports[i].num_sdp_stream_sinks);
- 1588:                  }
- 1589:
- 1590:                  drm_dp_check_mstb_guid(mstb, txmsg->reply.u.link_addr.guid);
- 1591:
- 1592:                  for (i = 0; i < txmsg->reply.u.link_addr.nports; i++) {
- 1593:                          drm_dp_add_port(mstb, mgr->dev, &txmsg->reply.u.link_addr.ports[i]);
- 1594:                  }
- 1595:                  (*mgr->cbs->hotplug)(mgr);
- 1596:          }
- 1597:  } else {
- 1598:          mstb->link_address_sent = false;
- 1599:          DRM_DEBUG_KMS("link address failed %d\n", ret);
- 1600:  }
- 1601:
- 1602:  kfree(txmsg);
- 1603: }
- 1604:
- 1605: static int drm_dp_send_enum_path_resources(struct drm_dp_mst_topology_mgr *mgr,
- 1606:                                     struct drm_dp_mst_branch *mstb,
- 1607:                                     struct drm_dp_mst_port *port)
- 1608: {
- 1609:  int len; <<< TARGET
- 1610:  struct drm_dp_sideband_msg_tx *txmsg;
- 1611:  int ret;
- 1612:
- 1613:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
- 1614:  if (!txmsg)
- 1615:          return -ENOMEM;
- 1616:
- 1617:  txmsg->dst = mstb;
- 1618:  len = build_enum_path_resources(txmsg, port->port_num);
- 1619:
- 1620:  drm_dp_queue_down_tx(mgr, txmsg);
- 1621:
- 1622:  ret = drm_dp_mst_wait_tx_reply(mstb, txmsg);
- 1623:  if (ret > 0) {
- 1624:          if (txmsg->reply.reply_type == 1)
- 1625:                  DRM_DEBUG_KMS("enum path resources nak received\n");
- 1626:          else {
- 1627:                  if (port->port_num != txmsg->reply.u.path_resources.port_number)
- 1628:                          DRM_ERROR("got incorrect port in response\n");
- 1629:                  DRM_DEBUG_KMS("enum path resources %d: %d %d\n", txmsg->reply.u.path_resources.port_number, txmsg->reply.u.path_resources.full_payload_bw_number,
- 1630:                         txmsg->reply.u.path_resources.avail_payload_bw_number);
- 1631:                  port->available_pbn = txmsg->reply.u.path_resources.avail_payload_bw_number;
- 1632:          }
- 1633:  }
- 1634:
- 1635:  kfree(txmsg);
- 1636:  return 0;
- 1637: }
- 1638:
- 1639: static struct drm_dp_mst_port *drm_dp_get_last_connected_port_to_mstb(struct drm_dp_mst_branch *mstb)
- 1640: {
- 1641:  if (!mstb->port_parent)
- 1642:          return NULL;
- 1643:
- 1644:  if (mstb->port_parent->mstb != mstb)
- 1645:          return mstb->port_parent;
- 1646:
- 1647:  return drm_dp_get_last_connected_port_to_mstb(mstb->port_parent->parent);
- 1648: }
- 1649:
- 1650: static struct drm_dp_mst_branch *drm_dp_get_last_connected_port_and_mstb(struct drm_dp_mst_topology_mgr *mgr,
- 1651:                                                                   struct drm_dp_mst_branch *mstb,
- 1652:                                                                   int *port_num)
- 1653: {
+FILE: Build-Debug.sh
+MATCH: kpatch
 
-'len' OCCURRENCES IN CONTEXT:
- 1609:  int len;
- 1618:  len = build_enum_path_resources(txmsg, port->port_num);
-COUNT: 2
+FILE: Build-Release.sh
+MATCH: kpatch
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 1677: variable 'len'
-----------------------------------------------------------------------------------------------------
-CONTEXT 1642-1721:
- 1642:          return NULL;
- 1643:
- 1644:  if (mstb->port_parent->mstb != mstb)
- 1645:          return mstb->port_parent;
- 1646:
- 1647:  return drm_dp_get_last_connected_port_to_mstb(mstb->port_parent->parent);
- 1648: }
- 1649:
- 1650: static struct drm_dp_mst_branch *drm_dp_get_last_connected_port_and_mstb(struct drm_dp_mst_topology_mgr *mgr,
- 1651:                                                                   struct drm_dp_mst_branch *mstb,
- 1652:                                                                   int *port_num)
- 1653: {
- 1654:  struct drm_dp_mst_branch *rmstb = NULL;
- 1655:  struct drm_dp_mst_port *found_port;
- 1656:  mutex_lock(&mgr->lock);
- 1657:  if (mgr->mst_primary) {
- 1658:          found_port = drm_dp_get_last_connected_port_to_mstb(mstb);
- 1659:
- 1660:          if (found_port) {
- 1661:                  rmstb = found_port->parent;
- 1662:                  kref_get(&rmstb->kref);
- 1663:                  *port_num = found_port->port_num;
- 1664:          }
- 1665:  }
- 1666:  mutex_unlock(&mgr->lock);
- 1667:  return rmstb;
- 1668: }
- 1669:
- 1670: static int drm_dp_payload_send_msg(struct drm_dp_mst_topology_mgr *mgr,
- 1671:                             struct drm_dp_mst_port *port,
- 1672:                             int id,
- 1673:                             int pbn)
- 1674: {
- 1675:  struct drm_dp_sideband_msg_tx *txmsg;
- 1676:  struct drm_dp_mst_branch *mstb;
- 1677:  int len, ret, port_num; <<< TARGET
- 1678:  u8 sinks[DRM_DP_MAX_SDP_STREAMS];
- 1679:  int i;
- 1680:
- 1681:  port = drm_dp_get_validated_port_ref(mgr, port);
- 1682:  if (!port)
- 1683:          return -EINVAL;
- 1684:
- 1685:  port_num = port->port_num;
- 1686:  mstb = drm_dp_get_validated_mstb_ref(mgr, port->parent);
- 1687:  if (!mstb) {
- 1688:          mstb = drm_dp_get_last_connected_port_and_mstb(mgr, port->parent, &port_num);
- 1689:
- 1690:          if (!mstb) {
- 1691:                  drm_dp_put_port(port);
- 1692:                  return -EINVAL;
- 1693:          }
- 1694:  }
- 1695:
- 1696:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
- 1697:  if (!txmsg) {
- 1698:          ret = -ENOMEM;
- 1699:          goto fail_put;
- 1700:  }
- 1701:
- 1702:  for (i = 0; i < port->num_sdp_streams; i++)
- 1703:          sinks[i] = i;
- 1704:
- 1705:  txmsg->dst = mstb;
- 1706:  len = build_allocate_payload(txmsg, port_num,
- 1707:                               id,
- 1708:                               pbn, port->num_sdp_streams, sinks);
- 1709:
- 1710:  drm_dp_queue_down_tx(mgr, txmsg);
- 1711:
- 1712:  ret = drm_dp_mst_wait_tx_reply(mstb, txmsg);
- 1713:  if (ret > 0) {
- 1714:          if (txmsg->reply.reply_type == 1) {
- 1715:                  ret = -EINVAL;
- 1716:          } else
- 1717:                  ret = 0;
- 1718:  }
- 1719:  kfree(txmsg);
- 1720: fail_put:
- 1721:  drm_dp_put_mst_branch_device(mstb);
+FILE: README.md
+MATCH: KernelPatch, kernelpatch, kpatch
 
-'len' OCCURRENCES IN CONTEXT:
- 1677:  int len, ret, port_num;
- 1706:  len = build_allocate_payload(txmsg, port_num,
-COUNT: 2
+FILE: README_CN.md
+MATCH: KernelPatch, kernelpatch, kpatch
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 1929: variable 'len'
-----------------------------------------------------------------------------------------------------
-CONTEXT 1894-1973:
- 1894:          if (ret) {
- 1895:                  mutex_unlock(&mgr->payload_lock);
- 1896:                  return ret;
- 1897:          }
- 1898:  }
- 1899:  mutex_unlock(&mgr->payload_lock);
- 1900:  return 0;
- 1901: }
- 1902: EXPORT_SYMBOL(drm_dp_update_payload_part2);
- 1903:
- 1904: #if 0 /* unused as of yet */
- 1905: static int drm_dp_send_dpcd_read(struct drm_dp_mst_topology_mgr *mgr,
- 1906:                           struct drm_dp_mst_port *port,
- 1907:                           int offset, int size)
- 1908: {
- 1909:  int len;
- 1910:  struct drm_dp_sideband_msg_tx *txmsg;
- 1911:
- 1912:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
- 1913:  if (!txmsg)
- 1914:          return -ENOMEM;
- 1915:
- 1916:  len = build_dpcd_read(txmsg, port->port_num, 0, 8);
- 1917:  txmsg->dst = port->parent;
- 1918:
- 1919:  drm_dp_queue_down_tx(mgr, txmsg);
- 1920:
- 1921:  return 0;
- 1922: }
- 1923: #endif
- 1924:
- 1925: static int drm_dp_send_dpcd_write(struct drm_dp_mst_topology_mgr *mgr,
- 1926:                            struct drm_dp_mst_port *port,
- 1927:                            int offset, int size, u8 *bytes)
- 1928: {
- 1929:  int len; <<< TARGET
- 1930:  int ret;
- 1931:  struct drm_dp_sideband_msg_tx *txmsg;
- 1932:  struct drm_dp_mst_branch *mstb;
- 1933:
- 1934:  mstb = drm_dp_get_validated_mstb_ref(mgr, port->parent);
- 1935:  if (!mstb)
- 1936:          return -EINVAL;
- 1937:
- 1938:  txmsg = kzalloc(sizeof(*txmsg), GFP_KERNEL);
- 1939:  if (!txmsg) {
- 1940:          ret = -ENOMEM;
- 1941:          goto fail_put;
- 1942:  }
- 1943:
- 1944:  len = build_dpcd_write(txmsg, port->port_num, offset, size, bytes);
- 1945:  txmsg->dst = mstb;
- 1946:
- 1947:  drm_dp_queue_down_tx(mgr, txmsg);
- 1948:
- 1949:  ret = drm_dp_mst_wait_tx_reply(mstb, txmsg);
- 1950:  if (ret > 0) {
- 1951:          if (txmsg->reply.reply_type == 1) {
- 1952:                  ret = -EINVAL;
- 1953:          } else
- 1954:                  ret = 0;
- 1955:  }
- 1956:  kfree(txmsg);
- 1957: fail_put:
- 1958:  drm_dp_put_mst_branch_device(mstb);
- 1959:  return ret;
- 1960: }
- 1961:
- 1962: static int drm_dp_encode_up_ack_reply(struct drm_dp_sideband_msg_tx *msg, u8 req_type)
- 1963: {
- 1964:  struct drm_dp_sideband_msg_reply_body reply;
- 1965:
- 1966:  reply.reply_type = 0;
- 1967:  reply.req_type = req_type;
- 1968:  drm_dp_encode_sideband_reply(&reply, msg);
- 1969:  return 0;
- 1970: }
- 1971:
- 1972: static int drm_dp_send_up_ack_reply(struct drm_dp_mst_topology_mgr *mgr,
- 1973:                              struct drm_dp_mst_branch *mstb,
+FILE: README_EN.md
+MATCH: kpatch
 
-'len' OCCURRENCES IN CONTEXT:
- 1909:  int len;
- 1916:  len = build_dpcd_read(txmsg, port->port_num, 0, 8);
- 1929:  int len;
- 1944:  len = build_dpcd_write(txmsg, port->port_num, offset, size, bytes);
-COUNT: 4
+FILE: README_JA.md
+MATCH: KernelPatch, kernelpatch, kpatch
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 2185: variable 'origlen'
-----------------------------------------------------------------------------------------------------
-CONTEXT 2150-2229:
- 2150:                  ret = -1;
- 2151:                  goto out_unlock;
- 2152:          }
- 2153:
- 2154:          ret = drm_dp_dpcd_writeb(mgr->aux, DP_MSTM_CTRL,
- 2155:                                   DP_MST_EN | DP_UP_REQ_EN | DP_UPSTREAM_IS_SRC);
- 2156:          if (ret < 0) {
- 2157:                  DRM_DEBUG_KMS("mst write failed - undocked during suspend?\n");
- 2158:                  ret = -1;
- 2159:                  goto out_unlock;
- 2160:          }
- 2161:
- 2162:          /* Some hubs forget their guids after they resume */
- 2163:          sret = drm_dp_dpcd_read(mgr->aux, DP_GUID, guid, 16);
- 2164:          if (sret != 16) {
- 2165:                  DRM_DEBUG_KMS("dpcd read failed - undocked during suspend?\n");
- 2166:                  ret = -1;
- 2167:                  goto out_unlock;
- 2168:          }
- 2169:          drm_dp_check_mstb_guid(mgr->mst_primary, guid);
- 2170:
- 2171:          ret = 0;
- 2172:  } else
- 2173:          ret = -1;
- 2174:
- 2175: out_unlock:
- 2176:  mutex_unlock(&mgr->lock);
- 2177:  return ret;
- 2178: }
- 2179: EXPORT_SYMBOL(drm_dp_mst_topology_mgr_resume);
- 2180:
- 2181: static bool drm_dp_get_one_sb_msg(struct drm_dp_mst_topology_mgr *mgr, bool up)
- 2182: {
- 2183:  int len;
- 2184:  u8 replyblock[32];
- 2185:  int replylen, origlen, curreply; <<< TARGET
- 2186:  int ret;
- 2187:  struct drm_dp_sideband_msg_rx *msg;
- 2188:  int basereg = up ? DP_SIDEBAND_MSG_UP_REQ_BASE : DP_SIDEBAND_MSG_DOWN_REP_BASE;
- 2189:  msg = up ? &mgr->up_req_recv : &mgr->down_rep_recv;
- 2190:
- 2191:  len = min(mgr->max_dpcd_transaction_bytes, 16);
- 2192:  ret = drm_dp_dpcd_read(mgr->aux, basereg,
- 2193:                         replyblock, len);
- 2194:  if (ret != len) {
- 2195:          DRM_DEBUG_KMS("failed to read DPCD down rep %d %d\n", len, ret);
- 2196:          return false;
- 2197:  }
- 2198:  ret = drm_dp_sideband_msg_build(msg, replyblock, len, true);
- 2199:  if (!ret) {
- 2200:          DRM_DEBUG_KMS("sideband msg build failed %d\n", replyblock[0]);
- 2201:          return false;
- 2202:  }
- 2203:  replylen = msg->curchunk_len + msg->curchunk_hdrlen;
- 2204:
- 2205:  origlen = replylen;
- 2206:  replylen -= len;
- 2207:  curreply = len;
- 2208:  while (replylen > 0) {
- 2209:          len = min3(replylen, mgr->max_dpcd_transaction_bytes, 16);
- 2210:          ret = drm_dp_dpcd_read(mgr->aux, basereg + curreply,
- 2211:                              replyblock, len);
- 2212:          if (ret != len) {
- 2213:                  DRM_DEBUG_KMS("failed to read a chunk (len %d, ret %d)\n",
- 2214:                                len, ret);
- 2215:                  return false;
- 2216:          }
- 2217:
- 2218:          ret = drm_dp_sideband_msg_build(msg, replyblock, len, false);
- 2219:          if (!ret) {
- 2220:                  DRM_DEBUG_KMS("failed to build sideband msg\n");
- 2221:                  return false;
- 2222:          }
- 2223:
- 2224:          curreply += len;
- 2225:          replylen -= len;
- 2226:  }
- 2227:  return true;
- 2228: }
- 2229:
+FILE: apd/Cargo.lock
+MATCH: 4\.9
 
-'origlen' OCCURRENCES IN CONTEXT:
- 2185:  int replylen, origlen, curreply;
- 2205:  origlen = replylen;
-COUNT: 2
+FILE: apd/build.rs
+MATCH: KernelPatch, kernelpatch, kpatch
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 2867: variable 'ret'
-----------------------------------------------------------------------------------------------------
-CONTEXT 2832-2911:
- 2832:  /* dump VCPIs */
- 2833:  mutex_unlock(&mgr->lock);
- 2834:
- 2835:  mutex_lock(&mgr->payload_lock);
- 2836:  seq_printf(m, "vcpi: %lx %lx %d\n", mgr->payload_mask, mgr->vcpi_mask,
- 2837:          mgr->max_payloads);
- 2838:
- 2839:  for (i = 0; i < mgr->max_payloads; i++) {
- 2840:          if (mgr->proposed_vcpis[i]) {
- 2841:                  char name[14];
- 2842:
- 2843:                  port = container_of(mgr->proposed_vcpis[i], struct drm_dp_mst_port, vcpi);
- 2844:                  fetch_monitor_name(mgr, port, name, sizeof(name));
- 2845:                  seq_printf(m, "vcpi %d: %d %d %d sink name: %s\n", i,
- 2846:                             port->port_num, port->vcpi.vcpi,
- 2847:                             port->vcpi.num_slots,
- 2848:                             (*name != 0) ? name :  "Unknown");
- 2849:          } else
- 2850:                  seq_printf(m, "vcpi %d:unused\n", i);
- 2851:  }
- 2852:  for (i = 0; i < mgr->max_payloads; i++) {
- 2853:          seq_printf(m, "payload %d: %d, %d, %d\n",
- 2854:                     i,
- 2855:                     mgr->payloads[i].payload_state,
- 2856:                     mgr->payloads[i].start_slot,
- 2857:                     mgr->payloads[i].num_slots);
- 2858:
- 2859:
- 2860:  }
- 2861:  mutex_unlock(&mgr->payload_lock);
- 2862:
- 2863:  mutex_lock(&mgr->lock);
- 2864:  if (mgr->mst_primary) {
- 2865:          u8 buf[64];
- 2866:          bool bret;
- 2867:          int ret; <<< TARGET
- 2868:          ret = drm_dp_dpcd_read(mgr->aux, DP_DPCD_REV, buf, DP_RECEIVER_CAP_SIZE);
- 2869:          seq_printf(m, "dpcd: ");
- 2870:          for (i = 0; i < DP_RECEIVER_CAP_SIZE; i++)
- 2871:                  seq_printf(m, "%02x ", buf[i]);
- 2872:          seq_printf(m, "\n");
- 2873:          ret = drm_dp_dpcd_read(mgr->aux, DP_FAUX_CAP, buf, 2);
- 2874:          seq_printf(m, "faux/mst: ");
- 2875:          for (i = 0; i < 2; i++)
- 2876:                  seq_printf(m, "%02x ", buf[i]);
- 2877:          seq_printf(m, "\n");
- 2878:          ret = drm_dp_dpcd_read(mgr->aux, DP_MSTM_CTRL, buf, 1);
- 2879:          seq_printf(m, "mst ctrl: ");
- 2880:          for (i = 0; i < 1; i++)
- 2881:                  seq_printf(m, "%02x ", buf[i]);
- 2882:          seq_printf(m, "\n");
- 2883:
- 2884:          /* dump the standard OUI branch header */
- 2885:          ret = drm_dp_dpcd_read(mgr->aux, DP_BRANCH_OUI, buf, DP_BRANCH_OUI_HEADER_SIZE);
- 2886:          seq_printf(m, "branch oui: ");
- 2887:          for (i = 0; i < 0x3; i++)
- 2888:                  seq_printf(m, "%02x", buf[i]);
- 2889:          seq_printf(m, " devid: ");
- 2890:          for (i = 0x3; i < 0x8 && buf[i]; i++)
- 2891:                  seq_printf(m, "%c", buf[i]);
- 2892:
- 2893:          seq_printf(m, " revision: hw: %x.%x sw: %x.%x", buf[0x9] >> 4, buf[0x9] & 0xf, buf[0xa], buf[0xb]);
- 2894:          seq_printf(m, "\n");
- 2895:          bret = dump_dp_payload_table(mgr, buf);
- 2896:          if (bret == true) {
- 2897:                  seq_printf(m, "payload table: ");
- 2898:                  for (i = 0; i < 63; i++)
- 2899:                          seq_printf(m, "%02x ", buf[i]);
- 2900:                  seq_printf(m, "\n");
- 2901:          }
- 2902:
- 2903:  }
- 2904:
- 2905:  mutex_unlock(&mgr->lock);
- 2906:
- 2907: }
- 2908: EXPORT_SYMBOL(drm_dp_mst_dump_topology);
- 2909:
- 2910: static void drm_dp_tx_work(struct work_struct *work)
- 2911: {
+FILE: apd/src/apd.rs
+MATCH: kpatch
 
-'ret' OCCURRENCES IN CONTEXT:
- 2867:          int ret;
- 2868:          ret = drm_dp_dpcd_read(mgr->aux, DP_DPCD_REV, buf, DP_RECEIVER_CAP_SIZE);
- 2873:          ret = drm_dp_dpcd_read(mgr->aux, DP_FAUX_CAP, buf, 2);
- 2878:          ret = drm_dp_dpcd_read(mgr->aux, DP_MSTM_CTRL, buf, 1);
- 2885:          ret = drm_dp_dpcd_read(mgr->aux, DP_BRANCH_OUI, buf, DP_BRANCH_OUI_HEADER_SIZE);
-COUNT: 5
-====================================================================================================
-FILE: /root/kernel-source/work/kernel-4.9.205/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/sound/soc/mediatek/common_int/mtk-soc-pcm-dl1-i2s0.c
-====================================================================================================
+FILE: apd/src/cli.rs
+MATCH: KernelPatch, kernelpatch
 
-----------------------------------------------------------------------------------------------------
-TARGET LINE 101: variable 'ret'
-----------------------------------------------------------------------------------------------------
-CONTEXT 66-145:
-   66: /*
-   67:  *    function implementation
-   68:  */
-   69:
-   70: static int mtk_i2s0_probe(struct platform_device *pdev);
-   71: static int mtk_pcm_i2s0_close(struct snd_pcm_substream *substream);
-   72: static int mtk_afe_i2s0_probe(struct snd_soc_platform *platform);
-   73:
-   74: int mtk_soc_always_hd;
-   75: int extcodec_echoref_control;
-   76: static int mi2s0_sidegen_control;
-   77: static int hdoutput_control;
-   78: const char *const i2s0_SIDEGEN[] = {"Off",     "On8000",  "On16000",
-   79:                              "On32000", "On44100", "On48000",
-   80:                              "On96000", "On192000"};
-   81: const char *const i2s0_HD_output[] = {"Off", "On"};
-   82: const char *const ExtCodec_EchoRef_Routing[] = {"Off", "MD1", "MD3", "SCP"};
-   83:
-   84: static const struct soc_enum Audio_i2s0_Enum[] = {
-   85:  SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(i2s0_SIDEGEN), i2s0_SIDEGEN),
-   86:  SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(i2s0_HD_output), i2s0_HD_output),
-   87:  SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(ExtCodec_EchoRef_Routing),
-   88:                      ExtCodec_EchoRef_Routing),
-   89: };
-   90:
-   91: static int Audio_i2s0_SideGen_Get(struct snd_kcontrol *kcontrol,
-   92:                            struct snd_ctl_elem_value *ucontrol)
-   93: {
-   94:  ucontrol->value.integer.value[0] = mi2s0_sidegen_control;
-   95:  return 0;
-   96: }
-   97:
-   98: static int Audio_i2s0_SideGen_Set(struct snd_kcontrol *kcontrol,
-   99:                            struct snd_ctl_elem_value *ucontrol)
-  100: {
-  101:  bool ret = false; <<< TARGET
-  102:  static int samplerate;
-  103:  unsigned int u32AudioI2sOut = 0;
-  104:  unsigned int u32Audio2ndI2sIn = 0;
-  105:
-  106:  AudDrv_Clk_On();
-  107:
-  108:  if (ucontrol->value.enumerated.item[0] > ARRAY_SIZE(i2s0_SIDEGEN)) {
-  109:          pr_err("return -EINVAL\n");
-  110:          return -EINVAL;
-  111:  }
-  112:  mi2s0_sidegen_control = ucontrol->value.integer.value[0];
-  113:
-  114:  /* Config smart pa I2S pin */
-  115:  AudDrv_GPIO_SMARTPA_Select(mi2s0_sidegen_control > 0 ? 1 : 0);
-  116:
-  117:  pr_debug(
-  118:          "%s(), sidegen = %d, hdoutput = %d, extcodec_echoref = %d, always_hd = %d\n",
-  119:          __func__, mi2s0_sidegen_control, hdoutput_control,
-  120:          extcodec_echoref_control, mtk_soc_always_hd);
-  121:
-  122:  /* Set SmartPa i2s by platform. Return false if no platform implement,
-  123:   * then use default i2s3/0.
-  124:   */
-  125:  if (get_afe_platform_ops()->set_smartpa_i2s != NULL) {
-  126:          ret = get_afe_platform_ops()->set_smartpa_i2s(
-  127:                  mi2s0_sidegen_control, hdoutput_control,
-  128:                  extcodec_echoref_control, mtk_soc_always_hd);
-  129:          goto i2s_config_done;
-  130:  }
-  131:
-  132:  if (mi2s0_sidegen_control) {
-  133:          /* Phone call echo ref, speaker mode connection*/
-  134:          switch (extcodec_echoref_control) {
-  135:          case 1:
-  136:                  /* MD1 connection */
-  137:                  SetIntfConnection(
-  138:                          Soc_Aud_InterCon_Connection,
-  139:                          Soc_Aud_AFE_IO_Block_MODEM_PCM_2_I_CH1,
-  140:                          Soc_Aud_AFE_IO_Block_I2S3);
-  141:                  SetIntfConnection(
-  142:                          Soc_Aud_InterCon_Connection,
-  143:                          Soc_Aud_AFE_IO_Block_I2S0_CH2,
-  144:                          Soc_Aud_AFE_IO_Block_MODEM_PCM_2_O_CH4);
-  145:                  break;
+FILE: apd/src/defs.rs
+MATCH: kpatch
 
-'ret' OCCURRENCES IN CONTEXT:
-  101:  bool ret = false;
-  126:          ret = get_afe_platform_ops()->set_smartpa_i2s(
-COUNT: 2
+FILE: apd/src/event.rs
+MATCH: KernelPatch, kernelpatch, kpatch
 
-====================================================================================================
-FORENSIC V2 COMPLETE
-====================================================================================================
+FILE: apd/src/insmod.rs
+MATCH: KernelPatch, kernelpatch
+
+FILE: apd/src/late_load.rs
+MATCH: KernelPatch, kernelpatch
+
+FILE: apd/src/plugin.rs
+MATCH: kpatch
+
+FILE: apd/src/sepolicy.rs
+MATCH: kpatch
+
+FILE: apd/src/supercall.rs
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/build.gradle.kts
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/libs/arm64-v8a/.gitignore
+MATCH: kpatch
+
+FILE: app/libs/arm64-v8a/libkptools.so.version
+MATCH: 0\.13\.9
+
+FILE: app/src/main/AndroidManifest.xml
+MATCH: kpatch
+
+FILE: app/src/main/assets/boot_flash.sh
+MATCH: kpatch
+
+FILE: app/src/main/assets/boot_patch.sh
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/boot_unpatch.sh
+MATCH: kpatch
+
+FILE: app/src/main/assets/faq/ar.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/default.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/es.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/in.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/ja.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/ko.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/mgl.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/pl.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/pt-rBR.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/ru.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/tr-rTR.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/vi.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/zh-rAG.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/zh-rAT.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/zh-rCK.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/zh-rCN.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/zh-rMC.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/zh-rTW.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/zh-rWC.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/faq/zh-rWY.json
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/assets/fonts/xiaolai-OFL.txt
+MATCH: kpatch
+
+FILE: app/src/main/assets/jq/jq
+MATCH: 4\.9, image_size
+
+FILE: app/src/main/assets/kpimg.version
+MATCH: 0\.13\.9
+
+FILE: app/src/main/cpp/apjni.cpp
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/cpp/supercall.h
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/cpp/uapi/scdefs.h
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/APatchApp.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/Natives.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/magica/AppZygotePreload.java
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/magica/BootCompletedReceiver.java
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/WebUIActivity.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/navigation/BottomBarDestination.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/navigation/NavigationBarContent.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/navigation/NavigationBars.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeCircle.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeCircleCards.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeInfoCards.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeJailbreak.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeStats.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeStatsSections.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeStatusCards.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeTopBar.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV2.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV3.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV3Cards.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV4.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV4Cards.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV4HeroCard.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/misc/AboutScreen.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/misc/Settings.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/misc/SettingsDeveloperInfo.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/misc/SettingsProfile.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/module/KPM.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/module/KPMModuleActions.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/module/KPMModuleList.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/patches/InstallModeSelect.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/patches/Patches.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/patches/PatchesViews.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/script/OnlineScriptScreen.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/script/ScriptExecutionLogScreen.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/AppearanceSettings.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/AppearanceSettingsScreen.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/BackupSettings.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/BehaviorSettings.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/BehaviorSettingsScreen.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettings.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsHideAppItems.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsHideSection.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsScreen.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/GeneralSettings.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/GeneralSettingsScreen.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/SecuritySettings.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/SecuritySettingsScreen.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/SettingsRegistry.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceLayoutSection.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceNavItems.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceThemeIoDialogs.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/settings/general/GeneralBehaviorDialogs.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/screen/superuser/SuperUser.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/theme/BackgroundConfig.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/theme/FontConfig.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/theme/ThemeIO.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/viewmodel/ApiMarketplaceViewModel.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/viewmodel/KPModuleViewModel.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/viewmodel/PatchesViewModel.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/ui/wallpaper/WallpaperModels.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/APatchCli.kt
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/AppData.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/LauncherIconUtils.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/LogEvent.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/ModuleBackupUtils.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/ScriptLibraryManager.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/ShizukuServiceManager.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/ThemeDownloader.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/UpdateChecker.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/Version.kt
+MATCH: KernelPatch, kernelpatch
+
+FILE: app/src/main/java/me/bmax/apatch/util/WallpaperDownloader.kt
+MATCH: kpatch
+
+FILE: app/src/main/java/rikka/shizuku/server/ServerConstants.java
+MATCH: kpatch
+
+FILE: app/src/main/res/drawable/ic_launcher_foreground_alt.xml
+MATCH: 4\.9
+
+FILE: app/src/main/res/drawable/ic_launcher_monochrome_alt.xml
+MATCH: 4\.9
+
+FILE: app/src/main/res/drawable/telegram.xml
+MATCH: 4\.9
+
+FILE: app/src/main/res/values/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-ar/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-es/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-in/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-ja/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-ko/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-mgl/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-pl/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-pt-rBR/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-ru/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-tr-rTR/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-vi/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-zh-rAG/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-zh-rAT/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-zh-rCK/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-zh-rCN/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-zh-rMC/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-zh-rTW/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-zh-rWC/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/values-zh-rWY/strings.xml
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: app/src/main/res/xml/file_paths.xml
+MATCH: kpatch
+
+FILE: app/src/test/java/me/bmax/apatch/ui/theme/WallpaperRouteTest.kt
+MATCH: kpatch
+
+FILE: build.gradle.kts
+MATCH: KernelPatch, kernelpatch, 0\.13\.9
+
+FILE: core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkSettingsTokens.kt
+MATCH: kpatch
+
+FILE: docs/1.png
+MATCH: 4\.9
+
+FILE: docs/2.png
+MATCH: 4\.9
+
+FILE: docs/4.png
+MATCH: 4\.9
+
+FILE: docs/5.png
+MATCH: 4\.9
+
+FILE: docs/6.png
+MATCH: 4\.9
+
+FILE: examples/plugins/boot-script/plugin.json
+MATCH: kpatch
+
+FILE: examples/plugins/cache-cleaner/plugin.json
+MATCH: kpatch
+
+FILE: examples/plugins/file-tick-test/main.lua
+MATCH: kpatch
+
+FILE: examples/plugins/file-tick-test/plugin.json
+MATCH: kpatch
+
+FILE: examples/plugins/hello-plugin/main.lua
+MATCH: kpatch
+
+FILE: examples/plugins/hello-plugin/plugin.json
+MATCH: kpatch
+
+FILE: examples/plugins/log-rotator/plugin.json
+MATCH: kpatch
+
+FILE: fastlane/metadata/android/en-US/full_description.txt
+MATCH: KernelPatch, kernelpatch
+
+FILE: fastlane/metadata/android/pl-PL/full_description.txt
+MATCH: KernelPatch, kernelpatch
+
+FILE: fpd/Cargo.toml
+MATCH: kpatch
+
+FILE: fpd/src/main.rs
+MATCH: kpatch
+
+FILE: logo.png
+MATCH: 4\.9
+
+FILE: scripts/Build-Debug.sh
+MATCH: kpatch
+
+FILE: scripts/Build-Release.sh
+MATCH: kpatch
+
+FILE: scripts/check-package-boundaries.py
+MATCH: KernelPatch, kernelpatch
+
+FILE: scripts/check-source-file-length.py
+MATCH: KernelPatch, kernelpatch
+
+FILE: scripts/init-wsl.sh
+MATCH: kpatch
+
+FILE: scripts/setup-wsl.sh
+MATCH: kpatch
+
+FILE: scripts/test_kernel_artifacts.py
+MATCH: KernelPatch, kernelpatch, kpatch
+
+FILE: scripts/test_stability.py
+MATCH: kpatch
+
+FILE: version.properties
+MATCH: kpatch
+
+[3] IMPORTANT SOURCE FILES
+--------------------------------------------------------------------------------
+
+### kptools
+./app/libs/arm64-v8a/libkptools.so.version
+
+### kpimg
+./app/src/main/assets/kpimg.version
+
+### kernelpatch
+(none)
+
+### setup1.S
+(none)
+
+### setup.S
+(none)
+
+### patch
+./scripts/test_boot_patch_output.py
+./.git/hooks/pre-applypatch.sample
+./.git/hooks/applypatch-msg.sample
+./app/src/test/java/me/bmax/apatch/ui/navigation/CommitOnlyBackDispatcherTest.kt
+./app/src/main/assets/boot_unpatch.sh
+./app/src/main/assets/boot_patch.sh
+./app/src/main/java/me/bmax/apatch/ui/screen/patches/PatchesViews.kt
+./app/src/main/java/me/bmax/apatch/ui/screen/patches/Patches.kt
+./app/src/main/java/me/bmax/apatch/ui/viewmodel/PatchesViewModel.kt
+./app/src/main/java/me/bmax/apatch/ui/navigation/CommitOnlyBackDispatcher.kt
+./app/src/main/java/me/bmax/apatch/util/APatchCli.kt
+./app/src/main/java/me/bmax/apatch/util/APatchKeyHelper.java
+./app/src/main/java/me/bmax/apatch/APatchApp.kt
+./app/libs/arm64-v8a/libkpatch.so.version
+./fpd/src/prop_patch.rs
+
+### kallsyms
+(none)
+
+### ksyms
+(none)
+
+[4] FILE TREE - PATCH/KERNEL COMPONENTS
+--------------------------------------------------------------------------------
+.gitattributes  652
+.github/ISSUE_TEMPLATE/bug_report.yml   4434
+.github/ISSUE_TEMPLATE/config.yml       426
+.github/ISSUE_TEMPLATE/feature_request.yml      1406
+.github/actions/setup-build-env/action.yml      915
+.github/dependabot.yml  866
+.github/workflows/CI_up.yml     3159
+.github/workflows/build.yml     7844
+.github/workflows/contracts.yml 1232
+.github/workflows/stability.yml 1400
+.gitignore      421
+Build-Debug.bat 813
+Build-Debug.sh  3458
+Build-Release.bat       817
+Build-Release.sh        3468
+LICENSE 35149
+README.md       5009
+README_CN.md    4409
+README_EN.md    82
+README_JA.md    5946
+apd/.cargo/config.toml  773
+apd/.gitignore  167
+apd/Cargo.lock  61168
+apd/Cargo.toml  2611
+apd/build.rs    4819
+apd/src/apd.rs  9520
+apd/src/assets.rs       721
+apd/src/banner  317
+apd/src/cli.rs  19516
+apd/src/defs.rs 5272
+apd/src/event.rs        27431
+apd/src/insmod.rs       4711
+apd/src/install_jq.sh   497
+apd/src/installer.sh    11540
+apd/src/installer_bind.sh       10953
+apd/src/late_load.rs    5171
+apd/src/lua.rs  25260
+apd/src/magic_mount.rs  16001
+apd/src/magic_mount_tests.rs    3388
+apd/src/magica.rs       8506
+apd/src/main.rs 392
+apd/src/metamodule.rs   10058
+apd/src/module.rs       27820
+apd/src/module_config.rs        14060
+apd/src/module_icon.rs  3766
+apd/src/package.rs      12332
+apd/src/package_tests.rs        7585
+apd/src/plugin.rs       13370
+apd/src/pty.rs  6218
+apd/src/resetprop.rs    8142
+apd/src/restorecon.rs   2510
+apd/src/sepolicy.rs     7532
+apd/src/supercall.rs    28706
+apd/src/utils.rs        13322
+app/.gitignore  54
+app/build.gradle.kts    19005
+app/libs/arm64-v8a/.gitignore   48
+app/libs/arm64-v8a/libbootctl.so        154248
+app/libs/arm64-v8a/libbusybox.so        1710600
+app/libs/arm64-v8a/libkpatch.so.version 6
+app/libs/arm64-v8a/libkptools.so.version        6
+app/libs/arm64-v8a/libresetprop.so      94728
+app/proguard-rules.pro  3245
+app/src/main/AndroidManifest.xml        12099
+app/src/main/aidl/me/bmax/apatch/IAPRootService.aidl    226
+app/src/main/assets/.gitignore  24
+app/src/main/assets/InstallAP.sh        2844
+app/src/main/assets/UninstallAP.sh      1737
+app/src/main/assets/boot_extract.sh     310
+app/src/main/assets/boot_flash.sh       761
+app/src/main/assets/boot_patch.sh       4215
+app/src/main/assets/boot_unpatch.sh     1695
+app/src/main/assets/faq/ar.json 16111
+app/src/main/assets/faq/default.json    11429
+app/src/main/assets/faq/es.json 13137
+app/src/main/assets/faq/in.json 12046
+app/src/main/assets/faq/ja.json 15889
+app/src/main/assets/faq/ko.json 13216
+app/src/main/assets/faq/mgl.json        10177
+app/src/main/assets/faq/pl.json 12823
+app/src/main/assets/faq/pt-rBR.json     12986
+app/src/main/assets/faq/ru.json 20278
+app/src/main/assets/faq/tr-rTR.json     13170
+app/src/main/assets/faq/vi.json 14442
+app/src/main/assets/faq/zh-rAG.json     10542
+app/src/main/assets/faq/zh-rAT.json     9546
+app/src/main/assets/faq/zh-rCK.json     9992
+app/src/main/assets/faq/zh-rCN.json     10956
+app/src/main/assets/faq/zh-rMC.json     9992
+app/src/main/assets/faq/zh-rTW.json     11134
+app/src/main/assets/faq/zh-rWC.json     9713
+app/src/main/assets/faq/zh-rWY.json     9112
+app/src/main/assets/fonts/xiaolai-OFL.txt       4947
+app/src/main/assets/jq/jq       1721901
+app/src/main/assets/kpimg.version       6
+app/src/main/assets/sound/Baka.wav      89322
+app/src/main/assets/sound/Ciallo.wav    184398
+app/src/main/assets/sound/Ehe.wav       102700
+app/src/main/assets/sound/Imoi.wav      164740
+app/src/main/assets/sound/Zako.wav      71028
+app/src/main/assets/sound/Zako2.wav     117214
+app/src/main/assets/start/Hentai.wav    156216
+app/src/main/assets/start/Zako.wav      345404
+app/src/main/assets/util_functions.sh   14437
+app/src/main/assets/wallpaper/providers.json    733
+app/src/main/cpp/CMakeLists.txt 3374
+app/src/main/cpp/apjni.cpp      27796
+app/src/main/cpp/apjni.hpp      827
+app/src/main/cpp/fpdrop/fpdrop.c        2910
+app/src/main/cpp/jni_helper.hpp 51076
+app/src/main/cpp/rish/logging.h 865
+app/src/main/cpp/rish/main.cpp  452
+app/src/main/cpp/rish/pts.cpp   2517
+app/src/main/cpp/rish/pts.h     456
+app/src/main/cpp/rish/rikka_rish_RishHost.cpp   8121
+app/src/main/cpp/rish/rikka_rish_RishHost.h     165
+app/src/main/cpp/rish/rikka_rish_RishTerminal.cpp       3824
+app/src/main/cpp/rish/rikka_rish_RishTerminal.h 173
+app/src/main/cpp/security.cpp   5508
+app/src/main/cpp/security.hpp   145
+app/src/main/cpp/supercall.h    21495
+app/src/main/cpp/type_traits.hpp        421
+app/src/main/cpp/uapi/scdefs.h  4172
+app/src/main/cpp/version        49
+app/src/main/ic_launcher-playstore.png  9262
+app/src/main/java/me/bmax/apatch/APatchApp.kt   23470
+app/src/main/java/me/bmax/apatch/Natives.kt     10186
+app/src/main/java/me/bmax/apatch/data/ScriptInfo.kt     314
+app/src/main/java/me/bmax/apatch/magica/AppZygotePreload.java   1096
+app/src/main/java/me/bmax/apatch/magica/BootCompletedReceiver.java      1631
+app/src/main/java/me/bmax/apatch/magica/MagicaService.java      424
+app/src/main/java/me/bmax/apatch/receiver/BootCompletedReceiver.kt      4104
+app/src/main/java/me/bmax/apatch/receiver/ShizukuReceiver.java  597
+app/src/main/java/me/bmax/apatch/services/RootServices.java     2831
+app/src/main/java/me/bmax/apatch/ui/CrashHandleActivity.kt      5849
+app/src/main/java/me/bmax/apatch/ui/LayoutVariant.kt    428
+app/src/main/java/me/bmax/apatch/ui/MainActivity.kt     12302
+app/src/main/java/me/bmax/apatch/ui/MainActivityContent.kt      26320
+app/src/main/java/me/bmax/apatch/ui/ShizukuPermissionActivity.kt        10834
+app/src/main/java/me/bmax/apatch/ui/WebUIActivity.kt    16688
+app/src/main/java/me/bmax/apatch/ui/component/ColorGenerationPicker.kt  8978
+app/src/main/java/me/bmax/apatch/ui/component/DebugBuildRibbon.kt       1482
+app/src/main/java/me/bmax/apatch/ui/component/Dialog.kt 15996
+app/src/main/java/me/bmax/apatch/ui/component/DropdownMenu.kt   3362
+app/src/main/java/me/bmax/apatch/ui/component/DualBackgroundSettings.kt 3435
+app/src/main/java/me/bmax/apatch/ui/component/FilePicker.kt     12987
+app/src/main/java/me/bmax/apatch/ui/component/ImageCrop.kt      3568
+app/src/main/java/me/bmax/apatch/ui/component/InfoCopy.kt       2523
+app/src/main/java/me/bmax/apatch/ui/component/SliderSettingCard.kt      2673
+app/src/main/java/me/bmax/apatch/ui/component/ThemeColorPicker.kt       9328
+app/src/main/java/me/bmax/apatch/ui/component/ThemeModeSelector.kt      5542
+app/src/main/java/me/bmax/apatch/ui/component/UmountConfig.kt   8444
+app/src/main/java/me/bmax/apatch/ui/component/UpdateDialog.kt   1835
+app/src/main/java/me/bmax/apatch/ui/component/WelcomeGuide.kt   9066
+app/src/main/java/me/bmax/apatch/ui/model/ApiMarketplaceItem.kt 701
+app/src/main/java/me/bmax/apatch/ui/navigation/BottomBarDestination.kt  2131
+app/src/main/java/me/bmax/apatch/ui/navigation/CommitOnlyBackDispatcher.kt      1951
+app/src/main/java/me/bmax/apatch/ui/navigation/DrawerBottomBarContent.kt        7405
+app/src/main/java/me/bmax/apatch/ui/navigation/NavContainerTransform.kt 10472
+app/src/main/java/me/bmax/apatch/ui/navigation/NavTransitions.kt        4089
+app/src/main/java/me/bmax/apatch/ui/navigation/NavigationBarContent.kt  24464
+app/src/main/java/me/bmax/apatch/ui/navigation/NavigationBars.kt        16088
+app/src/main/java/me/bmax/apatch/ui/navigation/PlainBottomNavigationBar.kt      9375
+app/src/main/java/me/bmax/apatch/ui/navigation/ScrollState.kt   3289
+app/src/main/java/me/bmax/apatch/ui/screen/home/Home.kt 15267
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeAStatusCard.kt      7165
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeCircle.kt   7903
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeCircleCards.kt      23352
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeCountCard.kt        2731
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeInfoCards.kt        12127
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeJailbreak.kt        4929
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeStats.kt    7408
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeStatsMetrics.kt     11588
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeStatsSections.kt    7569
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeStatusCards.kt      16459
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeTopBar.kt   12574
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV2.kt       21390
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV3.kt       6062
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV3Cards.kt  16584
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV3MagiskCard.kt     10899
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV4.kt       6426
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV4Cards.kt  12642
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV4HeroCard.kt       13856
+app/src/main/java/me/bmax/apatch/ui/screen/home/HomeV4StatusCards.kt    14296
+app/src/main/java/me/bmax/apatch/ui/screen/misc/AboutScreen.kt  8960
+app/src/main/java/me/bmax/apatch/ui/screen/misc/AppProfile.kt   14609
+app/src/main/java/me/bmax/apatch/ui/screen/misc/BannerApiService.kt     11003
+app/src/main/java/me/bmax/apatch/ui/screen/misc/FaqScreen.kt    9733
+app/src/main/java/me/bmax/apatch/ui/screen/misc/ProfileAvatarSources.kt 6059
+app/src/main/java/me/bmax/apatch/ui/screen/misc/ProfileAvatarTile.kt    3999
+app/src/main/java/me/bmax/apatch/ui/screen/misc/Settings.kt     27653
+app/src/main/java/me/bmax/apatch/ui/screen/misc/SettingsDeveloperInfo.kt        7349
+app/src/main/java/me/bmax/apatch/ui/screen/misc/SettingsDisclaimerDialog.kt     1955
+app/src/main/java/me/bmax/apatch/ui/screen/misc/SettingsProfile.kt      14195
+app/src/main/java/me/bmax/apatch/ui/screen/module/APM.kt        23319
+app/src/main/java/me/bmax/apatch/ui/screen/module/APMModuleDialogs.kt   5950
+app/src/main/java/me/bmax/apatch/ui/screen/module/APMModuleItem.kt      21696
+app/src/main/java/me/bmax/apatch/ui/screen/module/APMModuleItemContent.kt       15206
+app/src/main/java/me/bmax/apatch/ui/screen/module/APMModuleList.kt      26140
+app/src/main/java/me/bmax/apatch/ui/screen/module/APMModuleRow.kt       4475
+app/src/main/java/me/bmax/apatch/ui/screen/module/APMTopBar.kt  7246
+app/src/main/java/me/bmax/apatch/ui/screen/module/ApmBulkInstallScreen.kt       16800
+app/src/main/java/me/bmax/apatch/ui/screen/module/ExecuteAPMAction.kt   6686
+app/src/main/java/me/bmax/apatch/ui/screen/module/KPM.kt        18688
+app/src/main/java/me/bmax/apatch/ui/screen/module/KPMControlDialog.kt   4014
+app/src/main/java/me/bmax/apatch/ui/screen/module/KPMModuleActions.kt   4474
+app/src/main/java/me/bmax/apatch/ui/screen/module/KPMModuleItem.kt      25004
+app/src/main/java/me/bmax/apatch/ui/screen/module/KPMModuleList.kt      22218
+app/src/main/java/me/bmax/apatch/ui/screen/module/KPMTopBar.kt  2341
+app/src/main/java/me/bmax/apatch/ui/screen/module/ModuleSort.kt 3471
+app/src/main/java/me/bmax/apatch/ui/screen/module/ModuleSortSheet.kt    12476
+app/src/main/java/me/bmax/apatch/ui/screen/module/OnlineKPMScreen.kt    7288
+app/src/main/java/me/bmax/apatch/ui/screen/module/OnlineModuleScreen.kt 23145
+app/src/main/java/me/bmax/apatch/ui/screen/module/RepoModuleDetailScreen.kt     13054
+app/src/main/java/me/bmax/apatch/ui/screen/patches/Install.kt   9201
+app/src/main/java/me/bmax/apatch/ui/screen/patches/InstallModeSelect.kt 22991
+app/src/main/java/me/bmax/apatch/ui/screen/patches/Patches.kt   14163
+app/src/main/java/me/bmax/apatch/ui/screen/patches/PatchesViews.kt      20777
+app/src/main/java/me/bmax/apatch/ui/screen/plugin/OnlinePluginScreen.kt 8790
+app/src/main/java/me/bmax/apatch/ui/screen/plugin/Plugin.kt     14367
+app/src/main/java/me/bmax/apatch/ui/screen/plugin/PluginComponents.kt   19356
+app/src/main/java/me/bmax/apatch/ui/screen/plugin/PluginLogScreen.kt    8255
+app/src/main/java/me/bmax/apatch/ui/screen/script/OnlineScriptScreen.kt 9291
+app/src/main/java/me/bmax/apatch/ui/screen/script/ScriptExecutionLogScreen.kt   10450
+app/src/main/java/me/bmax/apatch/ui/screen/script/ScriptLibrary.kt      18926
+app/src/main/java/me/bmax/apatch/ui/screen/script/ScriptLibraryItems.kt 20381
+app/src/main/java/me/bmax/apatch/ui/screen/settings/AppearanceSettings.kt       23021
+app/src/main/java/me/bmax/apatch/ui/screen/settings/AppearanceSettingsScreen.kt 2485
+app/src/main/java/me/bmax/apatch/ui/screen/settings/BackupSettings.kt   14845
+app/src/main/java/me/bmax/apatch/ui/screen/settings/BackupSettingsScreen.kt     1751
+app/src/main/java/me/bmax/apatch/ui/screen/settings/BehaviorSettings.kt 14398
+app/src/main/java/me/bmax/apatch/ui/screen/settings/BehaviorSettingsScreen.kt   1824
+app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettings.kt 11676
+app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsActions.kt  11989
+app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsHideAppItems.kt     23519
+app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsHideSection.kt      9081
+app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsPickers.kt  15893
+app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsScreen.kt   15796
+app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsServiceActions.kt   4362
+app/src/main/java/me/bmax/apatch/ui/screen/settings/FunctionSettingsState.kt    3025
+app/src/main/java/me/bmax/apatch/ui/screen/settings/GeneralIdentitySection.kt   2928
+app/src/main/java/me/bmax/apatch/ui/screen/settings/GeneralInterfaceSection.kt  2641
+app/src/main/java/me/bmax/apatch/ui/screen/settings/GeneralMaintenanceSection.kt        3200
+app/src/main/java/me/bmax/apatch/ui/screen/settings/GeneralMountSection.kt      6108
+app/src/main/java/me/bmax/apatch/ui/screen/settings/GeneralSettings.kt  20257
+app/src/main/java/me/bmax/apatch/ui/screen/settings/GeneralSettingsDialogs.kt   2517
+app/src/main/java/me/bmax/apatch/ui/screen/settings/GeneralSettingsScreen.kt    3539
+app/src/main/java/me/bmax/apatch/ui/screen/settings/LanguagePickerScreen.kt     7837
+app/src/main/java/me/bmax/apatch/ui/screen/settings/ModuleSettings.kt   7418
+app/src/main/java/me/bmax/apatch/ui/screen/settings/ModuleSettingsScreen.kt     1708
+app/src/main/java/me/bmax/apatch/ui/screen/settings/MultimediaMusicSection.kt   10880
+app/src/main/java/me/bmax/apatch/ui/screen/settings/MultimediaSettings.kt       581
+app/src/main/java/me/bmax/apatch/ui/screen/settings/MultimediaSettingsScreen.kt 1306
+app/src/main/java/me/bmax/apatch/ui/screen/settings/MultimediaSoundSection.kt   17003
+app/src/main/java/me/bmax/apatch/ui/screen/settings/SecuritySettings.kt 8175
+app/src/main/java/me/bmax/apatch/ui/screen/settings/SecuritySettingsScreen.kt   1637
+app/src/main/java/me/bmax/apatch/ui/screen/settings/SettingsRegistry.kt 17280
+app/src/main/java/me/bmax/apatch/ui/screen/settings/SettingsSearchScreen.kt     11464
+app/src/main/java/me/bmax/apatch/ui/screen/settings/SettingsShared.kt   233
+app/src/main/java/me/bmax/apatch/ui/screen/settings/ShizukuLogScreen.kt 18241
+app/src/main/java/me/bmax/apatch/ui/screen/settings/ShizukuManagementScreen.kt  16479
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceBackgroundGridItems.kt 8585
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceBackgroundSection.kt   24060
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceBannerSection.kt       7254
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceDashboardCardSection.kt        9803
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceDialogs.kt     5289
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceFocusCardSection.kt    11549
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceFontSection.kt 4687
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceLayoutSection.kt       14991
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceNavIconItem.kt 7419
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceNavItems.kt    15607
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceNightModeSection.kt    8874
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceOptionDialogs.kt       20373
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceThemeIoDialogs.kt      4780
+app/src/main/java/me/bmax/apatch/ui/screen/settings/appearance/AppearanceThemeSection.kt        11429
+app/src/main/java/me/bmax/apatch/ui/screen/settings/general/GeneralBehaviorDialogs.kt   11650
+app/src/main/java/me/bmax/apatch/ui/screen/settings/general/GeneralDialogs.kt   6521
+app/src/main/java/me/bmax/apatch/ui/screen/settings/general/GeneralSystemDialogs.kt     15799
+app/src/main/java/me/bmax/apatch/ui/screen/settings/multimedia/MultimediaDialogs.kt     15875
+app/src/main/java/me/bmax/apatch/ui/screen/superuser/SuAuditLogScreen.kt        15841
+app/src/main/java/me/bmax/apatch/ui/screen/superuser/SuperUser.kt       21227
+app/src/main/java/me/bmax/apatch/ui/screen/superuser/SuperUserAppItems.kt       10694
+app/src/main/java/me/bmax/apatch/ui/screen/superuser/SuperUserComponents.kt     8988
+app/src/main/java/me/bmax/apatch/ui/screen/superuser/SuperUserDialogs.kt        7917
+app/src/main/java/me/bmax/apatch/ui/screen/theme/ApiMarketplace.kt      15381
+app/src/main/java/me/bmax/apatch/ui/screen/theme/MyThemesScreen.kt      14300
+app/src/main/java/me/bmax/apatch/ui/screen/theme/ThemeStore.kt  20705
+app/src/main/java/me/bmax/apatch/ui/screen/theme/ThemeStoreDialogs.kt   13994
+app/src/main/java/me/bmax/apatch/ui/screen/wallpaper/WallpaperDisplaySheet.kt   3136
+app/src/main/java/me/bmax/apatch/ui/screen/wallpaper/WallpaperGalleryScreen.kt  9249
+app/src/main/java/me/bmax/apatch/ui/screen/wallpaper/WallpaperLayouts.kt        11068
+app/src/main/java/me/bmax/apatch/ui/theme/BackgroundConfig.kt   67957
+app/src/main/java/me/bmax/apatch/ui/theme/BackgroundLayer.kt    11204
+app/src/main/java/me/bmax/apatch/ui/theme/BackupConfig.kt       1748
+app/src/main/java/me/bmax/apatch/ui/theme/BannerFadeColor.kt    695
+app/src/main/java/me/bmax/apatch/ui/theme/CardManage.kt 312
+app/src/main/java/me/bmax/apatch/ui/theme/ColorSchemeConfig.kt  1928
+app/src/main/java/me/bmax/apatch/ui/theme/FontConfig.kt 8531
+app/src/main/java/me/bmax/apatch/ui/theme/MusicConfig.kt        5318
+app/src/main/java/me/bmax/apatch/ui/theme/SoundEffectConfig.kt  9368
+app/src/main/java/me/bmax/apatch/ui/theme/Theme.kt      14604
+app/src/main/java/me/bmax/apatch/ui/theme/ThemeIO.kt    66538
+app/src/main/java/me/bmax/apatch/ui/theme/ThemeManager.kt       4937
+app/src/main/java/me/bmax/apatch/ui/theme/ThemePreferenceMigration.kt   237
+app/src/main/java/me/bmax/apatch/ui/theme/ThemeReveal.kt        3408
+app/src/main/java/me/bmax/apatch/ui/theme/VibrationConfig.kt    1670
+app/src/main/java/me/bmax/apatch/ui/theme/WallpaperColorScheme.kt       7640
+app/src/main/java/me/bmax/apatch/ui/theme/WallpaperContentColors.kt     862
+app/src/main/java/me/bmax/apatch/ui/theme/WallpaperContrastPolicy.kt    2930
+app/src/main/java/me/bmax/apatch/ui/theme/WallpaperRoute.kt     5884
+app/src/main/java/me/bmax/apatch/ui/viewmodel/APModuleViewModel.kt      14848
+app/src/main/java/me/bmax/apatch/ui/viewmodel/ApiMarketplaceViewModel.kt        7241
+app/src/main/java/me/bmax/apatch/ui/viewmodel/KPModel.kt        1750
+app/src/main/java/me/bmax/apatch/ui/viewmodel/KPModuleViewModel.kt      8606
+app/src/main/java/me/bmax/apatch/ui/viewmodel/OnlineKPMViewModel.kt     3887
+app/src/main/java/me/bmax/apatch/ui/viewmodel/OnlineModuleViewModel.kt  6042
+app/src/main/java/me/bmax/apatch/ui/viewmodel/OnlinePluginViewModel.kt  4150
+app/src/main/java/me/bmax/apatch/ui/viewmodel/OnlineScriptViewModel.kt  3746
+app/src/main/java/me/bmax/apatch/ui/viewmodel/PatchesViewModel.kt       33384
+app/src/main/java/me/bmax/apatch/ui/viewmodel/PluginViewModel.kt        7286
+app/src/main/java/me/bmax/apatch/ui/viewmodel/RepoModuleViewModel.kt    7016
+app/src/main/java/me/bmax/apatch/ui/viewmodel/ScriptLibraryViewModel.kt 5207
+app/src/main/java/me/bmax/apatch/ui/viewmodel/StatsViewModel.kt 6103
+app/src/main/java/me/bmax/apatch/ui/viewmodel/SuperUserViewModel.kt     25596
+app/src/main/java/me/bmax/apatch/ui/viewmodel/ThemeStoreViewModel.kt    22715
+app/src/main/java/me/bmax/apatch/ui/viewmodel/WallpaperGalleryViewModel.kt      5650
+app/src/main/java/me/bmax/apatch/ui/wallpaper/WallpaperCatalog.kt       9376
+app/src/main/java/me/bmax/apatch/ui/wallpaper/WallpaperGalleryCache.kt  3547
+app/src/main/java/me/bmax/apatch/ui/wallpaper/WallpaperModels.kt        1884
+app/src/main/java/me/bmax/apatch/ui/wallpaper/WallpaperProviderRegistry.kt      2606
+app/src/main/java/me/bmax/apatch/ui/webui/AppIconUtil.kt        1708
+app/src/main/java/me/bmax/apatch/ui/webui/Insets.kt     1696
+app/src/main/java/me/bmax/apatch/ui/webui/MimeUtil.java 4346
+app/src/main/java/me/bmax/apatch/ui/webui/MonetColorsProvider.kt        4951
+app/src/main/java/me/bmax/apatch/ui/webui/SuFilePathHandler.java        11349
+app/src/main/java/me/bmax/apatch/ui/webui/WebViewInterface.kt   8945
+app/src/main/java/me/bmax/apatch/util/APatchCli.kt      43140
+app/src/main/java/me/bmax/apatch/util/APatchKeyHelper.java      7402
+app/src/main/java/me/bmax/apatch/util/AppData.kt        6398
+app/src/main/java/me/bmax/apatch/util/BackupLogManager.kt       1498
+app/src/main/java/me/bmax/apatch/util/BiometricUtils.kt 2718
+app/src/main/java/me/bmax/apatch/util/BottomBarIconConfig.kt    6340
+app/src/main/java/me/bmax/apatch/util/BulkInstallManager.kt     481
+app/src/main/java/me/bmax/apatch/util/ComposePrefs.kt   3085
+app/src/main/java/me/bmax/apatch/util/DPIUtils.kt       2617
+app/src/main/java/me/bmax/apatch/util/DeviceInfoUtils.kt        2580
+app/src/main/java/me/bmax/apatch/util/Downloader.kt     4759
+app/src/main/java/me/bmax/apatch/util/EmbeddedKpmUtils.kt       6925
+app/src/main/java/me/bmax/apatch/util/FolkApiClient.kt  4494
+app/src/main/java/me/bmax/apatch/util/FsUtils.kt        3196
+app/src/main/java/me/bmax/apatch/util/HanziToPinyin.java        27704
+app/src/main/java/me/bmax/apatch/util/HardwareMonitor.kt        10720
+app/src/main/java/me/bmax/apatch/util/IOStreamUtils.kt  1063
+app/src/main/java/me/bmax/apatch/util/LauncherIconUtils.kt      3929
+app/src/main/java/me/bmax/apatch/util/Localization.kt   3279
+app/src/main/java/me/bmax/apatch/util/LogEvent.kt       5386
+app/src/main/java/me/bmax/apatch/util/ModuleBackupUtils.kt      5413
+app/src/main/java/me/bmax/apatch/util/ModuleBannerStorage.kt    1280
+app/src/main/java/me/bmax/apatch/util/ModuleDataUtils.kt        6265
+app/src/main/java/me/bmax/apatch/util/ModuleShortcut.kt 19087
+app/src/main/java/me/bmax/apatch/util/MusicManager.kt   6939
+app/src/main/java/me/bmax/apatch/util/PermissionUtils.kt        3001
+app/src/main/java/me/bmax/apatch/util/PkgConfig.kt      5243
+app/src/main/java/me/bmax/apatch/util/SafeFileProvider.kt       2539
+app/src/main/java/me/bmax/apatch/util/SafeUriResolver.kt        3239
+app/src/main/java/me/bmax/apatch/util/ScriptLibraryManager.kt   9278
+app/src/main/java/me/bmax/apatch/util/ShellArgs.kt      109
+app/src/main/java/me/bmax/apatch/util/ShellBinderRequestHandler.java    1683
+app/src/main/java/me/bmax/apatch/util/ShizukuManagerProvider.java       4216
+app/src/main/java/me/bmax/apatch/util/ShizukuServiceManager.kt  18782
+app/src/main/java/me/bmax/apatch/util/SoundEffectManager.kt     2955
+app/src/main/java/me/bmax/apatch/util/SuAuditLog.kt     5077
+app/src/main/java/me/bmax/apatch/util/SystemInfoCollector.kt    2983
+app/src/main/java/me/bmax/apatch/util/ThemeDownloader.kt        27554
+app/src/main/java/me/bmax/apatch/util/UpdateChecker.kt  1945
+app/src/main/java/me/bmax/apatch/util/Version.kt        4844
+app/src/main/java/me/bmax/apatch/util/VibrationManager.kt       1847
+app/src/main/java/me/bmax/apatch/util/WallpaperDownloader.kt    3570
+app/src/main/java/me/bmax/apatch/util/WebDavUtils.kt    4347
+app/src/main/java/me/bmax/apatch/util/ui/AnsiUtils.kt   3717
+app/src/main/java/me/bmax/apatch/util/ui/CompositionProvider.kt 268
+app/src/main/java/me/bmax/apatch/util/ui/FloatingBarConfig.kt   1470
+app/src/main/java/me/bmax/apatch/util/ui/GlassEffectHelper.kt   7308
+app/src/main/java/me/bmax/apatch/util/ui/HomeBottomSpacer.kt    1339
+app/src/main/java/me/bmax/apatch/util/ui/HyperlinkText.kt       2921
+app/src/main/java/me/bmax/apatch/util/ui/ToastExt.kt    2476
+app/src/main/java/moe/shizuku/common/util/BuildUtils.java       850
+app/src/main/java/moe/shizuku/common/util/OsUtils.java  679
+app/src/main/java/moe/shizuku/starter/ServiceStarter.java       6220
+app/src/main/java/moe/shizuku/starter/util/IContentProviderCompat.java  1424
+app/src/main/java/rikka/rish/FileDescriptors.java       1608
+app/src/main/java/rikka/rish/Rish.java  1003
+app/src/main/java/rikka/rish/RishConfig.java    1772
+app/src/main/java/rikka/rish/RishConstants.java 187
+app/src/main/java/rikka/rish/RishHost.java      3324
+app/src/main/java/rikka/rish/RishService.java   4451
+app/src/main/java/rikka/rish/RishTerminal.java  4915
+app/src/main/java/rikka/shizuku/server/ApkChangedObservers.kt   4086
+app/src/main/java/rikka/shizuku/server/BinderSender.java        6878
+app/src/main/java/rikka/shizuku/server/ClientManager.java       2860
+app/src/main/java/rikka/shizuku/server/ClientRecord.java        1284
+app/src/main/java/rikka/shizuku/server/ConfigManager.java       1001
+app/src/main/java/rikka/shizuku/server/ConfigPackageEntry.java  320
+app/src/main/java/rikka/shizuku/server/ServerConstants.java     1191
+app/src/main/java/rikka/shizuku/server/Service.java     13204
+app/src/main/java/rikka/shizuku/server/ShizukuClientManager.java        222
+app/src/main/java/rikka/shizuku/server/ShizukuConfig.java       1399
+app/src/main/java/rikka/shizuku/server/ShizukuConfigManager.java        11240
+app/src/main/java/rikka/shizuku/server/ShizukuService.java      32713
+app/src/main/java/rikka/shizuku/server/ShizukuUserServiceManager.java   3288
+app/src/main/java/rikka/shizuku/server/UserService.java 3839
+app/src/main/java/rikka/shizuku/server/UserServiceManager.java  13228
+app/src/main/java/rikka/shizuku/server/UserServiceRecord.java   4425
+app/src/main/java/rikka/shizuku/server/api/IContentProviderUtils.java   1228
+app/src/main/java/rikka/shizuku/server/api/RemoteProcessHolder.java     3714
+app/src/main/java/rikka/shizuku/server/ktx/Handler.kt   330
+app/src/main/java/rikka/shizuku/server/util/AbiUtil.java        301
+app/src/main/java/rikka/shizuku/server/util/HandlerUtil.java    475
+app/src/main/java/rikka/shizuku/server/util/Logger.java 4121
+app/src/main/java/rikka/shizuku/server/util/OsUtils.java        680
+app/src/main/java/rikka/shizuku/server/util/ParcelFileDescriptorUtil.java       2164
+app/src/main/java/rikka/shizuku/server/util/ServerLog.java      8102
+app/src/main/java/rikka/shizuku/server/util/UserHandleCompat.java       298
+app/src/main/res/drawable/device_mobile_down.xml        1225
+app/src/main/res/drawable/github.xml    1061
+app/src/main/res/drawable/ic_clear_background.xml       401
+app/src/main/res/drawable/ic_custom_background.xml      508
+app/src/main/res/drawable/ic_launcher_foreground.xml    686
+app/src/main/res/drawable/ic_launcher_foreground_alt.xml        15117
+app/src/main/res/drawable/ic_launcher_monochrome.xml    646
+app/src/main/res/drawable/ic_launcher_monochrome_alt.xml        14603
+app/src/main/res/drawable/info_circle_filled.xml        862
+app/src/main/res/drawable/package_import.xml    1394
+app/src/main/res/drawable/play_circle.xml       663
+app/src/main/res/drawable/settings.xml  1132
+app/src/main/res/drawable/splash_background.xml 625
+app/src/main/res/drawable/telegram.xml  1104
+app/src/main/res/drawable/trash.xml     1231
+app/src/main/res/drawable/webui.xml     1414
+app/src/main/res/drawable-nodpi/about_icon_anime.webp   56195
+app/src/main/res/drawable-nodpi/ic_launcher_foreground_anime.png        70053
+app/src/main/res/font/xiaolai.ttf       8605916
+app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml      339
+app/src/main/res/mipmap-anydpi-v26/ic_launcher_alt.xml  351
+app/src/main/res/mipmap-anydpi-v26/ic_launcher_alt_round.xml    351
+app/src/main/res/mipmap-anydpi-v26/ic_launcher_anime.xml        280
+app/src/main/res/mipmap-anydpi-v26/ic_launcher_anime_round.xml  280
+app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml        339
+app/src/main/res/resources.properties   23
+app/src/main/res/values/arrays.xml      1425
+app/src/main/res/values/colors.xml      347
+app/src/main/res/values/ic_launcher_background.xml      420
+app/src/main/res/values/strings.xml     106007
+app/src/main/res/values/themes.xml      1731
+app/src/main/res/values-ar/strings.xml  122965
+app/src/main/res/values-es/strings.xml  110436
+app/src/main/res/values-in/strings.xml  104683
+app/src/main/res/values-ja/strings.xml  120514
+app/src/main/res/values-ko/strings.xml  109286
+app/src/main/res/values-mgl/strings.xml 103107
+app/src/main/res/values-night/colors.xml        180
+app/src/main/res/values-night/themes.xml        127
+app/src/main/res/values-night-v31/ic_launcher_background.xml    476
+app/src/main/res/values-pl/strings.xml  109196
+app/src/main/res/values-pt-rBR/strings.xml      109173
+app/src/main/res/values-ru/strings.xml  137358
+app/src/main/res/values-tr-rTR/strings.xml      107361
+app/src/main/res/values-v31/ic_launcher_background.xml  476
+app/src/main/res/values-vi/strings.xml  115326
+app/src/main/res/values-zh-rAG/strings.xml      107723
+app/src/main/res/values-zh-rAT/strings.xml      102400
+app/src/main/res/values-zh-rCK/strings.xml      100201
+app/src/main/res/values-zh-rCN/strings.xml      100468
+app/src/main/res/values-zh-rMC/strings.xml      101602
+app/src/main/res/values-zh-rTW/strings.xml      100974
+app/src/main/res/values-zh-rWC/strings.xml      100654
+app/src/main/res/values-zh-rWY/strings.xml      97659
+app/src/main/res/xml/backup_rules.xml   478
+app/src/main/res/xml/data_extraction_rules.xml  551
+app/src/main/res/xml/file_paths.xml     412
+app/src/main/res/xml/network_security_config.xml        256
+app/src/test/java/me/bmax/apatch/ui/LayoutVariantTest.kt        467
+app/src/test/java/me/bmax/apatch/ui/navigation/CommitOnlyBackDispatcherTest.kt  3388
+app/src/test/java/me/bmax/apatch/ui/navigation/FloatingBarColorTest.kt  499
+app/src/test/java/me/bmax/apatch/ui/navigation/NavContainerTransformTest.kt     5472
+app/src/test/java/me/bmax/apatch/ui/screen/home/StatsMetricsTest.kt     949
+app/src/test/java/me/bmax/apatch/ui/screen/module/ModuleSortTest.kt     2525
+app/src/test/java/me/bmax/apatch/ui/screen/settings/SettingsSearchTest.kt       1860
+app/src/test/java/me/bmax/apatch/ui/theme/HomeCardSurfaceTest.kt        1728
+app/src/test/java/me/bmax/apatch/ui/theme/ThemePreferenceMigrationTest.kt       1515
+app/src/test/java/me/bmax/apatch/ui/theme/WallpaperColorSchemeTest.kt   5761
+app/src/test/java/me/bmax/apatch/ui/theme/WallpaperRouteTest.kt 3127
+app/src/test/java/me/bmax/apatch/ui/wallpaper/WallpaperCatalogTest.kt   9482
+auth.properties.template        170
+build.gradle.kts        2438
+core/designsystem/build.gradle.kts      1306
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/ColorSchemeGenerator.kt 2631
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/Type.kt 3843
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/ContinuousCornerShape.kt 5807
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/FolkColors.kt    253
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/FolkDimens.kt    1407
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/FolkMotion.kt    2359
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/FolkMotionScheme.kt      1071
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/FolkPalette.kt   2482
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/FolkShape.kt     1943
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/FolkThemeCatalog.kt      19198
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/FolkType.kt      2793
+core/designsystem/src/main/java/me/bmax/apatch/ui/theme/tokens/FolkWallpaperTokens.kt   2876
+core/designsystem/src/test/java/me/bmax/apatch/ui/theme/ColorSchemeGeneratorTest.kt     1563
+core/designsystem/src/test/java/me/bmax/apatch/ui/theme/tokens/FolkContrastTest.kt      4960
+core/designsystem/src/test/java/me/bmax/apatch/ui/theme/tokens/FolkDimensTest.kt        2925
+core/designsystem/src/test/java/me/bmax/apatch/ui/theme/tokens/FolkMotionSchemeTest.kt  1561
+core/designsystem/src/test/java/me/bmax/apatch/ui/theme/tokens/FolkMotionTest.kt        2256
+core/designsystem/src/test/java/me/bmax/apatch/ui/theme/tokens/FolkPaletteTest.kt       7492
+core/designsystem/src/test/java/me/bmax/apatch/ui/theme/tokens/FolkShapeTest.kt 1591
+core/designsystem/src/test/java/me/bmax/apatch/ui/theme/tokens/FolkTypeTest.kt  1986
+core/designsystem/src/test/java/me/bmax/apatch/ui/theme/tokens/FolkWallpaperTokensTest.kt       2667
+core/ui/build.gradle.kts        1400
+core/ui/src/main/java/me/bmax/apatch/ui/component/AdaptiveSearchAppBar.kt       12961
+core/ui/src/main/java/me/bmax/apatch/ui/component/BackgroundOptionsDialog.kt    16108
+core/ui/src/main/java/me/bmax/apatch/ui/component/ExpressiveSwitch.kt   2062
+core/ui/src/main/java/me/bmax/apatch/ui/component/KeyEventBlocker.kt    837
+core/ui/src/main/java/me/bmax/apatch/ui/component/ModuleCardComponents.kt       10909
+core/ui/src/main/java/me/bmax/apatch/ui/component/ModuleLabel.kt        1095
+core/ui/src/main/java/me/bmax/apatch/ui/component/OnlineModuleCard.kt   6074
+core/ui/src/main/java/me/bmax/apatch/ui/component/SearchAppBarScrollBehavior.kt 7293
+core/ui/src/main/java/me/bmax/apatch/ui/component/SearchBar.kt  10922
+core/ui/src/main/java/me/bmax/apatch/ui/component/SegmentedChoiceRow.kt 1155
+core/ui/src/main/java/me/bmax/apatch/ui/component/SegmentedColumn.kt    9532
+core/ui/src/main/java/me/bmax/apatch/ui/component/SegmentedRows.kt      11159
+core/ui/src/main/java/me/bmax/apatch/ui/component/SegmentedSection.kt   2250
+core/ui/src/main/java/me/bmax/apatch/ui/component/SegmentedSliderItem.kt        3986
+core/ui/src/main/java/me/bmax/apatch/ui/component/SplicedLazyColumn.kt  3360
+core/ui/src/main/java/me/bmax/apatch/ui/component/TonalCard.kt  5621
+core/ui/src/main/java/me/bmax/apatch/ui/component/TwoColumnGrid.kt      3634
+core/ui/src/main/java/me/bmax/apatch/ui/component/WarningCard.kt        3464
+core/ui/src/main/java/me/bmax/apatch/ui/component/chart/ChartUtils.kt   2304
+core/ui/src/main/java/me/bmax/apatch/ui/component/chart/DonutChart.kt   2652
+core/ui/src/main/java/me/bmax/apatch/ui/component/chart/StorageColumnChart.kt   3443
+core/ui/src/main/java/me/bmax/apatch/ui/component/chart/WaveChart.kt    4672
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/ExpressiveDialog.kt      2222
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkAnimations.kt        1732
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkButton.kt    1301
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkLoadingIndicator.kt  1259
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkLog.kt       6671
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkScaffold.kt  10742
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkSettingsScaffold.kt  5269
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkSettingsTokens.kt    5914
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkStateView.kt 2698
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkWallpaperChrome.kt   3699
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkWallpaperSurface.kt  2309
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/FolkWrapSafeText.kt      2759
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/NavOrigin.kt     7003
+core/ui/src/main/java/me/bmax/apatch/ui/component/folk/TopBarBackButton.kt      2053
+core/ui/src/main/java/me/bmax/apatch/ui/navigation/NavigationVisibilityLocals.kt        267
+core/ui/src/main/java/me/bmax/apatch/util/ui/APDialogBlurBehindUtils.kt 4856
+core/ui/src/main/java/me/bmax/apatch/util/ui/NavigationBarsSpacer.kt    685
+core/ui/src/main/res/values/strings.xml 747
+core/ui/src/main/res/values-ar/strings.xml      792
+core/ui/src/main/res/values-es/strings.xml      770
+core/ui/src/main/res/values-in/strings.xml      761
+core/ui/src/main/res/values-ja/strings.xml      789
+core/ui/src/main/res/values-ko/strings.xml      778
+core/ui/src/main/res/values-mgl/strings.xml     756
+core/ui/src/main/res/values-pl/strings.xml      773
+core/ui/src/main/res/values-pt-rBR/strings.xml  764
+core/ui/src/main/res/values-ru/strings.xml      856
+core/ui/src/main/res/values-tr-rTR/strings.xml  758
+core/ui/src/main/res/values-vi/strings.xml      777
+core/ui/src/main/res/values-zh-rAG/strings.xml  792
+core/ui/src/main/res/values-zh-rAT/strings.xml  720
+core/ui/src/main/res/values-zh-rCK/strings.xml  756
+core/ui/src/main/res/values-zh-rCN/strings.xml  759
+core/ui/src/main/res/values-zh-rMC/strings.xml  756
+core/ui/src/main/res/values-zh-rTW/strings.xml  765
+core/ui/src/main/res/values-zh-rWC/strings.xml  741
+core/ui/src/main/res/values-zh-rWY/strings.xml  729
+docs/1.png      2117555
+docs/2.png      1762610
+docs/3.png      1862771
+docs/4.png      3952194
+docs/5.png      4977602
+docs/6.png      3932395
+examples/plugins/boot-script/main.lua   1964
+examples/plugins/boot-script/plugin.json        1479
+examples/plugins/cache-cleaner/main.lua 3526
+examples/plugins/cache-cleaner/plugin.json      1057
+examples/plugins/file-tick-test/main.lua        807
+examples/plugins/file-tick-test/plugin.json     562
+examples/plugins/hello-plugin/main.lua  1350
+examples/plugins/hello-plugin/plugin.json       328
+examples/plugins/log-rotator/main.lua   1696
+examples/plugins/log-rotator/plugin.json        1018
+fastlane/metadata/android/en-US/full_description.txt    1142
+fastlane/metadata/android/en-US/images/icon.png 137514
+fastlane/metadata/android/en-US/short_description.txt   50
+fastlane/metadata/android/pl-PL/full_description.txt    1228
+fastlane/metadata/android/pl-PL/short_description.txt   43
+fpd/Cargo.lock  365
+fpd/Cargo.toml  335
+fpd/src/main.rs 1252
+fpd/src/prop_patch.rs   3506
+fpd/src/umount.rs       1572
+gradle/libs.versions.toml       6173
+gradle/wrapper/gradle-wrapper.jar       45457
+gradle/wrapper/gradle-wrapper.properties        252
+gradle.properties       1748
+gradlew 8618
+gradlew.bat     2896
+keystore.properties.template    312
+local.properties.template       577
+logo.png        242637
+scripts/Build-Debug.sh  1693
+scripts/Build-Release.sh        1707
+scripts/capture-design-matrix.sh        3770
+scripts/check-icons.py  2660
+scripts/check-package-boundaries.py     5164
+scripts/check-screen-tokens.py  3236
+scripts/check-source-file-length.py     2682
+scripts/icon-whitelist.txt      4392
+scripts/init-wsl.sh     2871
+scripts/package-boundary-allowlist.txt  471
+scripts/setup-wsl.sh    9808
+scripts/source-length-allowlist.txt     3199
+scripts/test-package-boundaries.py      4937
+scripts/test-source-file-length.py      2255
+scripts/test_boot_patch_output.py       4603
+scripts/test_kernel_artifacts.py        2842
+scripts/test_stability.py       6578
+scripts/update_binary.sh        912
+scripts/update_script.sh        91
+settings.gradle.kts     533
+version.properties      171
+
+[5] VERSION FILES
+--------------------------------------------------------------------------------
+
+### version.properties
+# Single source of the FolkPatch manager version code.
+# Read by build.gradle.kts, apd/build.rs, and GitHub Actions.
+managerVersionEpoch=113202
+managerVersionFloor=115036
+
+
+### README.md
+<div align="center">
+<img src="logo.png" width="180" alt="FolkPatch logo">
+
+[![Latest Release](https://img.shields.io/github/v/release/LyraVoid/FolkPatch?label=Release&logo=github)](https://github.com/LyraVoid/FolkPatch/releases/latest)
+[![Telegram](https://img.shields.io/badge/Telegram-FolkPatch-blue?logo=telegram)](https://t.me/FolkPatch)
+[![License](https://img.shields.io/github/license/LyraVoid/FolkPatch?logo=gnu)](/LICENSE)
+
+</div>
+
+**Language:** [English](./README.md) / [中文](./README_CN.md) / [日本語](./README_JA.md)
+
+FolkPatch is a Root management application built on [KernelPatch](https://github.com/LyraVoid/KernelPatch). It combines a KernelPatch-based Root implementation, system and kernel module management, Lua plugins, Shizuku integration, and a configurable modern interface in one manager.
+
+[Read the full documentation](https://fp.mysqil.com/)
+
+<table>
+  <tr>
+    <td><img alt="FolkPatch home screen" src="docs/1.png"></td>
+    <td><img alt="FolkPatch module interface" src="docs/2.png"></td>
+    <td><img alt="FolkPatch settings interface" src="docs/3.png"></td>
+  </tr>
+  <tr>
+    <td><img alt="FolkPatch feature interface" src="docs/4.png"></td>
+    <td><img alt="FolkPatch plugin interface" src="docs/5.png"></td>
+    <td><img alt="FolkPatch customization interface" src="docs/6.png"></td>
+  </tr>
+</table>
+
+---
+
+## Overview
+
+FolkPatch provides:
+
+- KernelPatch-based Root without recompiling the kernel
+- APM system modules with batch installation and backup support
+- KPM kernel modules, including automatic loading
+- Lightweight APD Lua plugins
+- Shizuku service management and startup integration
+- Runtime controls for network isolation, path hiding, kernel spoofing, mount hiding, and unmount policies
+- Importable themes, wallpapers, custom fonts, and multiple home layouts
+- English, Chinese, Japanese, and additional community translations
+
+## Requirements
+
+- ARM64 Android device
+- Android kernel 3.18 through 6.15
+- A supported KernelPatch installation
+
+The exact compatibility matrix and installation steps are available in the [documentation](https://fp.mysqil.com/).
+
+## Interface
+
+- Multiple home layouts, including ListUI, GridUI, FocusUI, CircleUI, DashboardUI, and StatsUI
+- FocusUI as the default home layout for new installations
+- System theme colors, custom colors, wallpapers, and custom fonts
+- Configurable navigation styles and dashboard cards
+- Optional automatic update checks
+
+## Modules and Extensions
+
+### APM
+
+APM provides a Magisk-like system module system with installation, removal, enable and disable controls, batch operations, and full backups.
+
+### KPM
+
+KPM provides kernel module support for `inline-hook` and `syscall-table-hook` use cases, including automatic module loading.
+
+### APD Lua Plugins
+
+APD plugins run Lua scripts in the `apd` lifecycle without modifying system files or injecting a kernel module. They support configuration, quick actions, background daemons, and persistent logs.
+
+Plugin documentation:
+
+- English: https://fp.mysqil.com/en/modules/plugin/
+- Chinese: https://fp.mysqil.com/modules/plugin/
+
+## Security
+
+The SuperKey has higher privileges than a normal Root session. A weak or exposed key can allow unauthorized control of the device. Use a strong key and keep it private.
+
+## Translation
+
+English and Chinese are the reference languages. Translation corrections should be submitted only for the target language. New language contributions are welcome when the entire translated file is included in the pull request.
+
+## Download and Installation
+
+1. Download the latest package from the [Releases page](https://github.com/LyraVoid/FolkPatch/releases/latest).
+2. Install the package on the Android device.
+3. Follow the in-app setup flow and read the [documentation](https://fp.mysqil.com/) before installing modules or enabling runtime controls.
+
+## Credits
+
+- [KernelPatch](https://github.com/LyraVoid/KernelPatch) - core Root implementation
+- [Magisk](https://github.com/topjohnwu/Magisk) - magiskpolicy
+- [KernelSU](https://github.com/tiann/KernelSU) - application UI and module system reference
+- [SukiSU-Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) - interface design reference
+- [APatch](https://github.com/bmax121/APatch) - upstream project
+- [MMRL](https://github.com/MMRLApp/MMRL) - module repository format reference
+- [Shizuku](https://github.com/RikkaApps/Shizuku) - built-in Shizuku service
+- [LoliAPI](https://www.loliapi.com/docs/acg/) - online wallpaper source for the wallpaper gallery
+
+## License
+
+FolkPatch is licensed under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.html).
+
+If you modify FolkPatch or integrate it into another project and distribute the result, the complete project must be released under GPLv3. Binary distributions must provide or promise complete, readable source code. The software is provided without warranty, and any violation terminates the GPLv3 grant.
+
+## Community
+
+- Telegram: [@FolkPatch](https://t.me/FolkPatch)
+
+
+### README_EN.md
+# FolkPatch
+
+The English documentation is maintained in [README.md](./README.md).
+
+
+### Build-Release.sh
+#!/usr/bin/env bash
+# =============================================================================
+# FolkPatch Release Build Script (Linux)
+# Mirrors Build-Release.bat functionality for Linux / WSL environment
+# =============================================================================
+
+set -euo pipefail
+
+# ── Colors ───────────────────────────────────────────────────────────────────
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
+
+# ── Load Environment ─────────────────────────────────────────────────────────
+[[ -f "${HOME}/.cargo/env" ]] && source "${HOME}/.cargo/env"
+export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
+export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+
+if [[ -z "${JAVA_HOME:-}" ]]; then
+    if [[ -d "${HOME}/.local/share/jvm/temurin-21" ]]; then
+        export JAVA_HOME="${HOME}/.local/share/jvm/temurin-21"
+    elif [[ -d "${HOME}/.jdks/temurin-21" ]]; then
+        export JAVA_HOME="${HOME}/.jdks/temurin-21"
+    fi
+fi
+
+if [[ -n "${JAVA_HOME:-}" && -d "${JAVA_HOME}/bin" ]]; then
+    export PATH="${JAVA_HOME}/bin:${PATH}"
+fi
+if [[ -d "${HOME}/.cargo/bin" ]]; then
+    export PATH="${HOME}/.cargo/bin:${PATH}"
+fi
+if [[ -d "${ANDROID_HOME}/cmdline-tools/latest/bin" ]]; then
+    export PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${PATH}"
+fi
+if [[ -d "${ANDROID_HOME}/platform-tools" ]]; then
+    export PATH="${ANDROID_HOME}/platform-tools:${PATH}"
+fi
+
+# ── Step 1: Enter apd directory ──────────────────────────────────────────────
+echo -e "${BLUE}[1/4]${NC} Entering apd directory..."
+if ! cd apd; then
+    echo -e "${RED}Error: Failed to enter apd directory, please check if the directory exists!${NC}" >&2
+    exit 1
+fi
+
+# ── Step 2: Clean apd (Rust) ─────────────────────────────────────────────────
+echo -e "${BLUE}[2/4]${NC} Executing cargo clean..."
+if ! cargo clean; then
+    echo -e "${RED}Error: cargo clean execution failed!${NC}" >&2
+    exit 1
+fi
+
+# ── Step 3: Return to parent directory ───────────────────────────────────────
+echo -e "${BLUE}[3/4]${NC} Returning to parent directory..."
+if ! cd ..; then
+    echo -e "${RED}Error: Failed to return to parent directory!${NC}" >&2
+    exit 1
+fi
+
+# ── Step 4: Build Release APK ────────────────────────────────────────────────
+echo -e "${BLUE}[4/4]${NC} Executing ./gradlew assembleRelease..."
+if ! ./gradlew assembleRelease; then
+    echo -e "${RED}Error: ./gradlew assembleRelease execution failed!${NC}" >&2
+    exit 1
+fi
+
+echo ""
+echo -e "${GREEN}All commands executed successfully!${NC}"
+echo -e "${GREEN}Release build complete!${NC}"
+APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" -type f 2>/dev/null | head -n 1)
+if [[ -n "$APK_PATH" ]]; then
+    echo "  Output: $APK_PATH"
+fi
+
+
+### scripts/Build-Release.sh
+#!/usr/bin/env bash
+# =============================================================================
+# FolkPatch Release Build Script (WSL)
+# =============================================================================
+# Usage: bash scripts/Build-Release.sh
+#
+# Mirrors Build-Release.bat functionality for WSL environment.
+# Builds: cargo clean (apd) → Gradle assembleRelease
+# =============================================================================
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# ── Colors ───────────────────────────────────────────────────────────────────
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+step() { echo -e "${GREEN}[$1/4]${NC} $2"; }
+die()  { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
+
+cd "$PROJECT_DIR"
+
+# Load Rust env
+[[ -f "${HOME}/.cargo/env" ]] && source "${HOME}/.cargo/env"
+
+# ── Step 1: Clean apd (Rust) ────────────────────────────────────────────────
+step 1 "Cleaning apd directory..."
+cd apd
+cargo clean || die "cargo clean failed!"
+cd ..
+
+# ── Step 2: Build Release APK ──────────────────────────────────────────────
+step 2 "Building release APK with Gradle..."
+./gradlew assembleRelease || die "Gradle assembleRelease failed!"
+
+echo ""
+echo -e "${GREEN}✅ Release build complete!${NC}"
+echo "  Output: app/build/outputs/apk/release/*.apk"
+
+
+================================================================================
+FORENSIC COMPLETE
+================================================================================
 🐧 [root@debian:~]#
