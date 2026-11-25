@@ -10,390 +10,346 @@ make[1]: Entering directory '/root/ksu-config-audit'
   CHK     include/generated/bounds.h
   CHK     include/generated/asm-offsets.h
   CALL    /root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/checksyscalls.sh
-  CC      init/main.o
-  HOSTCC  usr/gen_init_cpio
-  GEN     usr/initramfs_data.cpio.gz
-  AS      usr/initramfs_data.o
-  LD      usr/built-in.o
-  CC      arch/arm64/kernel/debug-monitors.o
-  AS      arch/arm64/kernel/entry.o
-  CC      arch/arm64/kernel/irq.o
   CHK     include/generated/compile.h
-  UPD     include/generated/compile.h
-  CC      init/do_mounts.o
-  CC      arch/arm64/kernel/fpsimd.o
-  AS      arch/arm64/kernel/entry-fpsimd.o
-  CC      arch/arm64/kernel/process.o
-  CC      init/do_mounts_rd.o
-  CC      arch/arm64/kernel/ptrace.o
-  CC      init/do_mounts_initrd.o
-  CC      init/do_mounts_dm.o
-  CC      arch/arm64/kernel/setup.o
-  CC      init/noinitramfs.o
-  CC      arch/arm64/kernel/signal.o
-  CC      init/initramfs.o
-  CC      arch/arm64/kernel/sys.o
-  CC      init/calibrate.o
-  CC      init/init_task.o
-  CC      arch/arm64/kernel/stacktrace.o
-  CC      init/version.o
-  CC      arch/arm64/kernel/time.o
-  LD      init/mounts.o
-  LD      init/built-in.o
-  CC      arch/arm64/mm/dma-mapping.o
-  CC      arch/arm64/kernel/traps.o
-  CC      arch/arm64/mm/extable.o
-  CC      arch/arm64/kernel/io.o
-  CC      arch/arm64/mm/fault.o
-  CC      arch/arm64/kernel/vdso.o
-  CC      arch/arm64/mm/init.o
-  AS      arch/arm64/kernel/hyp-stub.o
-  CC      arch/arm64/kernel/psci.o
-  CC      arch/arm64/kernel/cpu_ops.o
-  AS      arch/arm64/mm/cache.o
-  CC      arch/arm64/mm/copypage.o
-  CC      arch/arm64/kernel/insn.o
-  CC      arch/arm64/mm/flush.o
-  CC      arch/arm64/kernel/module.o
-  CC      arch/arm64/mm/ioremap.o
-  CC      arch/arm64/kernel/return_address.o
-  CC      arch/arm64/mm/mmap.o
-  CC      arch/arm64/kernel/cpuinfo.o
-  CC      arch/arm64/mm/pgd.o
-  CC      arch/arm64/kernel/cpu_errata.o
-  CC      arch/arm64/mm/mmu.o
-  CC      arch/arm64/kernel/cpufeature.o
-  CC      arch/arm64/mm/context.o
-  AS      arch/arm64/mm/proc.o
-  CC      arch/arm64/kernel/alternative.o
-  CC      arch/arm64/mm/pageattr.o
-  CC      arch/arm64/kernel/cacheinfo.o
-  AS      arch/arm64/mm/cache-mtk-v8.o
-  LD      arch/arm64/mm/built-in.o
-  LD      arch/arm64/net/built-in.o
-  CC      arch/arm64/crypto/sha2-ce-glue.o
-  CC      arch/arm64/kernel/smp.o
-  AS      arch/arm64/crypto/sha2-ce-core.o
-  CC      arch/arm64/crypto/aes-ce-cipher-glue.o
-  CC      arch/arm64/crypto/aes-ce-cipher-core.o
-  CC      arch/arm64/kernel/smp_spin_table.o
-  CC      arch/arm64/crypto/aes-glue-ce.o
-  CC      arch/arm64/kernel/topology.o
-  AS      arch/arm64/crypto/aes-ce.o
-  LD      arch/arm64/crypto/sha2-ce.o
-  LD      arch/arm64/crypto/aes-ce-cipher.o
-  LD      arch/arm64/crypto/aes-ce-blk.o
-  LD      arch/arm64/crypto/built-in.o
-  CC      kernel/fork.o
-  AS      arch/arm64/kernel/smccc-call.o
-  CC      arch/arm64/kernel/sys32.o
-  CC      arch/arm64/kernel/signal32.o
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/fork.c:487:20: warning: variable 'stack_vm_area' set but not used [-Wunused-but-set-variable]
-        struct vm_struct *stack_vm_area;
-                          ^
-1 warning generated.
-  CC      arch/arm64/kernel/sys_compat.o
-  CC      kernel/exec_domain.o
-  AS      arch/arm64/kernel/entry32.o
-  AS      arch/arm64/kernel/kuser32.o
-  CC      arch/arm64/kernel/arm64ksyms.o
-  CC      kernel/panic.o
-  CC      arch/arm64/kernel/module-plts.o
-  CC      kernel/cpu.o
-  CC      arch/arm64/kernel/perf_regs.o
-  CC      arch/arm64/kernel/perf_callchain.o
-  CC      arch/arm64/kernel/perf_event.o
-  CC      kernel/exit.o
-  CC      arch/arm64/kernel/hw_breakpoint.o
-  AS      arch/arm64/kernel/sleep.o
-  CC      arch/arm64/kernel/suspend.o
-  CC      arch/arm64/kernel/cpuidle.o
-  CC      kernel/softirq.o
-  CC      arch/arm64/kernel/armv8_deprecated.o
-  CC      arch/arm64/kernel/kaslr.o
-  CC      kernel/resource.o
-  CC      arch/arm64/kernel/ssbd.o
-  CC      arch/arm64/kernel/probes/kprobes.o
-  CC      kernel/sysctl.o
-  CC      arch/arm64/kernel/probes/decode-insn.o
-  AS      arch/arm64/kernel/probes/kprobes_trampoline.o
-  CC      arch/arm64/kernel/probes/simulate-insn.o
-  LD      arch/arm64/kernel/probes/built-in.o
-  OBJCOPY arch/arm64/kernel/vdso/vdso.so
-  AS      arch/arm64/kernel/vdso/vdso.o
-  LD      arch/arm64/kernel/vdso/built-in.o
-  CC      kernel/sysctl_binary.o
-  OBJCOPY arch/arm64/kernel/vdso32/vdso.so
-  AS      arch/arm64/kernel/vdso32/vdso.o
-  LD      arch/arm64/kernel/vdso32/built-in.o
-  AS      arch/arm64/kernel/head.o
-  LDS     arch/arm64/kernel/vmlinux.lds
-  LD      arch/arm64/kernel/built-in.o
-  LD      certs/built-in.o
-  CC      mm/filemap.o
-  CC      kernel/capability.o
-  CC      kernel/ptrace.o
-  CC      mm/mempool.o
-  CC      kernel/user.o
-  CC      mm/oom_kill.o
-  CC      kernel/signal.o
-  CC      mm/maccess.o
-  CC      mm/page_alloc.o
-  CC      kernel/sys.o
-  CC      mm/page-writeback.o
-  CC      kernel/kmod.o
-  CC      kernel/workqueue.o
-  CC      mm/readahead.o
-  CC      mm/swap.o
-  CC      kernel/pid.o
-  CC      mm/truncate.o
-  CC      kernel/task_work.o
-  CC      kernel/extable.o
-  CC      mm/vmscan.o
-  CC      kernel/params.o
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/vmscan.c:3197:6: error: variable 'nid' set but not used [-Werror,-Wunused-but-set-variable]
-        int nid;
-            ^
+  CC      mm/shmem.o
+  CHK     kernel/config_data.h
+  CC      fs/open.o
+/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/mm/shmem.c:3055:27: error: variable 'info' set but not used [-Werror,-Wunused-but-set-variable]
+        struct shmem_inode_info *info;
+                                 ^
 1 error generated.
-make[2]: *** [/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: mm/vmscan.o] Error 1
+make[2]: *** [/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/scripts/Makefile.build:334: mm/shmem.o] Error 1
 make[1]: *** [/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/Makefile:1120: mm] Error 2
 make[1]: *** Waiting for unfinished jobs....
-  CC      kernel/kthread.o
-  CC      kernel/sys_ni.o
-  CC      kernel/nsproxy.o
-  CC      kernel/notifier.o
-  CC      kernel/ksysfs.o
-  CC      kernel/cred.o
-  CC      kernel/reboot.o
-  CC      kernel/async.o
-  CC      kernel/range.o
-  CC      kernel/smpboot.o
-  CC      kernel/ucount.o
-  CC      kernel/groups.o
-  CC      kernel/bpf/core.o
-  CC      kernel/events/core.o
-  CC      kernel/bpf/syscall.o
-  CC      kernel/bpf/verifier.o
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/bpf/verifier.c:1618:7: warning: variable 'min_set' set but not used [-Wunused-but-set-variable]
-        bool min_set = false, max_set = false;
-             ^
-1 warning generated.
-  CC      kernel/events/ring_buffer.o
-  CC      kernel/bpf/inode.o
-  CC      kernel/events/callchain.o
-  CC      kernel/bpf/helpers.o
-  CC      kernel/events/hw_breakpoint.o
-  CC      kernel/bpf/hashtab.o
-  LD      kernel/events/built-in.o
-  CC      kernel/irq/irqdesc.o
-  CC      kernel/bpf/arraymap.o
-  CC      kernel/irq/handle.o
-  CC      kernel/irq/manage.o
-  CC      kernel/bpf/percpu_freelist.o
-  CC      kernel/bpf/stackmap.o
-  CC      kernel/irq/spurious.o
-  CC      kernel/bpf/cgroup.o
-  CC      kernel/irq/resend.o
-  CC      kernel/irq/chip.o
-  LD      kernel/bpf/built-in.o
-  LD      kernel/livepatch/built-in.o
-  CC      kernel/locking/mutex.o
-  CC      kernel/irq/dummychip.o
-  CC      kernel/locking/semaphore.o
-  CC      kernel/irq/devres.o
-  CC      kernel/locking/rwsem.o
-  CC      kernel/irq/autoprobe.o
-  CC      kernel/locking/percpu-rwsem.o
-  CC      kernel/locking/spinlock.o
-  CC      kernel/irq/irqdomain.o
-  CC      kernel/locking/osq_lock.o
-  CC      kernel/locking/rtmutex.o
-  CC      kernel/irq/proc.o
-  CC      kernel/locking/rwsem-xadd.o
-  CC      kernel/irq/cpuhotplug.o
-  LD      kernel/locking/built-in.o
-  CC      kernel/power/qos.o
-  CC      kernel/irq/pm.o
-  CC      kernel/irq/affinity.o
-  CC      kernel/power/main.o
-  LD      kernel/irq/built-in.o
-  CC      kernel/printk/printk.o
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/printk/printk.c:2114:6: warning: variable 'in_irq_disable' set but not used [-Wunused-but-set-variable]
-        int in_irq_disable;
+  CC      fs/read_write.o
+  CC      fs/file_table.o
+  CC      fs/super.o
+  CC      fs/char_dev.o
+  CC      fs/stat.o
+  CC      fs/exec.o
+  CC      fs/pipe.o
+  CC      fs/namei.o
+  CC      fs/fcntl.o
+  CC      fs/ioctl.o
+  CC      fs/readdir.o
+  CC      fs/select.o
+  CC      fs/dcache.o
+  CC      fs/inode.o
+  CC      fs/attr.o
+  CC      fs/bad_inode.o
+  CC      fs/file.o
+  CC      fs/filesystems.o
+  CC      fs/namespace.o
+  CC      fs/seq_file.o
+  CC      fs/xattr.o
+  CC      fs/libfs.o
+  CC      fs/fs-writeback.o
+  CC      fs/pnode.o
+  CC      fs/splice.o
+  CC      fs/sync.o
+  CC      fs/utimes.o
+  CC      fs/stack.o
+  CC      fs/fs_struct.o
+  CC      fs/statfs.o
+  CC      fs/fs_pin.o
+  CC      fs/nsfs.o
+  CC      fs/buffer.o
+  CC      fs/block_dev.o
+  CC      fs/direct-io.o
+  CC      fs/mpage.o
+  CC      fs/proc_namespace.o
+  CC      fs/configfs/inode.o
+  CC      fs/crypto/crypto.o
+  CC      fs/configfs/file.o
+  CC      fs/configfs/dir.o
+  CC      fs/crypto/fname.o
+  CC      fs/configfs/symlink.o
+  CC      fs/crypto/hooks.o
+  CC      fs/configfs/mount.o
+  CC      fs/crypto/keyinfo.o
+  CC      fs/configfs/item.o
+  LD      fs/configfs/configfs.o
+  LD      fs/configfs/built-in.o
+  CC      fs/debugfs/inode.o
+  CC      fs/crypto/policy.o
+  CC      fs/debugfs/file.o
+  CC      fs/crypto/bio.o
+  LD      fs/debugfs/debugfs.o
+  LD      fs/debugfs/built-in.o
+  CC      fs/devpts/inode.o
+  LD      fs/crypto/fscrypto.o
+  LD      fs/crypto/built-in.o
+  CC      fs/erofs/super.o
+  LD      fs/devpts/devpts.o
+  LD      fs/devpts/built-in.o
+  CC      fs/exfat/inode.o
+  CC      fs/erofs/inode.o
+  CC      fs/exfat/namei.o
+  CC      fs/erofs/data.o
+  CC      fs/exfat/dir.o
+  CC      fs/erofs/namei.o
+  CC      fs/exfat/super.o
+  CC      fs/erofs/dir.o
+  CC      fs/erofs/utils.o
+  CC      fs/exfat/fatent.o
+  CC      fs/erofs/pcpubuf.o
+  CC      fs/exfat/cache.o
+  CC      fs/erofs/xattr.o
+  CC      fs/exfat/nls.o
+  CC      fs/erofs/decompressor.o
+  CC      fs/exfat/misc.o
+  CC      fs/exfat/file.o
+  CC      fs/erofs/zmap.o
+  CC      fs/exfat/balloc.o
+  CC      fs/erofs/zdata.o
+  LD      fs/exfat/exfat.o
+  LD      fs/exfat/built-in.o
+  LD      fs/exofs/built-in.o
+  CC      fs/ext4/balloc.o
+  LD      fs/erofs/erofs.o
+  LD      fs/erofs/built-in.o
+  CC      fs/f2fs/dir.o
+  CC      fs/ext4/bitmap.o
+  CC      fs/f2fs/file.o
+  CC      fs/ext4/dir.o
+  CC      fs/ext4/file.o
+  CC      fs/ext4/fsync.o
+  CC      fs/f2fs/inode.o
+  CC      fs/ext4/ialloc.o
+  CC      fs/f2fs/namei.o
+  CC      fs/ext4/inode.o
+  CC      fs/f2fs/hash.o
+  CC      fs/f2fs/super.o
+  CC      fs/ext4/page-io.o
+  CC      fs/ext4/ioctl.o
+  CC      fs/f2fs/inline.o
+  CC      fs/ext4/namei.o
+  CC      fs/f2fs/checkpoint.o
+  CC      fs/ext4/super.o
+  CC      fs/f2fs/gc.o
+  CC      fs/f2fs/data.o
+  CC      fs/ext4/symlink.o
+  CC      fs/f2fs/node.o
+  CC      fs/ext4/hash.o
+  CC      fs/ext4/resize.o
+  CC      fs/f2fs/segment.o
+  CC      fs/ext4/extents.o
+  CC      fs/ext4/ext4_jbd2.o
+  CC      fs/f2fs/recovery.o
+  CC      fs/ext4/migrate.o
+  CC      fs/f2fs/shrinker.o
+  CC      fs/ext4/mballoc.o
+  CC      fs/f2fs/extent_cache.o
+  CC      fs/f2fs/sysfs.o
+  CC      fs/f2fs/debug.o
+  CC      fs/ext4/block_validity.o
+  CC      fs/f2fs/xattr.o
+  CC      fs/ext4/move_extent.o
+  CC      fs/f2fs/acl.o
+  CC      fs/ext4/mmp.o
+  LD      fs/f2fs/f2fs.o
+  LD      fs/f2fs/built-in.o
+  CC      fs/fat/cache.o
+  CC      fs/ext4/indirect.o
+  CC      fs/fat/dir.o
+  CC      fs/ext4/extents_status.o
+  CC      fs/fat/fatent.o
+  CC      fs/ext4/xattr.o
+  CC      fs/fat/file.o
+  CC      fs/fat/inode.o
+  CC      fs/ext4/xattr_user.o
+  CC      fs/ext4/xattr_trusted.o
+  CC      fs/fat/misc.o
+  CC      fs/ext4/inline.o
+  CC      fs/fat/nfs.o
+  CC      fs/fat/namei_vfat.o
+  CC      fs/ext4/readpage.o
+  CC      fs/fat/namei_msdos.o
+  CC      fs/ext4/sysfs.o
+  LD      fs/fat/fat.o
+  LD      fs/fat/vfat.o
+  LD      fs/fat/msdos.o
+  LD      fs/fat/built-in.o
+  CC      fs/fuse/dev.o
+  CC      fs/ext4/xattr_security.o
+  LD      fs/ext4/ext4.o
+  LD      fs/ext4/built-in.o
+  CC      fs/isofs/namei.o
+  CC      fs/isofs/inode.o
+  CC      fs/fuse/dir.o
+  CC      fs/isofs/dir.o
+  CC      fs/isofs/util.o
+  CC      fs/fuse/file.o
+  CC      fs/isofs/rock.o
+  CC      fs/isofs/export.o
+  CC      fs/isofs/joliet.o
+  CC      fs/fuse/inode.o
+  CC      fs/isofs/compress.o
+  LD      fs/isofs/isofs.o
+  LD      fs/isofs/built-in.o
+  CC      fs/jbd2/transaction.o
+  CC      fs/fuse/control.o
+  CC      fs/fuse/xattr.o
+  CC      fs/jbd2/commit.o
+  CC      fs/fuse/acl.o
+  LD      fs/fuse/fuse.o
+  LD      fs/fuse/built-in.o
+  CC      fs/kernfs/mount.o
+  CC      fs/jbd2/recovery.o
+  CC      fs/kernfs/inode.o
+  CC      fs/jbd2/checkpoint.o
+  CC      fs/kernfs/dir.o
+  CC      fs/jbd2/revoke.o
+  CC      fs/kernfs/file.o
+  CC      fs/jbd2/journal.o
+  CC      fs/kernfs/symlink.o
+  LD      fs/kernfs/built-in.o
+  CC      fs/nls/nls_base.o
+  CC      fs/nls/nls_cp437.o
+  CC      fs/nls/nls_cp950.o
+  LD      fs/jbd2/jbd2.o
+  LD      fs/jbd2/built-in.o
+  CC      fs/notify/fsnotify.o
+  CC      fs/nls/nls_ascii.o
+  CC      fs/nls/nls_iso8859-1.o
+  CC      fs/notify/notification.o
+  CC      fs/nls/nls_utf8.o
+  LD      fs/nls/built-in.o
+  CC      fs/ntfs/aops.o
+  CC      fs/notify/group.o
+  CC      fs/notify/inode_mark.o
+  CC      fs/ntfs/attrib.o
+  CC      fs/notify/mark.o
+  CC      fs/ntfs/collate.o
+  CC      fs/notify/vfsmount_mark.o
+  CC      fs/ntfs/compress.o
+  CC      fs/notify/fdinfo.o
+  CC      fs/notify/dnotify/dnotify.o
+  CC      fs/ntfs/debug.o
+  LD      fs/notify/dnotify/built-in.o
+  LD      fs/notify/fanotify/built-in.o
+  CC      fs/notify/inotify/inotify_fsnotify.o
+  CC      fs/ntfs/dir.o
+  CC      fs/notify/inotify/inotify_user.o
+  CC      fs/ntfs/file.o
+  LD      fs/notify/inotify/built-in.o
+  LD      fs/notify/built-in.o
+  CC      fs/overlayfs/super.o
+  CC      fs/ntfs/index.o
+  CC      fs/overlayfs/inode.o
+  CC      fs/ntfs/inode.o
+  CC      fs/overlayfs/dir.o
+  CC      fs/ntfs/mft.o
+  CC      fs/overlayfs/readdir.o
+  CC      fs/ntfs/mst.o
+  CC      fs/overlayfs/copy_up.o
+  CC      fs/ntfs/namei.o
+  LD      fs/overlayfs/overlay.o
+  LD      fs/overlayfs/built-in.o
+  CC      fs/proc/task_mmu.o
+  CC      fs/ntfs/runlist.o
+  CC      fs/ntfs/super.o
+  CC      fs/proc/inode.o
+  CC      fs/proc/root.o
+  CC      fs/ntfs/sysctl.o
+  CC      fs/ntfs/unistr.o
+  CC      fs/proc/base.o
+  CC      fs/ntfs/upcase.o
+  LD      fs/ntfs/ntfs.o
+  LD      fs/ntfs/built-in.o
+  CC      fs/pstore/inode.o
+  CC      fs/proc/generic.o
+  CC      fs/pstore/platform.o
+  CC      fs/proc/array.o
+  CC      fs/pstore/pmsg.o
+  CC      fs/pstore/ram.o
+  CC      fs/proc/fd.o
+  CC      fs/pstore/ram_core.o
+  CC      fs/proc/proc_tty.o
+  CC      fs/proc/cmdline.o
+  LD      fs/pstore/pstore.o
+  LD      fs/pstore/ramoops.o
+  LD      fs/pstore/built-in.o
+  CC      fs/quota/dquot.o
+  CC      fs/proc/consoles.o
+/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/quota/dquot.c:1044:6: warning: variable 'reserved' set but not used [-Wunused-but-set-variable]
+        int reserved = 0;
             ^
-  CC      kernel/power/process.o
+  CC      fs/proc/cpuinfo.o
+  CC      fs/proc/devices.o
 1 warning generated.
-  CC      kernel/power/suspend.o
-  LD      kernel/printk/built-in.o
-  CC      kernel/rcu/update.o
-  CC      kernel/rcu/sync.o
-  CC      kernel/power/wakelock.o
-  CC      kernel/rcu/srcu.o
-  CC      kernel/power/poweroff.o
-  CC      kernel/power/wakeup_reason.o
-  CC      kernel/rcu/tree.o
-  LD      kernel/power/built-in.o
-  CC      kernel/sched/core.o
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/rcu/tree.c:3844:16: warning: variable 'mask' set but not used [-Wunused-but-set-variable]
-        unsigned long mask;
-                      ^
-1 warning generated.
-  LD      kernel/rcu/built-in.o
-  CC      kernel/time/time.o
-  CC      kernel/time/timer.o
-  CC      kernel/time/hrtimer.o
-  CC      kernel/time/itimer.o
-  CC      kernel/sched/loadavg.o
-  CC      kernel/time/posix-timers.o
-  CC      kernel/sched/clock.o
-  CC      kernel/time/posix-cpu-timers.o
-  CC      kernel/sched/cputime.o
-  CC      kernel/sched/idle_task.o
-  CC      kernel/time/timekeeping.o
-  CC      kernel/sched/fair.o
-  CC      kernel/time/ntp.o
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/fair.c:7214:16: warning: variable 'target_util' set but not used [-Wunused-but-set-variable]
-        unsigned long target_util = ULONG_MAX;
-                      ^
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/fair.c:9848:18: warning: variable 'busiest_cpumask' set but not used [-Wunused-but-set-variable]
-        struct cpumask *busiest_cpumask;
-                        ^
-In file included from /root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/fair.c:11846:
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/eas_plus.c:567:6: warning: variable 'target_capacity' set but not used [-Wunused-but-set-variable]
-        int target_capacity, src_capacity;
-            ^
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/eas_plus.c:1027:6: warning: variable 'task_prefer' set but not used [-Wunused-but-set-variable]
-        int task_prefer;
-            ^
-In file included from /root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/fair.c:11849:
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/hmp.c:1256:30: warning: variable 'orig' set but not used [-Wunused-but-set-variable]
-        struct sched_entity *curr, *orig;
+  CC      fs/quota/quota_v2.o
+  CC      fs/proc/interrupts.o
+  CC      fs/proc/loadavg.o
+  CC      fs/quota/quota_tree.o
+  CC      fs/proc/meminfo.o
+  CC      fs/quota/quota.o
+  CC      fs/proc/stat.o
+  CC      fs/proc/uptime.o
+  CC      fs/quota/kqid.o
+  CC      fs/proc/version.o
+  CC      fs/quota/netlink.o
+  CC      fs/proc/softirqs.o
+  CC      fs/proc/namespaces.o
+  LD      fs/quota/built-in.o
+  CC      fs/ramfs/inode.o
+  CC      fs/proc/self.o
+  CC      fs/ramfs/file-mmu.o
+  CC      fs/proc/thread_self.o
+  LD      fs/ramfs/ramfs.o
+  LD      fs/ramfs/built-in.o
+  CC      fs/sdcardfs/dentry.o
+  CC      fs/proc/uid.o
+  CC      fs/sdcardfs/file.o
+  CC      fs/proc/proc_sysctl.o
+  CC      fs/sdcardfs/inode.o
+  CC      fs/sdcardfs/main.o
+  CC      fs/proc/proc_net.o
+  CC      fs/sdcardfs/super.o
+  CC      fs/proc/kmsg.o
+  CC      fs/sdcardfs/lookup.o
+  CC      fs/proc/page.o
+/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/sdcardfs/lookup.c:89:30: warning: variable 'info' set but not used [-Wunused-but-set-variable]
+        struct sdcardfs_inode_info *info;
                                     ^
-  CC      kernel/time/clocksource.o
-  CC      kernel/time/jiffies.o
-  CC      kernel/time/timer_list.o
-  CC      kernel/time/timeconv.o
-  CC      kernel/time/timecounter.o
-  CC      kernel/time/posix-clock.o
-  CC      kernel/time/alarmtimer.o
-  CC      kernel/time/clockevents.o
-  CC      kernel/time/tick-common.o
-  CC      kernel/time/tick-broadcast.o
-5 warnings generated.
-  CC      kernel/sched/rt.o
-  CC      kernel/time/tick-broadcast-hrtimer.o
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/rt.c:1550:22: warning: variable 'curr' set but not used [-Wunused-but-set-variable]
-        struct task_struct *curr;
-                            ^
-In file included from /root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/rt.c:2746:
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/rt_enh.c:91:22: warning: variable 'curr' set but not used [-Wunused-but-set-variable]
-        struct task_struct *curr;
-                            ^
-  CC      kernel/time/sched_clock.o
-  CC      kernel/time/tick-oneshot.o
+/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/fs/sdcardfs/lookup.c:262:27: warning: variable 'sbi' set but not used [-Wunused-but-set-variable]
+        struct sdcardfs_sb_info *sbi;
+                                 ^
 2 warnings generated.
-  CC      kernel/sched/deadline.o
-  CC      kernel/time/tick-sched.o
-  CC      kernel/sched/stop_task.o
-  CC      kernel/time/timer_stats.o
-  CC      kernel/sched/wait.o
-  CC      kernel/time/timekeeping_debug.o
-  CC      kernel/time/timer_list_aee.o
-  CC      kernel/sched/swait.o
-  LD      kernel/time/built-in.o
-  CC      kernel/trace/trace_clock.o
-  CC      kernel/sched/completion.o
-  CC      kernel/trace/ring_buffer.o
-  CC      kernel/sched/idle.o
-  CC      kernel/sched/cpupri.o
-  CC      kernel/sched/cpudeadline.o
-  CC      kernel/trace/trace.o
-  CC      kernel/sched/energy.o
-  CC      kernel/sched/walt.o
-  CC      kernel/sched/stats.o
-  CC      kernel/sched/debug.o
-In file included from /root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/debug.c:1074:
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/debug_aee.c:317:29: warning: variable 'spread0' set but not used [-Wunused-but-set-variable]
-                spread, rq0_min_vruntime, spread0;
-                                          ^
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/sched/debug_aee.c:317:3: warning: variable 'spread' set but not used [-Wunused-but-set-variable]
-                spread, rq0_min_vruntime, spread0;
-                ^
-2 warnings generated.
-  CC      kernel/trace/trace_output.o
-  CC      kernel/sched/tune.o
-  CC      kernel/trace/trace_seq.o
-  CC      kernel/sched/cpuacct.o
-  CC      kernel/trace/trace_stat.o
-  CC      kernel/sched/cpufreq.o
-  CC      kernel/trace/trace_printk.o
-  CC      kernel/sched/cpufreq_schedutil.o
-  CC      kernel/trace/trace_sched_switch.o
-  CC      kernel/sched/cpufreq_schedplus.o
-  CC      kernel/trace/trace_nop.o
-  CC      kernel/trace/blktrace.o
-  CC      kernel/sched/psi.o
-  CC      kernel/trace/trace_events.o
-  LD      kernel/sched/built-in.o
-  CC      kernel/freezer.o
-  CC      kernel/profile.o
-  CC      kernel/trace/trace_export.o
-  CC      kernel/stacktrace.o
-  CC      kernel/futex.o
-  CC      kernel/trace/trace_event_perf.o
-  CC      kernel/trace/trace_events_filter.o
-  CC      kernel/futex_compat.o
-  CC      kernel/smp.o
-  CC      kernel/trace/trace_events_trigger.o
-  CC      kernel/uid16.o
-  CC      kernel/trace/bpf_trace.o
-  CC      kernel/module.o
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/module.c:1662:6: warning: variable 'nowarn' set but not used [-Wunused-but-set-variable]
-        int nowarn;
-            ^
-  CC      kernel/trace/trace_kprobe.o
-1 warning generated.
-  CC      kernel/trace/power-traces.o
-  CC      kernel/kallsyms.o
-  CC      kernel/compat.o
-  CC      kernel/trace/rpm-traces.o
-  CC      kernel/trace/trace_probe.o
-  CC      kernel/cgroup.o
-  CC      kernel/trace/mtk_trace.o
-  LD      kernel/trace/built-in.o
-  CC      kernel/cgroup_freezer.o
-  CC      kernel/cpuset.o
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/cpuset.c:1611:17: warning: variable 'cs' set but not used [-Wunused-but-set-variable]
-        struct cpuset *cs;
-                       ^
-/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15/kernel/cpuset.c:2541:18: warning: variable 'parent' set but not used [-Wunused-but-set-variable]
-                struct cpuset *parent;
-                               ^
-2 warnings generated.
-  GZIP    kernel/config_data.gz
-  CC      kernel/stop_machine.o
-  CC      kernel/audit.o
-  CC      kernel/auditfilter.o
-  CC      kernel/auditsc.o
-  CC      kernel/audit_watch.o
-  CC      kernel/audit_fsnotify.o
-  CC      kernel/audit_tree.o
-  CC      kernel/kprobes.o
-  CC      kernel/seccomp.o
-  CC      kernel/utsname_sysctl.o
-  CC      kernel/delayacct.o
-  CC      kernel/taskstats.o
-  CC      kernel/tsacct.o
-  CC      kernel/tracepoint.o
-  CC      kernel/elfcore.o
-  CC      kernel/irq_work.o
-  CC      kernel/cpu_pm.o
-  CC      kernel/membarrier.o
-  CC      kernel/memremap.o
-  CHK     kernel/config_data.h
-  UPD     kernel/config_data.h
-  CC      kernel/configs.o
-  LD      kernel/built-in.o
+  CC      fs/sdcardfs/mmap.o
+  LD      fs/proc/proc.o
+  LD      fs/proc/built-in.o
+  CC      fs/sysfs/file.o
+  CC      fs/sdcardfs/packagelist.o
+  CC      fs/sysfs/dir.o
+  CC      fs/sysfs/symlink.o
+  CC      fs/sysfs/mount.o
+  CC      fs/sysfs/group.o
+  CC      fs/sdcardfs/derived_perm.o
+  LD      fs/sysfs/built-in.o
+  CC      fs/tracefs/inode.o
+  LD      fs/sdcardfs/sdcardfs.o
+  LD      fs/sdcardfs/built-in.o
+  CC      fs/eventpoll.o
+  LD      fs/tracefs/tracefs.o
+  LD      fs/tracefs/built-in.o
+  CC      fs/anon_inodes.o
+  CC      fs/signalfd.o
+  CC      fs/timerfd.o
+  CC      fs/eventfd.o
+  CC      fs/aio.o
+  CC      fs/locks.o
+  CC      fs/compat.o
+  CC      fs/compat_ioctl.o
+  CC      fs/binfmt_script.o
+  CC      fs/binfmt_elf.o
+  CC      fs/compat_binfmt_elf.o
+  CC      fs/mbcache.o
+  CC      fs/posix_acl.o
+  CC      fs/coredump.o
+  CC      fs/drop_caches.o
+  CC      fs/dcookies.o
+  LD      fs/built-in.o
 make[1]: Leaving directory '/root/ksu-config-audit'
 make: *** [Makefile:152: sub-make] Error 2
 make: Leaving directory '/root/kernel-source/android_kernel_xiaomi_mt6765-lotus-4.9.205_oss-certus-arm64-20240419-15'
